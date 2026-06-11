@@ -9,6 +9,7 @@ import type { Category, Slice } from "@/store/types";
 export default function Budgets() {
   const categories = useAppStore(s => s.categories);
   const expenses = useAppStore(s => s.expenses);
+  const profile = useAppStore(s => s.profile);
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -35,7 +36,7 @@ export default function Budgets() {
     setIsFormOpen(true);
   };
 
-  const slices: Slice[] = ['Basic', 'Family', 'Wealth', 'Subscription'];
+  const slices = (profile?.enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription']) as Slice[];
 
   return (
     <motion.div

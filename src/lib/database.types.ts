@@ -23,10 +23,11 @@ export interface Database {
           has_seen_investment_nudge: boolean
           created_at: string
           updated_at: string
-           is_premium: boolean | null
+          is_premium: boolean | null
           has_supported_creator: boolean | null
           financial_streak: number | null
           last_logged_date: string | null
+          enabled_slices: string[] | null
         }
         Insert: {
           id: string
@@ -45,6 +46,7 @@ export interface Database {
           has_supported_creator?: boolean | null
           financial_streak?: number | null
           last_logged_date?: string | null
+          enabled_slices?: string[] | null
         }
         Update: {
           id?: string
@@ -63,6 +65,7 @@ export interface Database {
           has_supported_creator?: boolean | null
           financial_streak?: number | null
           last_logged_date?: string | null
+          enabled_slices?: string[] | null
         }
         Relationships: []
       }

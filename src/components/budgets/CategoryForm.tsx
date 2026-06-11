@@ -19,7 +19,7 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
   const [budgetLimit, setBudgetLimit] = useState('');
   const [icon, setIcon] = useState('Folder');
 
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,6 +41,7 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setErrorMsg(null);
 
     if (!navigator.onLine) {
@@ -59,7 +60,7 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
     try {
       const isBasic = slice === 'Basic';
       const isSubscription = slice === 'Subscription';
@@ -90,7 +91,7 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred while saving the category.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -141,17 +142,23 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
               FINANCIAL_SLICE
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {(['Basic', 'Family', 'Wealth', 'Subscription'] as Slice[]).map(slc => (
-                <button
-                  key={slc}
-                  type="button"
-                  onClick={() => setSlice(slc)}
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                  className={`py-2 px-3 text-xs font-bold border-[var(--border-default)] rounded-[var(--border-radius)] transition-all duration-100 uppercase ${slice === slc ? 'bg-[var(--color-primary)] shadow-[var(--shadow-btn-active)] translate-x-[0.5px] translate-y-[0.5px]' : 'bg-[var(--color-surface)]'}`}
-                >
-                  {slc}
-                </button>
-              ))}
+              {(() => {
+                const enabledSlices = [...(profile?.enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription'])];
+                if (category && category.slice && !enabledSlices.includes(category.slice)) {
+                  enabledSlices.push(category.slice);
+                }
+                return (enabledSlices as Slice[]).map(slc => (
+                  <button
+                    key={slc}
+                    type="button"
+                    onClick={() => setSlice(slc)}
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                    className={`py-2 px-3 text-xs font-bold border-[var(--border-default)] rounded-[var(--border-radius)] transition-all duration-100 uppercase ${slice === slc ? 'bg-[var(--color-primary)] shadow-[var(--shadow-btn-active)] translate-x-[0.5px] translate-y-[0.5px]' : 'bg-[var(--color-surface)]'}`}
+                  >
+                    {slc.replace('_', ' ')}
+                  </button>
+                ));
+              })()}
             </div>
           </div>
 
@@ -217,15 +224,15 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              disabled={loading}
+              disabled={isSubmitting}
               style={{ fontFamily: 'var(--font-display)' }}
-              className="px-5 py-3 bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 disabled:opacity-50"
+              className="px-5 py-3 bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               CANCEL
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting}
               style={{ fontFamily: 'var(--font-display)' }}
               className={`
                 px-5 py-3 bg-[var(--color-ink)] text-[var(--color-primary)] border-[var(--border-default)] 
@@ -233,10 +240,11 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
                 hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] 
                 active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs 
                 uppercase transition-all duration-100 flex items-center justify-center gap-2
-                ${loading ? 'animate-pulse cursor-wait' : ''}
+                disabled:opacity-50 disabled:cursor-not-allowed
+                ${isSubmitting ? 'animate-pulse cursor-wait' : ''}
               `}
             >
-              {loading ? 'SAVING...' : 'SAVE_CATEGORY'}
+              {isSubmitting ? 'SAVING...' : 'SAVE_CATEGORY'}
             </button>
           </DialogFooter>
         </form>

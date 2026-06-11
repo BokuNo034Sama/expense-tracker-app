@@ -121,6 +121,12 @@ export default function Dashboard() {
             <WealthCard />
             <SummaryCard type="totalSpent" />
             <SummaryCard type="topCategory" />
+            <div className="w-full h-auto">
+              <SpendingChart />
+            </div>
+            <div className="w-full h-auto">
+              <SpendingRadar />
+            </div>
           </div>
         )}
         {activeTab === 'buckets' && (

@@ -2,9 +2,9 @@ import type { User, Session } from '@supabase/supabase-js';
 
 // ─── Domain Primitives ────────────────────────────────────────────────────────
 
-export type Purpose        = 'clarity' | 'saving' | 'habit';
-export type SavingsRate    = 15 | 20 | 30 | 40;
-export type Slice          = 'Basic' | 'Family' | 'Wealth' | 'Subscription';
+export type Purpose        = 'clarity' | 'saving' | 'habit' | (string & {});
+export type SavingsRate    = 15 | 20 | 30 | 40 | number;
+export type Slice          = 'Basic' | 'Family' | 'Wealth' | 'Subscription' | (string & {});
 export type IncomeSource   = 'Salary' | 'Business' | 'Gifting';
 export type Theme          = 'light' | 'dark';
 export type SyncStatus     = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
@@ -32,6 +32,7 @@ export interface ProfileRow {
   push_subscription?:        any;
   financial_streak?:         number;
   last_logged_date?:         string;
+  enabled_slices:            string[];
 }
 
 export interface CategoryRow {

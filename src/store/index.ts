@@ -31,6 +31,47 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   initAuth: async () => {
     // Called once in App.tsx on mount — establishes session and subscribes to changes
+    if (!navigator.onLine) {
+      let cachedUser = null;
+      let cachedSession = null;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+          const val = localStorage.getItem(key);
+          if (val) {
+            try {
+              const parsed = JSON.parse(val);
+              if (parsed && (parsed.currentSession || parsed.user)) {
+                cachedUser = parsed.user || parsed.currentSession?.user || null;
+                cachedSession = parsed.currentSession || null;
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+      }
+
+      set({
+        auth: {
+          user: cachedUser,
+          session: cachedSession,
+          status: 'authenticated',
+        },
+      });
+
+      try {
+        await Promise.all([
+          get().fetchProfile(),
+          get().fetchCategories(),
+          get().fetchExpenses(),
+          get().fetchIncomes(),
+        ]);
+      } catch (err) {
+        console.error('[KINY] Offline initAuth initial data fetch failed:', err);
+      }
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     set({
       auth: {
@@ -158,10 +199,15 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           last_active_date: '',
           financial_streak: 0,
           last_logged_date: '',
+          enabled_slices: ['Basic', 'Family', 'Wealth', 'Subscription'],
         };
         set({ profile: fallbackProfile, theme: 'light' });
       } else {
-        set({ profile: data as any, theme: (data.theme as Theme) || 'light' });
+        const profileWithSlices = {
+          ...(data as any),
+          enabled_slices: (data as any).enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription'],
+        };
+        set({ profile: profileWithSlices, theme: (data.theme as Theme) || 'light' });
       }
     } catch (e: any) {
       set(s => ({ errors: { ...s.errors, profile: e.message } }));
@@ -186,6 +232,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           last_active_date: '',
           financial_streak: 0,
           last_logged_date: '',
+          enabled_slices: ['Basic', 'Family', 'Wealth', 'Subscription'],
         };
         set({ profile: fallbackProfile, theme: 'light' });
       } catch {

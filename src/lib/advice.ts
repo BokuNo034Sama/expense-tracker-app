@@ -12,7 +12,7 @@ export interface ProjectionItem {
 }
 
 export function generateAdvice(
-  purpose: 'clarity' | 'saving' | 'habit',
+  purpose: string,
   categories: any[],
   expenses: any[],
   incomes: any[]

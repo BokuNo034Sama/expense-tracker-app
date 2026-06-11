@@ -24,7 +24,7 @@ export function SliceSection({ slice, categories, categorySpends, onEditCategory
       case 'Subscription':
         return 'SUBSCRIPTIONS_&_MEMBERSHIPS';
       default:
-        return 'BUDGET_BUCKETS';
+        return slice.replace('_', ' ').toUpperCase();
     }
   };
 

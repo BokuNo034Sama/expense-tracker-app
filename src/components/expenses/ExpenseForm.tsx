@@ -73,7 +73,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
 
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handlePasteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -117,6 +117,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setErrorMsg(null);
 
     if (!navigator.onLine) {
@@ -135,7 +136,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
     try {
       const matchedCategory = categories.find(c => 
         c.id === categoryId || 
@@ -159,7 +160,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred while saving the expense.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -313,15 +314,15 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              disabled={loading}
+              disabled={isSubmitting}
               style={{ fontFamily: 'var(--font-display)' }}
-              className="px-5 py-3 bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 disabled:opacity-50"
+              className="px-5 py-3 bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               CANCEL
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting}
               style={{ fontFamily: 'var(--font-display)' }}
               className={`
                 px-5 py-3 bg-[var(--color-ink)] text-[var(--color-primary)] border-[var(--border-default)] 
@@ -329,10 +330,11 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
                 hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] 
                 active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs 
                 uppercase transition-all duration-100 flex items-center justify-center gap-2
-                ${loading ? 'animate-pulse cursor-wait' : ''}
+                disabled:opacity-50 disabled:cursor-not-allowed
+                ${isSubmitting ? 'animate-pulse cursor-wait' : ''}
               `}
             >
-              {loading ? 'SAVING...' : 'SAVE_RECORD'}
+              {isSubmitting ? 'SAVING...' : 'SAVE_RECORD'}
             </button>
           </DialogFooter>
         </form>

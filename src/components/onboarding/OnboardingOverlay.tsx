@@ -17,6 +17,7 @@ export function OnboardingOverlay() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const completeOnboarding = useAppStore(s => s.completeOnboarding);
+  const profile = useAppStore(s => s.profile);
 
   const handleNext = () => {
     setErrorMsg(null);
@@ -240,80 +241,61 @@ export function OnboardingOverlay() {
                   </p>
 
                   <div className="space-y-3">
-                    <button
-                      type="button"
-                      onClick={() => setPurpose('clarity')}
-                      style={{ border: 'var(--border-default)' }}
-                      className={`w-full p-4 text-left rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${
-                        purpose === 'clarity'
-                          ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
-                          : 'bg-[var(--color-surface)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
-                      }`}
-                    >
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
-                          SAPA_EARLY_WARNING_SYSTEM
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
-                          For tracking baseline costs so you stop asking where your money vanished to.
-                        </div>
-                      </div>
-                      {purpose === 'clarity' && (
-                        <span className="font-bold text-xs bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-ink)]">
-                          ACTIVE
-                        </span>
-                      )}
-                    </button>
- 
-                    <button
-                      type="button"
-                      onClick={() => setPurpose('saving')}
-                      style={{ border: 'var(--border-default)' }}
-                      className={`w-full p-4 text-left rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${
-                        purpose === 'saving'
-                          ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
-                          : 'bg-[var(--color-surface)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
-                      }`}
-                    >
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
-                          ACTIVE_WEALTH_ENGINE
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
-                          Prioritizes aggressive tracking, investment nudges, and wealth multiplication.
-                        </div>
-                      </div>
-                      {purpose === 'saving' && (
-                        <span className="font-bold text-xs bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-ink)]">
-                          ACTIVE
-                        </span>
-                      )}
-                    </button>
- 
-                    <button
-                      type="button"
-                      onClick={() => setPurpose('habit')}
-                      style={{ border: 'var(--border-default)' }}
-                      className={`w-full p-4 text-left rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${
-                        purpose === 'habit'
-                          ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
-                          : 'bg-[var(--color-surface)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
-                      }`}
-                    >
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
-                          SUBSCRIPTION_URGENT_CARE
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
-                          Flags recurring streaming plans, hidden data leaks, and unnecessary auto-debits.
-                        </div>
-                      </div>
-                      {purpose === 'habit' && (
-                        <span className="font-bold text-xs bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-ink)]">
-                          ACTIVE
-                        </span>
-                      )}
-                    </button>
+                    {(() => {
+                      const defaultPurposes = [
+                        {
+                          id: 'clarity' as Purpose,
+                          title: 'SAPA_EARLY_WARNING_SYSTEM',
+                          description: 'For tracking baseline costs so you stop asking where your money vanished to.'
+                        },
+                        {
+                          id: 'saving' as Purpose,
+                          title: 'ACTIVE_WEALTH_ENGINE',
+                          description: 'Prioritizes aggressive tracking, investment nudges, and wealth multiplication.'
+                        },
+                        {
+                          id: 'habit' as Purpose,
+                          title: 'SUBSCRIPTION_URGENT_CARE',
+                          description: 'Flags recurring streaming plans, hidden data leaks, and unnecessary auto-debits.'
+                        }
+                      ];
+                      const purposes = [...defaultPurposes];
+                      if (profile?.purpose && !purposes.some(p => p.id === profile.purpose)) {
+                        purposes.push({
+                          id: profile.purpose,
+                          title: `${profile.purpose.toUpperCase()}_ENGINE`,
+                          description: `Custom goal requested by profile: ${profile.purpose}`
+                        });
+                      }
+
+                      return purposes.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setPurpose(p.id)}
+                          style={{ border: 'var(--border-default)' }}
+                          className={`w-full p-4 text-left rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${
+                            purpose === p.id
+                              ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
+                              : 'bg-[var(--color-surface)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
+                          }`}
+                        >
+                          <div>
+                            <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
+                              {p.title}
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
+                              {p.description}
+                            </div>
+                          </div>
+                          {purpose === p.id && (
+                            <span className="font-bold text-xs bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-ink)]">
+                              ACTIVE
+                            </span>
+                          )}
+                        </button>
+                      ));
+                    })()}
                   </div>
 
                   {purpose === 'saving' && (
@@ -325,17 +307,24 @@ export function OnboardingOverlay() {
                         TARGET_SAVINGS_RATE (%)
                       </label>
                       <div className="grid grid-cols-4 gap-2">
-                        {([15, 20, 30, 40] as SavingsRate[]).map((rate) => (
-                          <button
-                            key={rate}
-                            type="button"
-                            onClick={() => setSavingsRate(rate)}
-                            style={{ fontFamily: 'var(--font-mono)' }}
-                            className={`py-2 text-center text-xs font-bold border-[var(--border-default)] rounded-[var(--border-radius)] transition-all duration-100 ${savingsRate === rate ? 'bg-[var(--color-primary)] shadow-[var(--shadow-btn-active)] translate-x-[0.5px] translate-y-[0.5px]' : 'bg-[var(--color-surface)]'}`}
-                          >
-                            {rate}%
-                          </button>
-                        ))}
+                        {(() => {
+                          const defaultRates = [15, 20, 30, 40];
+                          const rates = [...defaultRates];
+                          if (profile?.target_savings_rate && !rates.includes(profile.target_savings_rate)) {
+                            rates.push(profile.target_savings_rate);
+                          }
+                          return rates.map((rate) => (
+                            <button
+                              key={rate}
+                              type="button"
+                              onClick={() => setSavingsRate(rate)}
+                              style={{ fontFamily: 'var(--font-mono)' }}
+                              className={`py-2 text-center text-xs font-bold border-[var(--border-default)] rounded-[var(--border-radius)] transition-all duration-100 ${savingsRate === rate ? 'bg-[var(--color-primary)] shadow-[var(--shadow-btn-active)] translate-x-[0.5px] translate-y-[0.5px]' : 'bg-[var(--color-surface)]'}`}
+                            >
+                              {rate}%
+                            </button>
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
