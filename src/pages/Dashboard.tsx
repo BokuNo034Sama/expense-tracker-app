@@ -7,7 +7,6 @@ import { AdviceCard } from "@/components/dashboard/AdviceCard";
 import { BudgetProgress } from "@/components/dashboard/BudgetProgress";
 import { RecentExpenses } from "@/components/dashboard/RecentExpenses";
 import { SpendingRadar } from "@/components/dashboard/SpendingRadar";
-import { SyncIndicator } from "@/components/shared/SyncIndicator";
 import { InvestmentNudge } from "@/components/dashboard/InvestmentNudge";
 
 export default function Dashboard() {
@@ -59,8 +58,6 @@ export default function Dashboard() {
           </p>
         </div>
         
-        {/* Sync Indicator */}
-        <SyncIndicator />
       </div>
 
       {/* Welcome guide card if no expenses logged */}

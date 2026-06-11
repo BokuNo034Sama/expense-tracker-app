@@ -19,7 +19,7 @@ const initialErrors: ErrorState = {
 };
 
 const initialPWA: PWAState = {
-  isInstalled: false, hasUpdate: false, installPromptDismissed: false,
+  isInstalled: false, hasUpdate: false, installPromptDismissed: false, deferredPrompt: null,
 };
 
 // ─── Helper: seed categories for a brand-new user ─────────────────────────────
@@ -166,6 +166,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           updated_at: new Date().toISOString(),
           is_premium: false,
           has_supported_creator: false,
+          current_streak: 0,
+          last_active_date: '',
         };
         set({ profile: fallbackProfile, theme: 'light' });
       } else {
@@ -190,6 +192,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           updated_at: new Date().toISOString(),
           is_premium: false,
           has_supported_creator: false,
+          current_streak: 0,
+          last_active_date: '',
         };
         set({ profile: fallbackProfile, theme: 'light' });
       } catch {
@@ -444,4 +448,5 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   setPWAInstalled:      (v) => set(s => ({ pwa: { ...s.pwa, isInstalled: v } })),
   setPWAUpdate:         (v) => set(s => ({ pwa: { ...s.pwa, hasUpdate: v } })),
   dismissInstallPrompt: ()  => set(s => ({ pwa: { ...s.pwa, installPromptDismissed: true } })),
+  setDeferredPrompt:    (prompt) => set(s => ({ pwa: { ...s.pwa, deferredPrompt: prompt } })),
 }));

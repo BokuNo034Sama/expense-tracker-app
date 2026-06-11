@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../store';
-import { LayoutDashboard, Receipt, PieChart, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Receipt, PieChart, LogOut, Sun, Moon, ArrowDownToLine } from 'lucide-react';
 
 export function Sidebar() {
   const location = useLocation();
@@ -8,13 +8,25 @@ export function Sidebar() {
   const signOut = useAppStore(s => s.signOut);
   const theme = useAppStore(s => s.theme);
   const setTheme = useAppStore(s => s.setTheme);
+  const isInstalled = useAppStore(s => s.pwa.isInstalled);
+  const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
+  const setPWAInstalled = useAppStore(s => s.setPWAInstalled);
+  const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
 
   const initials = profile?.avatar_initials || 'U';
 
-
-
   const handleThemeToggle = () => {
     setTheme(theme === 'light' ? 'dark' : 'light').catch(console.error);
+  };
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setPWAInstalled(true);
+    }
+    setDeferredPrompt(null);
   };
 
   return (
@@ -89,10 +101,23 @@ export function Sidebar() {
       {/* 6. Sign Out Button (Hidden on Mobile) */}
       <button
         onClick={() => signOut().catch(console.error)}
-        className="hidden md:block p-3 text-gray-400 hover:text-[var(--color-danger)] hover:bg-neutral-900 rounded-[var(--border-radius)] transition-all duration-150 order-6"
+        className="hidden md:block p-3 text-gray-400 hover:text-[var(--color-danger)] hover:bg-neutral-900 rounded-[var(--border-radius)] transition-all duration-150 order-7 md:order-7"
       >
         <LogOut className="h-5 w-5" />
       </button>
+
+      {/* 7. PWA Install Button */}
+      {!isInstalled && deferredPrompt && (
+        <button
+          onClick={handleInstallPWA}
+          className="p-2.5 md:p-3 border-2 border-black bg-[var(--color-primary)] text-black rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-150 relative group order-6 md:order-6"
+        >
+          <ArrowDownToLine className="h-5 w-5" />
+          <span style={{ fontFamily: 'var(--font-mono)' }} className="hidden md:group-hover:block absolute left-16 top-1/2 -translate-y-1/2 bg-black border border-white text-white px-2 py-1 rounded text-[10px] uppercase font-bold whitespace-nowrap pointer-events-none z-50 shadow-md">
+            GET_APP_🚀
+          </span>
+        </button>
+      )}
     </aside>
   );
 }

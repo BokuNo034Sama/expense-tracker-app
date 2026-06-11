@@ -1,27 +1,14 @@
-import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
 import { ArrowDownToLine } from 'lucide-react';
 
 export function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [visible, setVisible] = useState(false);
   const isInstalled = useAppStore(s => s.pwa.isInstalled);
+  const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
   const setPWAInstalled = useAppStore(s => s.setPWAInstalled);
-
-  useEffect(() => {
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setVisible(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-    };
-  }, []);
+  const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
+  const dismissInstallPrompt = useAppStore(s => s.dismissInstallPrompt);
+  const installPromptDismissed = useAppStore(s => s.pwa.installPromptDismissed);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -31,10 +18,9 @@ export function InstallPrompt() {
       setPWAInstalled(true);
     }
     setDeferredPrompt(null);
-    setVisible(false);
   };
 
-  if (isInstalled || !visible) return null;
+  if (isInstalled || !deferredPrompt || installPromptDismissed) return null;
 
   return (
     <div className="fixed bottom-4 left-4 z-50 w-full max-w-[360px] animate-[slideInUp_0.2s_ease-out]">
@@ -55,7 +41,7 @@ export function InstallPrompt() {
             INSTALL_NOW
           </button>
           <button
-            onClick={() => setVisible(false)}
+            onClick={dismissInstallPrompt}
             style={{ fontFamily: 'var(--font-mono)' }}
             className="px-3 py-2 bg-transparent text-black border-2 border-transparent hover:border-black rounded-[var(--border-radius)] text-[10px] font-bold uppercase"
           >
@@ -66,3 +52,4 @@ export function InstallPrompt() {
     </div>
   );
 }
+

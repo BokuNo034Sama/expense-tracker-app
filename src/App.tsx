@@ -12,10 +12,22 @@ import { ExpenseForm } from "./components/expenses/ExpenseForm";
 export default function App() {
   const initAuth = useAppStore(s => s.initAuth);
   const authStatus = useAppStore(s => s.auth.status);
+  const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
   useEffect(() => {
     initAuth();
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
   }, []);
 
   if (authStatus === 'loading') {

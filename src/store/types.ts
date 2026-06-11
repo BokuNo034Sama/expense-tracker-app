@@ -27,6 +27,9 @@ export interface ProfileRow {
   updated_at:                string;
   is_premium?:               boolean;
   has_supported_creator?:    boolean;
+  current_streak?:           number;
+  last_active_date?:         string;
+  push_subscription?:        any;
 }
 
 export interface CategoryRow {
@@ -96,6 +99,7 @@ export interface PWAState {
   isInstalled:            boolean;
   hasUpdate:              boolean;
   installPromptDismissed: boolean;
+  deferredPrompt:         any;
 }
 
 // ─── Loading & Error Slices ───────────────────────────────────────────────────
@@ -178,4 +182,5 @@ export interface AppStore {
   setPWAInstalled:   (v: boolean) => void;
   setPWAUpdate:      (v: boolean) => void;
   dismissInstallPrompt: () => void;
+  setDeferredPrompt: (prompt: any) => void;
 }
