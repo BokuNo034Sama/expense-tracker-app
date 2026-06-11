@@ -45,17 +45,17 @@ export function WealthCard() {
       </div>
 
       <div className="space-y-2 border-t border-[var(--color-ink)] border-dashed pt-4">
-        <div className="flex justify-between items-center text-xs">
+        <div className="flex justify-between items-start gap-2 text-xs flex-wrap">
           <span style={{ fontFamily: 'var(--font-display)' }} className="font-semibold uppercase text-[var(--color-ink-muted)]">ESTIMATED_INCOME:</span>
-          <span style={{ fontFamily: 'var(--font-mono)' }} className="font-bold">{formatNaira(totalIncome)}</span>
+          <span style={{ fontFamily: 'var(--font-mono)' }} className="font-bold shrink-0">{formatNaira(totalIncome)}</span>
         </div>
-        <div className="flex justify-between items-center text-xs">
+        <div className="flex justify-between items-start gap-2 text-xs flex-wrap">
           <span style={{ fontFamily: 'var(--font-display)' }} className="font-semibold uppercase text-[var(--color-ink-muted)]">MONTH_EXPENSES:</span>
-          <span style={{ fontFamily: 'var(--font-mono)' }} className="font-bold">{formatNaira(totalExpenses)}</span>
+          <span style={{ fontFamily: 'var(--font-mono)' }} className="font-bold shrink-0">{formatNaira(totalExpenses)}</span>
         </div>
-        <div className="flex justify-between items-center text-xs">
+        <div className="flex justify-between items-start gap-2 text-xs flex-wrap">
           <span style={{ fontFamily: 'var(--font-display)' }} className="font-semibold uppercase text-[var(--color-ink-muted)]">SAVINGS_RATE:</span>
-          <span style={{ fontFamily: 'var(--font-mono)' }} className={`font-extrabold ${savingsRate < 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-ink)]'}`}>
+          <span style={{ fontFamily: 'var(--font-mono)' }} className={`font-extrabold shrink-0 ${savingsRate < 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-ink)]'}`}>
             {savingsRate.toFixed(1)}%
           </span>
         </div>

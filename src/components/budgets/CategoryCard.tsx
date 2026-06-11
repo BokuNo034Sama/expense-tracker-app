@@ -93,9 +93,9 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
         
         {limit > 0 ? (
           <div className="mt-1 space-y-1.5">
-            <div className="flex justify-between items-center text-[10px]">
-              <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[var(--color-ink-muted)]">LIMIT: {formatNaira(limit)}</span>
-              <span style={{ fontFamily: 'var(--font-mono)' }} className={`font-bold ${isOver ? 'text-[var(--color-danger)]' : 'text-[var(--color-ink-muted)]'}`}>
+            <div className="flex justify-between items-start gap-2 text-[10px] flex-wrap">
+              <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[var(--color-ink-muted)] break-all">LIMIT: {formatNaira(limit)}</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }} className={`font-bold shrink-0 ${isOver ? 'text-[var(--color-danger)]' : 'text-[var(--color-ink-muted)]'}`}>
                 {percentage.toFixed(0)}%
               </span>
             </div>

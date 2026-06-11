@@ -93,7 +93,7 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
         {/* Left Side: Profile Form */}
         <BentoCard hoverEffect={false} className="space-y-6">
           <div className="border-b border-[var(--color-ink)] border-dashed pb-3">

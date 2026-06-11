@@ -51,11 +51,11 @@ export function BudgetProgress() {
 
               return (
                 <div key={cat.id} className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs">
-                    <span style={{ fontFamily: 'var(--font-display)' }} className="font-bold text-[var(--color-ink)] uppercase">
+                  <div className="flex justify-between items-start gap-2 text-xs flex-wrap">
+                    <span style={{ fontFamily: 'var(--font-display)' }} className="font-bold text-[var(--color-ink)] uppercase break-all">
                       {cat.name}
                     </span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }} className={`font-semibold ${isOver ? 'text-[var(--color-danger)] font-bold' : 'text-[var(--color-ink-muted)]'}`}>
+                    <span style={{ fontFamily: 'var(--font-mono)' }} className={`font-semibold shrink-0 ${isOver ? 'text-[var(--color-danger)] font-bold' : 'text-[var(--color-ink-muted)]'}`}>
                       {formatNaira(spent)} / {formatNaira(limit)}
                     </span>
                   </div>

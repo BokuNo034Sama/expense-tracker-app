@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../store';
-import { LayoutDashboard, Receipt, PieChart, User, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Receipt, PieChart, LogOut, Sun, Moon } from 'lucide-react';
 
 export function Sidebar() {
   const location = useLocation();
@@ -11,12 +11,7 @@ export function Sidebar() {
 
   const initials = profile?.avatar_initials || 'U';
 
-  const navItems = [
-    { path: '/', icon: LayoutDashboard, label: 'DASHBOARD' },
-    { path: '/expenses', icon: Receipt, label: 'EXPENSES' },
-    { path: '/budgets', icon: PieChart, label: 'BUDGETS' },
-    { path: '/profile', icon: User, label: 'PROFILE' },
-  ];
+
 
   const handleThemeToggle = () => {
     setTheme(theme === 'light' ? 'dark' : 'light').catch(console.error);
@@ -24,75 +19,80 @@ export function Sidebar() {
 
   return (
     <aside 
-      style={{ width: 'var(--sidebar-width)', backgroundColor: 'var(--sidebar-bg)' }}
-      className="fixed inset-y-0 left-0 z-40 flex flex-col justify-between items-center py-6 border-r-2 border-[var(--color-ink)] transition-colors duration-200 select-none text-white"
+      style={{ backgroundColor: 'var(--sidebar-bg)' }}
+      className="fixed z-40 border-[var(--color-ink)] transition-colors duration-200 select-none text-white
+                 bottom-0 inset-x-0 h-16 flex flex-row justify-around items-center px-2 border-t-2 border-r-0 w-full
+                 md:top-0 md:bottom-auto md:left-0 md:w-[72px] md:h-screen md:flex-col md:justify-between md:py-6 md:border-r-2 md:border-t-0"
     >
-      {/* Top: Avatar */}
-      <div className="flex flex-col items-center gap-6">
-        <Link to="/profile" title="View Profile">
-          <div 
-            style={{ fontFamily: 'var(--font-display)' }}
-            className="w-10 h-10 bg-[var(--color-primary)] text-black border-2 border-black rounded-full flex items-center justify-center font-extrabold text-sm shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-150 uppercase"
-          >
-            {initials}
-          </div>
-        </Link>
-        
-        {/* Navigation List */}
-        <nav className="flex flex-col gap-4">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
+      {/* 1. Dashboard Link */}
+      <Link
+        to="/"
+        className={`p-2.5 md:p-3 border-2 border-transparent rounded-[var(--border-radius)] transition-all duration-150 relative group order-1 md:order-2
+          ${location.pathname === '/' ? 'bg-[var(--color-primary)] text-black border-black shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
+        `}
+      >
+        <LayoutDashboard className="h-5 w-5" />
+        <span style={{ fontFamily: 'var(--font-mono)' }} className="hidden md:group-hover:block absolute left-16 top-1/2 -translate-y-1/2 bg-black border border-white text-white px-2 py-1 rounded text-[10px] uppercase font-bold whitespace-nowrap pointer-events-none z-50 shadow-md">
+          DASHBOARD
+        </span>
+      </Link>
 
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                title={item.label}
-                className={`
-                  p-3 border-2 border-transparent rounded-[var(--border-radius)] 
-                  transition-all duration-150 relative group
-                  ${isActive 
-                    ? 'bg-[var(--color-primary)] text-black border-black shadow-[var(--shadow-btn-active)]' 
-                    : 'text-gray-400 hover:text-white hover:bg-neutral-900'
-                  }
-                `}
-              >
-                <Icon className="h-5 w-5" />
-                
-                {/* Floating labels */}
-                <span 
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                  className="absolute left-16 top-1/2 -translate-y-1/2 bg-black border border-white text-white px-2 py-1 rounded text-[10px] uppercase font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap pointer-events-none z-50 shadow-md"
-                >
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+      {/* 2. Expenses Link */}
+      <Link
+        to="/expenses"
+        className={`p-2.5 md:p-3 border-2 border-transparent rounded-[var(--border-radius)] transition-all duration-150 relative group order-2 md:order-3
+          ${location.pathname === '/expenses' ? 'bg-[var(--color-primary)] text-black border-black shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
+        `}
+      >
+        <Receipt className="h-5 w-5" />
+        <span style={{ fontFamily: 'var(--font-mono)' }} className="hidden md:group-hover:block absolute left-16 top-1/2 -translate-y-1/2 bg-black border border-white text-white px-2 py-1 rounded text-[10px] uppercase font-bold whitespace-nowrap pointer-events-none z-50 shadow-md">
+          EXPENSES
+        </span>
+      </Link>
 
-      {/* Bottom: Theme Toggle & Sign Out */}
-      <div className="flex flex-col items-center gap-4">
-        {/* Theme Toggle */}
-        <button
-          onClick={handleThemeToggle}
-          title="Toggle Theme"
-          className="p-3 text-gray-400 hover:text-white hover:bg-neutral-900 rounded-[var(--border-radius)] transition-all duration-150"
+      {/* 3. Budgets Link */}
+      <Link
+        to="/budgets"
+        className={`p-2.5 md:p-3 border-2 border-transparent rounded-[var(--border-radius)] transition-all duration-150 relative group order-3 md:order-4
+          ${location.pathname === '/budgets' ? 'bg-[var(--color-primary)] text-black border-black shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
+        `}
+      >
+        <PieChart className="h-5 w-5" />
+        <span style={{ fontFamily: 'var(--font-mono)' }} className="hidden md:group-hover:block absolute left-16 top-1/2 -translate-y-1/2 bg-black border border-white text-white px-2 py-1 rounded text-[10px] uppercase font-bold whitespace-nowrap pointer-events-none z-50 shadow-md">
+          BUDGETS
+        </span>
+      </Link>
+
+      {/* 4. Theme Toggle Button */}
+      <button
+        onClick={handleThemeToggle}
+        className="p-2.5 md:p-3 text-gray-400 hover:text-white hover:bg-neutral-900 rounded-[var(--border-radius)] transition-all duration-150 order-4 md:order-5"
+      >
+        {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+      </button>
+
+      {/* 5. Avatar (Dashboard links / Profile link) */}
+      <Link 
+        to="/profile" 
+        className={`p-1 md:p-0 border-2 border-transparent rounded-full transition-all duration-150 order-5 md:order-1
+          ${location.pathname === '/profile' ? 'border-[var(--color-primary)]' : ''}
+        `}
+      >
+        <div 
+          style={{ fontFamily: 'var(--font-display)' }}
+          className="w-9 h-9 md:w-10 md:h-10 bg-[var(--color-primary)] text-black border-2 border-black rounded-full flex items-center justify-center font-extrabold text-xs md:text-sm shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-150 uppercase"
         >
-          {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-        </button>
+          {initials}
+        </div>
+      </Link>
 
-        {/* Sign Out */}
-        <button
-          onClick={() => signOut().catch(console.error)}
-          title="Sign Out"
-          className="p-3 text-gray-400 hover:text-[var(--color-danger)] hover:bg-neutral-900 rounded-[var(--border-radius)] transition-all duration-150"
-        >
-          <LogOut className="h-5 w-5" />
-        </button>
-      </div>
+      {/* 6. Sign Out Button (Hidden on Mobile) */}
+      <button
+        onClick={() => signOut().catch(console.error)}
+        className="hidden md:block p-3 text-gray-400 hover:text-[var(--color-danger)] hover:bg-neutral-900 rounded-[var(--border-radius)] transition-all duration-150 order-6"
+      >
+        <LogOut className="h-5 w-5" />
+      </button>
     </aside>
   );
 }
