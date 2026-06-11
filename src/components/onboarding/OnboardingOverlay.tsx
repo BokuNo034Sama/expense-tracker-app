@@ -215,47 +215,86 @@ export function OnboardingOverlay() {
                   className="space-y-4"
                 >
                   <h2 style={{ fontFamily: 'var(--font-display)' }} className="text-2xl font-extrabold uppercase text-[var(--color-ink)]">
-                    CHOOSE_YOUR_PURPOSE
+                    SELECT_YOUR_GOAL
                   </h2>
                   <p style={{ fontFamily: 'var(--font-mono)' }} className="text-xs text-[var(--color-ink-muted)] mb-2">
-                    Select the main reason you're using Kiny:
+                    What is the primary objective you're using Kiny to achieve?
                   </p>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <button
                       type="button"
                       onClick={() => setPurpose('clarity')}
-                      className={`w-full p-3 text-left border-[var(--border-default)] rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${purpose === 'clarity' ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-btn)] -translate-x-[1px] -translate-y-[1px]' : 'bg-[var(--color-surface)]'}`}
+                      style={{ border: 'var(--border-default)' }}
+                      className={`w-full p-4 text-left rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${
+                        purpose === 'clarity'
+                          ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
+                          : 'bg-[var(--color-surface)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
+                      }`}
                     >
                       <div>
-                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">1. FIND_CLARITY</div>
-                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-0.5">Track everything to find clarity in spending</div>
+                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
+                          Expense Clarity
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
+                          Track everything to find clarity and patterns in your daily spending.
+                        </div>
                       </div>
-                      {purpose === 'clarity' && <span className="font-bold text-sm">✓</span>}
+                      {purpose === 'clarity' && (
+                        <span className="font-bold text-xs bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-ink)]">
+                          ACTIVE
+                        </span>
+                      )}
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setPurpose('saving')}
-                      className={`w-full p-3 text-left border-[var(--border-default)] rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${purpose === 'saving' ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-btn)] -translate-x-[1px] -translate-y-[1px]' : 'bg-[var(--color-surface)]'}`}
+                      style={{ border: 'var(--border-default)' }}
+                      className={`w-full p-4 text-left rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${
+                        purpose === 'saving'
+                          ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
+                          : 'bg-[var(--color-surface)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
+                      }`}
                     >
                       <div>
-                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">2. ACCUMULATE_SAVINGS</div>
-                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-0.5">Focus on growth & priority savings rates</div>
+                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
+                          Wealth Building
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
+                          Grow your net worth with focus on investment nudges & priority saving rates.
+                        </div>
                       </div>
-                      {purpose === 'saving' && <span className="font-bold text-sm">✓</span>}
+                      {purpose === 'saving' && (
+                        <span className="font-bold text-xs bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-ink)]">
+                          ACTIVE
+                        </span>
+                      )}
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setPurpose('habit')}
-                      className={`w-full p-3 text-left border-[var(--border-default)] rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${purpose === 'habit' ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-btn)] -translate-x-[1px] -translate-y-[1px]' : 'bg-[var(--color-surface)]'}`}
+                      style={{ border: 'var(--border-default)' }}
+                      className={`w-full p-4 text-left rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${
+                        purpose === 'habit'
+                          ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
+                          : 'bg-[var(--color-surface)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
+                      }`}
                     >
                       <div>
-                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">3. CONTROL_HABITS</div>
-                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-0.5">Monitor and cut down on subscriptions</div>
+                        <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
+                          Habit Correction
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
+                          Monitor subscriptions, analyze categories, and trim unnecessary outflows.
+                        </div>
                       </div>
-                      {purpose === 'habit' && <span className="font-bold text-sm">✓</span>}
+                      {purpose === 'habit' && (
+                        <span className="font-bold text-xs bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-ink)]">
+                          ACTIVE
+                        </span>
+                      )}
                     </button>
                   </div>
 
