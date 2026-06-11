@@ -1,136 +1,179 @@
-// ─── Purpose & Onboarding ───────────────────────────────────────────────────
-export type Purpose = 'clarity' | 'saving' | 'habit';
-export type SavingsRate = 15 | 20 | 30 | 40;
+import type { User, Session } from '@supabase/supabase-js';
 
-// ─── Category & Slices ──────────────────────────────────────────────────────
-export type Slice = 'Basic' | 'Family' | 'Wealth' | 'Subscription';
+// ─── Domain Primitives ────────────────────────────────────────────────────────
 
-// ─── Income ─────────────────────────────────────────────────────────────────
-export type IncomeSource = 'Salary' | 'Business' | 'Gifting';
-
-// ─── Theme ──────────────────────────────────────────────────────────────────
-export type Theme = 'light' | 'dark';
-
-// ─── Sync ───────────────────────────────────────────────────────────────────
-export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline';
-
-// ─── Investment ─────────────────────────────────────────────────────────────
+export type Purpose        = 'clarity' | 'saving' | 'habit';
+export type SavingsRate    = 15 | 20 | 30 | 40;
+export type Slice          = 'Basic' | 'Family' | 'Wealth' | 'Subscription';
+export type IncomeSource   = 'Salary' | 'Business' | 'Gifting';
+export type Theme          = 'light' | 'dark';
+export type SyncStatus     = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
 export type InvestmentType = 'Stocks' | 'Mutual Funds' | 'ETFs';
 
-// ─── User Profile ───────────────────────────────────────────────────────────
-export interface UserProfile {
-  // V1 core
-  name: string;
-  purpose: Purpose;
-  targetSavingsRate: SavingsRate | null;
-  hasCompletedOnboarding: boolean;
-  // V2 additions
-  occupation: string;
-  monthlySalary: number;
-  avatarInitials: string;
+// ─── Database Row Shapes (snake_case mirrors Supabase columns) ─────────────────
+
+export interface ProfileRow {
+  id:                        string;
+  name:                      string;
+  occupation:                string;
+  monthly_salary:            number;
+  avatar_initials:           string;
+  purpose:                   Purpose;
+  target_savings_rate:       SavingsRate | null;
+  has_completed_onboarding:  boolean;
+  theme:                     Theme;
+  has_seen_investment_nudge: boolean;
+  created_at:                string;
+  updated_at:                string;
 }
 
-// ─── Category ───────────────────────────────────────────────────────────────
-export interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  slice: Slice;
-  budgetLimit: number;      // Monthly cap in ₦ (0 = no limit)
-  isBasic: boolean;         // Used for Habit Control alerts
-  isPriority: boolean;      // Set by Purpose logic engine
-  isSubscription: boolean;  // Pre-populated subscriptions
-  createdAt: string;
+export interface CategoryRow {
+  id:               string;
+  user_id:          string;
+  name:             string;
+  icon:             string;
+  slice:            Slice;
+  budget_limit:     number;
+  is_basic:         boolean;
+  is_priority:      boolean;
+  is_subscription:  boolean;
+  created_at:       string;
 }
 
-// ─── Expense ────────────────────────────────────────────────────────────────
-export interface Expense {
-  id: string;
-  date: string;             // ISO 8601: "2026-05-15"
-  vendor: string;
-  categoryId: string;       // FK → Category.id
-  amount: number;           // Naira float
-  note?: string;
-  createdAt: string;
-  updatedAt: string;
+export interface ExpenseRow {
+  id:          string;
+  user_id:     string;
+  category_id: string | null;
+  date:        string;           // ISO date: "2026-05-15"
+  vendor:      string;
+  amount:      number;
+  note:        string | null;
+  created_at:  string;
+  updated_at:  string;
 }
 
-// ─── Income ─────────────────────────────────────────────────────────────────
-export interface Income {
-  id: string;
-  source: IncomeSource;
-  amount: number;
-  date: string;             // ISO 8601
-  note?: string;
-  createdAt: string;
+export interface IncomeRow {
+  id:         string;
+  user_id:    string;
+  source:     IncomeSource;
+  amount:     number;
+  date:       string;
+  note:       string | null;
+  created_at: string;
 }
 
-// ─── Investment Interest Log ─────────────────────────────────────────────────
-export interface InvestmentInterest {
-  id: string;
-  type: InvestmentType;
-  wealthBalanceAtClick: number;
-  clickedAt: string;
+export interface InvestmentInterestRow {
+  id:                      string;
+  user_id:                 string;
+  type:                    InvestmentType;
+  wealth_balance_at_click: number;
+  clicked_at:              string;
 }
 
-// ─── PWA State ───────────────────────────────────────────────────────────────
+// ─── App-level aliases (camelCase for component use) ──────────────────────────
+
+export type UserProfile     = ProfileRow;
+export type Category        = CategoryRow;
+export type Expense         = ExpenseRow;
+export type Income          = IncomeRow;
+export type InvestmentInterest = InvestmentInterestRow;
+
+// ─── Auth State ───────────────────────────────────────────────────────────────
+
+export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
+
+export interface AuthState {
+  user:    User | null;
+  session: Session | null;
+  status:  AuthStatus;
+}
+
+// ─── PWA State ────────────────────────────────────────────────────────────────
+
 export interface PWAState {
-  isInstalled: boolean;
-  hasUpdate: boolean;
+  isInstalled:            boolean;
+  hasUpdate:              boolean;
   installPromptDismissed: boolean;
 }
 
-// ─── App Store Shape ─────────────────────────────────────────────────────────
+// ─── Loading & Error Slices ───────────────────────────────────────────────────
+
+export interface LoadingState {
+  profile:    boolean;
+  categories: boolean;
+  expenses:   boolean;
+  incomes:    boolean;
+}
+
+export interface ErrorState {
+  profile:    string | null;
+  categories: string | null;
+  expenses:   string | null;
+  incomes:    string | null;
+  auth:       string | null;
+}
+
+// ─── Master Zustand Store Shape ───────────────────────────────────────────────
+
 export interface AppStore {
-  // Profile
-  profile: UserProfile | null;
-  setProfile: (p: UserProfile) => void;
+  // ── Auth ─────────────────────────────────────────────────────────────────
+  auth:           AuthState;
+  signUp:         (email: string, password: string) => Promise<void>;
+  signIn:         (email: string, password: string) => Promise<void>;
+  signInMagicLink:(email: string) => Promise<void>;
+  signOut:        () => Promise<void>;
+  initAuth:       () => Promise<void>; // Called once on app mount
+
+  // ── Profile ───────────────────────────────────────────────────────────────
+  profile:            UserProfile | null;
+  fetchProfile:       () => Promise<void>;
   completeOnboarding: (
-    name: string,
-    purpose: Purpose,
-    occupation: string,
-    monthlySalary: number,
-    savingsRate?: SavingsRate
-  ) => void;
-  updateProfile: (patch: Partial<UserProfile>) => void;
-  resetProfile: () => void;
+    name: string, purpose: Purpose, occupation: string,
+    monthlySalary: number, savingsRate?: SavingsRate
+  ) => Promise<void>;
+  updateProfile:      (patch: Partial<Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
 
-  // Categories
-  categories: Category[];
-  addCategory: (c: Omit<Category, 'id' | 'createdAt'>) => void;
-  updateCategory: (id: string, patch: Partial<Category>) => void;
-  deleteCategory: (id: string) => void;
+  // ── Categories ────────────────────────────────────────────────────────────
+  categories:     Category[];
+  fetchCategories:() => Promise<void>;
+  addCategory:    (c: Omit<Category, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateCategory: (id: string, patch: Partial<Category>) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
 
-  // Expenses
-  expenses: Expense[];
-  addExpense: (e: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateExpense: (id: string, patch: Partial<Expense>) => void;
-  deleteExpense: (id: string) => void;
+  // ── Expenses ─────────────────────────────────────────────────────────────
+  expenses:     Expense[];
+  fetchExpenses:() => Promise<void>;
+  addExpense:   (e: Omit<Expense, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateExpense:(id: string, patch: Partial<Expense>) => Promise<void>;
+  deleteExpense:(id: string) => Promise<void>;
 
-  // Income
-  incomes: Income[];
-  addIncome: (i: Omit<Income, 'id' | 'createdAt'>) => void;
-  updateIncome: (id: string, patch: Partial<Income>) => void;
-  deleteIncome: (id: string) => void;
+  // ── Incomes ──────────────────────────────────────────────────────────────
+  incomes:     Income[];
+  fetchIncomes:() => Promise<void>;
+  addIncome:   (i: Omit<Income, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateIncome:(id: string, patch: Partial<Income>) => Promise<void>;
+  deleteIncome:(id: string) => Promise<void>;
 
-  // Theme
-  theme: Theme;
-  setTheme: (t: Theme) => void;
+  // ── Investment Intelligence ───────────────────────────────────────────────
+  investmentInterests:  InvestmentInterest[];
+  logInvestmentInterest:(type: InvestmentType, wealthBalance: number) => Promise<void>;
 
-  // Sync
-  syncStatus: SyncStatus;
-  setSyncStatus: (s: SyncStatus) => void;
+  // ── Theme ─────────────────────────────────────────────────────────────────
+  theme:    Theme;
+  setTheme: (t: Theme) => Promise<void>; // Persists to profiles table
+
+  // ── Sync ──────────────────────────────────────────────────────────────────
+  syncStatus:   SyncStatus;
+  setSyncStatus:(s: SyncStatus) => void;
   lastSyncedAt: string | null;
 
-  // Investment
-  investmentInterests: InvestmentInterest[];
-  logInvestmentInterest: (type: InvestmentType, wealthBalance: number) => void;
-  hasSeenInvestmentNudge: boolean;
-  setHasSeenInvestmentNudge: (v: boolean) => void;
+  // ── Loading & Error ───────────────────────────────────────────────────────
+  loading: LoadingState;
+  errors:  ErrorState;
 
-  // PWA
-  pwa: PWAState;
-  setPWAInstalled: (v: boolean) => void;
-  setPWAUpdate: (v: boolean) => void;
+  // ── PWA ───────────────────────────────────────────────────────────────────
+  pwa:               PWAState;
+  setPWAInstalled:   (v: boolean) => void;
+  setPWAUpdate:      (v: boolean) => void;
   dismissInstallPrompt: () => void;
 }

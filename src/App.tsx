@@ -1,26 +1,49 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { Layout } from "./components/Layout"
-import Dashboard from "./pages/Dashboard"
-import Expenses from "./pages/Expenses"
-import Budgets from "./pages/Budgets"
-import { useState } from "react"
-import { ExpenseModal } from "./components/ExpenseModal"
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useAppStore } from './store';
+import { AuthGate } from './components/auth/AuthGate';
+import { Layout } from "./components/layout/Layout";
+import Dashboard from "./pages/Dashboard";
+import Expenses from "./pages/Expenses";
+import Budgets from "./pages/Budgets";
+import ProfilePage from "./pages/ProfilePage";
+import { ExpenseForm } from "./components/expenses/ExpenseForm";
 
-function App() {
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
+export default function App() {
+  const initAuth = useAppStore(s => s.initAuth);
+  const authStatus = useAppStore(s => s.auth.status);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+
+  useEffect(() => {
+    initAuth();
+  }, []);
+
+  if (authStatus === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)] text-[var(--color-ink)]">
+        <span 
+          style={{ fontFamily: 'var(--font-mono)' }}
+          className="text-sm font-bold animate-pulse animate-duration-1000"
+        >
+          INITIALISING_KINY...
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <BrowserRouter>
-      <Layout onAddExpense={() => setIsAddExpenseOpen(true)}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/budgets" element={<Budgets />} />
-        </Routes>
-        <ExpenseModal open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen} />
-      </Layout>
-    </BrowserRouter>
-  )
+    <AuthGate>
+      <BrowserRouter>
+        <Layout onAddExpense={() => setIsAddExpenseOpen(true)}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/budgets" element={<Budgets />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Routes>
+          <ExpenseForm open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen} />
+        </Layout>
+      </BrowserRouter>
+    </AuthGate>
+  );
 }
-
-export default App
