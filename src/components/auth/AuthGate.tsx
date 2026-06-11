@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { LoginForm } from './LoginForm';
 import { OnboardingOverlay } from '../onboarding/OnboardingOverlay';
@@ -5,6 +6,25 @@ import { OnboardingOverlay } from '../onboarding/OnboardingOverlay';
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const status  = useAppStore(s => s.auth.status);
   const profile = useAppStore(s => s.profile);
+  const updateProfile = useAppStore(s => s.updateProfile);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      const handlePaymentSuccess = async () => {
+        try {
+          await updateProfile({ has_supported_creator: true });
+          alert("CONTRIBUTION_RECEIVED — Thank you for fueling independent software development! 🚀");
+          const url = new URL(window.location.href);
+          url.searchParams.delete('payment');
+          window.history.replaceState({}, document.title, url.pathname + url.search);
+        } catch (err) {
+          console.error('[KINY] Failed to update creator support status:', err);
+        }
+      };
+      handlePaymentSuccess();
+    }
+  }, [updateProfile]);
 
   if (status === 'loading' || (status === 'authenticated' && !profile)) {
     return (
@@ -21,8 +41,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (status === 'unauthenticated') return <LoginForm />;
 
-  if (status === 'authenticated' && profile && !profile.has_completed_onboarding) {
-    return <OnboardingOverlay />;
+  if (status === 'authenticated' && profile) {
+    if (!profile.has_completed_onboarding) {
+      return <OnboardingOverlay />;
+    }
   }
 
   return <>{children}</>;

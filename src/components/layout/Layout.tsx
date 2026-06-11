@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { OfflineBanner } from '../pwa/OfflineBanner';
 import { UpdatePrompt } from '../pwa/UpdatePrompt';
 import { InstallPrompt } from '../pwa/InstallPrompt';
+import { CreatorAppreciationBanner } from '../dashboard/CreatorAppreciationBanner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,8 +17,9 @@ export function Layout({ children }: LayoutProps) {
       <Sidebar />
       
       {/* Main page content container */}
-      <main className="pl-[72px] mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
+      <main className="pl-[72px] mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <OfflineBanner />
+        <CreatorAppreciationBanner />
         {children}
         <UpdatePrompt />
         <InstallPrompt />

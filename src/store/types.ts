@@ -25,6 +25,8 @@ export interface ProfileRow {
   has_seen_investment_nudge: boolean;
   created_at:                string;
   updated_at:                string;
+  is_premium?:               boolean;
+  has_supported_creator?:    boolean;
 }
 
 export interface CategoryRow {

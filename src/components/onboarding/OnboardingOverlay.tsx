@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
 import type { Purpose, SavingsRate } from '../../store/types';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/tooltip';
 
 export function OnboardingOverlay() {
   const [step, setStep] = useState(1);
@@ -214,9 +215,26 @@ export function OnboardingOverlay() {
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <h2 style={{ fontFamily: 'var(--font-display)' }} className="text-2xl font-extrabold uppercase text-[var(--color-ink)]">
-                    SELECT_YOUR_GOAL
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 style={{ fontFamily: 'var(--font-display)' }} className="text-2xl font-extrabold uppercase text-[var(--color-ink)]">
+                      SELECT_YOUR_GOAL
+                    </h2>
+                    <TooltipProvider>
+                      <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-black bg-white text-black font-mono font-bold text-xs shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-none transition-all cursor-help"
+                          >
+                            ?
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="center">
+                          Your selection alters how the advice engine and category priorities flag your account data.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <p style={{ fontFamily: 'var(--font-mono)' }} className="text-xs text-[var(--color-ink-muted)] mb-2">
                     What is the primary objective you're using Kiny to achieve?
                   </p>
