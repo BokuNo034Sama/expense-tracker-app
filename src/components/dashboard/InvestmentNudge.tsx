@@ -8,6 +8,7 @@ export function InvestmentNudge() {
   const logInvestmentInterest = useAppStore(s => s.logInvestmentInterest);
   const expenses = useAppStore(s => s.expenses);
   const incomes = useAppStore(s => s.incomes);
+  const isDataMasked = useAppStore(s => s.isDataMasked);
 
   const [clickedType, setClickedType] = useState<InvestmentType | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,7 @@ export function InvestmentNudge() {
               style={{ fontFamily: 'var(--font-display)' }}
               className="text-sm font-extrabold uppercase text-[var(--color-ink)]"
             >
-              Put your savings of ₦{wealthBalance.toLocaleString()} to work!
+              Put your savings of {isDataMasked ? '••••••' : `₦${wealthBalance.toLocaleString()}`} to work!
             </h3>
             <p 
               style={{ fontFamily: 'var(--font-mono)' }}

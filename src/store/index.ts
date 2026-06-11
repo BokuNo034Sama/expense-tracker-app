@@ -1,9 +1,8 @@
 import { create } from 'zustand';
 import { supabase, getUID } from '../lib/supabaseClient';
-import { SEED_CATEGORIES, applyPriorityFlags } from '../lib/seed';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
-  Purpose, Theme, ProfileRow,
+  Theme, ProfileRow,
 } from './types';
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
@@ -21,17 +20,6 @@ const initialErrors: ErrorState = {
 const initialPWA: PWAState = {
   isInstalled: false, hasUpdate: false, installPromptDismissed: false, deferredPrompt: null,
 };
-
-// ─── Helper: seed categories for a brand-new user ─────────────────────────────
-
-async function seedCategoriesForUser(userId: string, purpose: Purpose): Promise<void> {
-  const seeded = applyPriorityFlags(SEED_CATEGORIES, purpose).map(c => ({
-    ...c,
-    user_id: userId,
-  }));
-  const { error } = await supabase.from('categories').insert(seeded);
-  if (error) throw new Error(`[KINY] Seed categories failed: ${error.message}`);
-}
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -211,6 +199,21 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   completeOnboarding: async (name, purpose, occupation, monthlySalary, savingsRate) => {
     const uid = await getUID();
 
+    // Seed baseline categories
+    const categoriesToSeed = [
+      { name: 'Transport',      icon: 'Car',        slice: 'Basic' as const,        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid },
+      { name: 'Feeding',        icon: 'Utensils',   slice: 'Basic' as const,        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid },
+      { name: 'Parent Token',   icon: 'Gift',       slice: 'Family' as const,       budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
+      { name: 'Sibling Token',  icon: 'Heart',      slice: 'Family' as const,       budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
+      { name: 'Investments',    icon: 'TrendingUp', slice: 'Wealth' as const,       budget_limit: 0, is_basic: false, is_priority: purpose === 'saving',  is_subscription: false, user_id: uid }
+    ];
+
+    const { error: seedError } = await supabase.from('categories').insert(categoriesToSeed);
+    if (seedError) {
+      console.warn('[KINY] Seeding baseline categories failed or duplicates ignored:', seedError.message);
+    }
+    await get().fetchCategories();
+
     const avatarInitials = name
       .split(' ')
       .filter(Boolean)
@@ -233,20 +236,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .update(profilePatch as any)
       .eq('id', uid);
     if (error) throw new Error(`[KINY] Profile update failed: ${error.message}`);
-
-    // Seed categories only on first onboarding completion
-    const existingCats = get().categories;
-    if (existingCats.length === 0) {
-      await seedCategoriesForUser(uid, purpose);
-      await get().fetchCategories();
-    } else {
-      // Re-apply priority flags to existing categories
-      const updated = applyPriorityFlags(existingCats, purpose);
-      for (const cat of updated) {
-        await supabase.from('categories').update({ is_priority: cat.is_priority }).eq('id', cat.id);
-      }
-      await get().fetchCategories();
-    }
 
     await get().fetchProfile();
   },
@@ -470,4 +459,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }
     }
   },
+
+  // ── Privacy Controls ───────────────────────────────────────────────────────
+  isDataMasked: false,
+  toggleDataMasked: () => set(s => ({ isDataMasked: !s.isDataMasked })),
 }));

@@ -95,6 +95,12 @@ export default function Budgets() {
               onEditCategory={handleEdit}
             />
           ))}
+          <button
+            onClick={handleCreate}
+            className="bg-[var(--color-primary)] border-2 border-black font-mono font-bold p-3 shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-100 w-full block text-center mt-6 text-black uppercase text-xs rounded-[var(--border-radius)] cursor-pointer"
+          >
+            [ + ADD_NEW_BUCKET ]
+          </button>
         </div>
       )}
 

@@ -8,8 +8,10 @@ interface SummaryCardProps {
 export function SummaryCard({ type }: SummaryCardProps) {
   const expenses = useAppStore(s => s.expenses);
   const categories = useAppStore(s => s.categories);
+  const isDataMasked = useAppStore(s => s.isDataMasked);
 
   const formatNaira = (amount: number) => {
+    if (isDataMasked) return '••••••';
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
@@ -65,7 +67,7 @@ export function SummaryCard({ type }: SummaryCardProps) {
   const content = getContent();
 
   return (
-    <BentoCard className="h-full flex flex-col justify-between hover:scale-[1.01]">
+    <BentoCard className="h-auto flex flex-col justify-between hover:scale-[1.01]">
       <div>
         <h4 
           style={{ fontFamily: 'var(--font-display)' }}

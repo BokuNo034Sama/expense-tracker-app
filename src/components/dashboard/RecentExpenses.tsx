@@ -5,8 +5,10 @@ import * as Icons from 'lucide-react';
 export function RecentExpenses() {
   const expenses = useAppStore(s => s.expenses);
   const categories = useAppStore(s => s.categories);
+  const isDataMasked = useAppStore(s => s.isDataMasked);
 
   const formatNaira = (amount: number) => {
+    if (isDataMasked) return '••••••';
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
@@ -19,7 +21,7 @@ export function RecentExpenses() {
   };
 
   return (
-    <BentoCard className="h-full flex flex-col justify-between">
+    <BentoCard className="h-auto flex flex-col justify-between">
       <div>
         <h3 
           style={{ fontFamily: 'var(--font-display)' }}

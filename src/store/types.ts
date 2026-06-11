@@ -189,4 +189,8 @@ export interface AppStore {
   // ── Session Re-validation ──────────────────────────────────────────────────
   isRevalidating:    boolean;
   refreshSession:    () => Promise<void>;
+
+  // ── Privacy Controls ───────────────────────────────────────────────────────
+  isDataMasked:      boolean;
+  toggleDataMasked:  () => void;
 }

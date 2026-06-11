@@ -118,15 +118,9 @@ export default function Dashboard() {
       <div className="flex-1 md:hidden overflow-hidden flex flex-col min-h-0">
         {activeTab === 'summary' && (
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0 pb-4">
-            <div className="h-[140px] shrink-0">
-              <WealthCard />
-            </div>
-            <div className="h-[120px] shrink-0">
-              <SummaryCard type="totalSpent" />
-            </div>
-            <div className="h-[120px] shrink-0">
-              <SummaryCard type="topCategory" />
-            </div>
+            <WealthCard />
+            <SummaryCard type="totalSpent" />
+            <SummaryCard type="topCategory" />
           </div>
         )}
         {activeTab === 'buckets' && (

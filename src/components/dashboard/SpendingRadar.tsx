@@ -66,7 +66,7 @@ export function SpendingRadar() {
 
   if (monthlyExpenses.length === 0) {
     return (
-      <BentoCard className="h-full flex flex-col justify-between">
+      <BentoCard className="h-auto flex flex-col justify-between">
         <div>
           <h3 
             style={{ fontFamily: 'var(--font-display)' }}
@@ -86,7 +86,7 @@ export function SpendingRadar() {
   }
 
   return (
-    <BentoCard className="h-full flex flex-col justify-between">
+    <BentoCard className="h-auto flex flex-col justify-between">
       <div>
         <h3 
           style={{ fontFamily: 'var(--font-display)' }}

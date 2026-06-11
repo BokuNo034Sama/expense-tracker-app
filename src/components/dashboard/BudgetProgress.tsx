@@ -4,8 +4,10 @@ import { BentoCard } from '../shared/BentoCard';
 export function BudgetProgress() {
   const categories = useAppStore(s => s.categories);
   const expenses = useAppStore(s => s.expenses);
+  const isDataMasked = useAppStore(s => s.isDataMasked);
 
   const formatNaira = (amount: number) => {
+    if (isDataMasked) return '••••••';
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
@@ -25,7 +27,7 @@ export function BudgetProgress() {
   const budgetedCategories = categories.filter(c => Number(c.budget_limit) > 0);
 
   return (
-    <BentoCard className="h-full flex flex-col justify-between">
+    <BentoCard className="h-auto flex flex-col justify-between">
       <div>
         <h3 
           style={{ fontFamily: 'var(--font-display)' }}

@@ -68,7 +68,15 @@ export default function Expenses() {
           </button>
         </BentoCard>
       ) : (
-        <ExpenseTable onEdit={handleEdit} />
+        <div className="space-y-6">
+          <ExpenseTable onEdit={handleEdit} />
+          <button
+            onClick={handleCreate}
+            className="bg-[var(--color-primary)] border-2 border-black font-mono font-bold p-3 shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-100 w-full block text-center mt-6 text-black uppercase text-xs rounded-[var(--border-radius)] cursor-pointer"
+          >
+            [ + REPORT_NEW_EXPENDITURE ]
+          </button>
+        </div>
       )}
 
       <ExpenseForm
