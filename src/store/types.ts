@@ -183,4 +183,8 @@ export interface AppStore {
   setPWAUpdate:      (v: boolean) => void;
   dismissInstallPrompt: () => void;
   setDeferredPrompt: (prompt: any) => void;
+
+  // ── Session Re-validation ──────────────────────────────────────────────────
+  isRevalidating:    boolean;
+  refreshSession:    () => Promise<void>;
 }

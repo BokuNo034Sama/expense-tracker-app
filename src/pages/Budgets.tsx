@@ -4,7 +4,6 @@ import { useAppStore } from "@/store/useAppStore";
 import { SliceSection } from "@/components/budgets/SliceSection";
 import { CategoryForm } from "@/components/budgets/CategoryForm";
 import { BentoCard } from "@/components/shared/BentoCard";
-import { Plus } from "lucide-react";
 import type { Category, Slice } from "@/store/types";
 
 export default function Budgets() {
@@ -45,30 +44,19 @@ export default function Budgets() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 
-            style={{ fontFamily: 'var(--font-display)' }}
-            className="text-3xl font-extrabold tracking-tight text-[var(--color-ink)] uppercase"
-          >
-            BUDGET_BUCKETS
-          </h1>
-          <p 
-            style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-xs text-[var(--color-ink-muted)] uppercase mt-1"
-          >
-            Allocate monthly caps and monitor category spending
-          </p>
-        </div>
-
-        <button
-          onClick={handleCreate}
+      <div className="flex flex-col items-start gap-1">
+        <h1 
           style={{ fontFamily: 'var(--font-display)' }}
-          className="px-4 py-2.5 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-2"
+          className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] uppercase"
         >
-          <Plus className="h-4 w-4" />
-          CREATE_CATEGORY
-        </button>
+          BUDGET_BUCKETS
+        </h1>
+        <p 
+          style={{ fontFamily: 'var(--font-mono)' }}
+          className="text-xs text-[var(--color-ink-muted)] uppercase"
+        >
+          Allocate monthly caps and monitor category spending
+        </p>
       </div>
 
       {/* Slices group / Onboarding Empty State */}

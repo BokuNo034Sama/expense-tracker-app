@@ -449,4 +449,21 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   setPWAUpdate:         (v) => set(s => ({ pwa: { ...s.pwa, hasUpdate: v } })),
   dismissInstallPrompt: ()  => set(s => ({ pwa: { ...s.pwa, installPromptDismissed: true } })),
   setDeferredPrompt:    (prompt) => set(s => ({ pwa: { ...s.pwa, deferredPrompt: prompt } })),
+
+  // ── Session Re-validation ──────────────────────────────────────────────────
+  isRevalidating: false,
+  refreshSession: async () => {
+    if (get().isRevalidating) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      set({ isRevalidating: true });
+      try {
+        await get().fetchProfile();
+      } catch (err) {
+        console.error('[KINY] refreshSession failed:', err);
+      } finally {
+        set({ isRevalidating: false });
+      }
+    }
+  },
 }));

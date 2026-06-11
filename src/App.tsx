@@ -13,6 +13,7 @@ export default function App() {
   const initAuth = useAppStore(s => s.initAuth);
   const authStatus = useAppStore(s => s.auth.status);
   const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
+  const refreshSession = useAppStore(s => s.refreshSession);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
   useEffect(() => {
@@ -23,12 +24,26 @@ export default function App() {
       setDeferredPrompt(e);
     };
 
+    const handleFocus = () => {
+      refreshSession().catch(console.error);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshSession().catch(console.error);
+      }
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [initAuth, setDeferredPrompt, refreshSession]);
 
   if (authStatus === 'loading') {
     return (

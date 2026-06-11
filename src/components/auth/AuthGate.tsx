@@ -6,6 +6,7 @@ import { OnboardingOverlay } from '../onboarding/OnboardingOverlay';
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const status  = useAppStore(s => s.auth.status);
   const profile = useAppStore(s => s.profile);
+  const isRevalidating = useAppStore(s => s.isRevalidating);
   const updateProfile = useAppStore(s => s.updateProfile);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [updateProfile]);
 
-  if (status === 'loading' || (status === 'authenticated' && !profile)) {
+  if (status === 'loading' || (status === 'authenticated' && !profile) || isRevalidating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] p-4">
         <div 
