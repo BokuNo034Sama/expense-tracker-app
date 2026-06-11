@@ -30,6 +30,8 @@ export interface ProfileRow {
   current_streak?:           number;
   last_active_date?:         string;
   push_subscription?:        any;
+  financial_streak?:         number;
+  last_logged_date?:         string;
 }
 
 export interface CategoryRow {

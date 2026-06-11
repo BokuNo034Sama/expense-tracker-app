@@ -39,14 +39,22 @@ export default function Dashboard() {
   return (
     <div className="h-[calc(100vh-200px)] md:h-auto max-h-[calc(100vh-200px)] md:max-h-none overflow-hidden md:overflow-visible flex flex-col gap-4 md:space-y-6">
       {/* Dashboard Top bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-3 shrink-0">
+      <div className="flex justify-between items-start md:items-center gap-1 sm:gap-3 shrink-0 flex-wrap">
         <div>
-          <h1 
-            style={{ fontFamily: 'var(--font-display)' }}
-            className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] uppercase"
-          >
-            DASHBOARD
-          </h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 
+              style={{ fontFamily: 'var(--font-display)' }}
+              className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] uppercase"
+            >
+              DASHBOARD
+            </h1>
+            <div 
+              style={{ border: '2px solid black', fontFamily: 'var(--font-mono)' }}
+              className="bg-[var(--color-primary)] text-black px-2 py-1 text-xs font-bold uppercase shadow-[var(--shadow-btn-active)] rounded-[var(--border-radius)] whitespace-nowrap shrink-0"
+            >
+              🔥 {profile?.financial_streak || 0}_DAY_FINANCIAL_SHIELD
+            </div>
+          </div>
           <p 
             style={{ fontFamily: 'var(--font-mono)' }}
             className="text-xs text-[var(--color-ink-muted)] uppercase mt-1"

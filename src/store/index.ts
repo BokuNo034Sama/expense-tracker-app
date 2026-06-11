@@ -168,6 +168,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           has_supported_creator: false,
           current_streak: 0,
           last_active_date: '',
+          financial_streak: 0,
+          last_logged_date: '',
         };
         set({ profile: fallbackProfile, theme: 'light' });
       } else {
@@ -194,6 +196,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           has_supported_creator: false,
           current_streak: 0,
           last_active_date: '',
+          financial_streak: 0,
+          last_logged_date: '',
         };
         set({ profile: fallbackProfile, theme: 'light' });
       } catch {

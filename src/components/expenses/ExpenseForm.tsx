@@ -9,6 +9,49 @@ interface ExpenseFormProps {
   expense?: Expense | null; // Edit mode
 }
 
+const parseBankAlert = (text: string) => {
+  let parsedAmount = '';
+  let parsedVendor = '';
+
+  const amountRegexes = [
+    /(?:amt|amount|debit|credit|spent|paid|value)[:\s]*(?:ngn|ng|₦|\$)?\s*([\d,]+\.\d{2})/i,
+    /(?:ngn|ng|₦|\$)\s*([\d,]+\.\d{2})/i,
+    /(?:amt|amount|debit|credit|spent|paid|value)[:\s]*(?:ngn|ng|₦|\$)?\s*([\d,]+)/i,
+    /([\d,]+\.\d{2})/
+  ];
+
+  for (const regex of amountRegexes) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      const cleaned = match[1].replace(/,/g, '');
+      if (!isNaN(parseFloat(cleaned))) {
+        parsedAmount = cleaned;
+        break;
+      }
+    }
+  }
+
+  const vendorRegexes = [
+    /(?:at|to|ref|merchant|desc|description|payee)[:\s]+([A-Za-z0-9\s\.\-_]{3,20})/i,
+    /paid\s+(?:to|at)\s+([A-Za-z0-9\s\.\-_]{3,20})/i,
+    /purchase\s+(?:at|on)\s+([A-Za-z0-9\s\.\-_]{3,20})/i
+  ];
+
+  for (const regex of vendorRegexes) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      const candidate = match[1].trim();
+      if (candidate.length >= 2) {
+        parsedVendor = candidate;
+        break;
+      }
+    }
+  }
+
+  return { amount: parsedAmount, vendor: parsedVendor };
+};
+
+
 export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const addExpense = useAppStore(s => s.addExpense);
   const updateExpense = useAppStore(s => s.updateExpense);
@@ -22,6 +65,15 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handlePasteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+    const { amount: parsedAmount, vendor: parsedVendor } = parseBankAlert(val);
+    if (parsedAmount) setAmount(parsedAmount);
+    if (parsedVendor) setVendor(parsedVendor);
+  };
+
 
   useEffect(() => {
     if (open) {
@@ -104,6 +156,25 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Quick Parser */}
+          {!expense && (
+            <div className="border-2 border-dashed border-[var(--color-ink-muted)] rounded-[var(--border-radius)] p-3 bg-white/5">
+              <label 
+                style={{ fontFamily: 'var(--font-mono)' }}
+                className="block text-[10px] font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1"
+              >
+                ⚡ QUICK_PARSER // PASTE_BANK_ALERT_STRING
+              </label>
+              <textarea
+                placeholder="Paste your SMS/Bank Alert string here to autofill Vendor & Amount (e.g. Debit: NGN6,500.00 at SHOPRITE)"
+                onChange={handlePasteChange}
+                rows={2}
+                style={{ fontFamily: 'var(--font-mono)' }}
+                className="w-full px-3 py-2 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[10px] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 resize-none font-bold"
+              />
+            </div>
+          )}
+
           {/* Vendor Name */}
           <div>
             <label 
