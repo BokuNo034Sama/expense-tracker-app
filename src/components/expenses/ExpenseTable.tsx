@@ -88,43 +88,43 @@ export function ExpenseTable({ onEdit }: ExpenseTableProps) {
       </div>
 
       {/* Table Container */}
-      <div className="overflow-x-auto border-[var(--border-default)] rounded-[var(--border-radius)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
+      <div className="w-full overflow-x-auto border-2 border-black dark:border-white rounded-[12px] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b-[var(--border-default)] bg-[var(--color-surface)]">
               <th 
                 onClick={() => toggleSort('date')}
                 style={{ fontFamily: 'var(--font-display)' }} 
-                className="text-left p-3.5 text-xs font-extrabold uppercase text-[var(--color-ink)] cursor-pointer select-none hover:bg-[rgba(0,0,0,0.03)]"
+                className="text-left p-2 sm:p-3.5 text-[10px] sm:text-xs font-extrabold uppercase text-[var(--color-ink)] cursor-pointer select-none hover:bg-[rgba(0,0,0,0.03)] whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   DATE
-                  <ArrowUpDown className="h-3 w-3 text-[var(--color-ink-muted)]" />
+                  <ArrowUpDown className="h-3 w-3 text-[var(--color-ink-muted)] shrink-0" />
                 </div>
               </th>
               <th 
                 onClick={() => toggleSort('vendor')}
                 style={{ fontFamily: 'var(--font-display)' }} 
-                className="text-left p-3.5 text-xs font-extrabold uppercase text-[var(--color-ink)] cursor-pointer select-none hover:bg-[rgba(0,0,0,0.03)]"
+                className="text-left p-2 sm:p-3.5 text-[10px] sm:text-xs font-extrabold uppercase text-[var(--color-ink)] cursor-pointer select-none hover:bg-[rgba(0,0,0,0.03)] whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   VENDOR
-                  <ArrowUpDown className="h-3 w-3 text-[var(--color-ink-muted)]" />
+                  <ArrowUpDown className="h-3 w-3 text-[var(--color-ink-muted)] shrink-0" />
                 </div>
               </th>
-              <th style={{ fontFamily: 'var(--font-display)' }} className="text-left p-3.5 text-xs font-extrabold uppercase text-[var(--color-ink-muted)]">CATEGORY</th>
-              <th style={{ fontFamily: 'var(--font-display)' }} className="text-left p-3.5 text-xs font-extrabold uppercase text-[var(--color-ink-muted)]">NOTE</th>
+              <th style={{ fontFamily: 'var(--font-display)' }} className="text-left p-2 sm:p-3.5 text-[10px] sm:text-xs font-extrabold uppercase text-[var(--color-ink-muted)] whitespace-nowrap">CATEGORY</th>
+              <th style={{ fontFamily: 'var(--font-display)' }} className="text-left p-2 sm:p-3.5 text-[10px] sm:text-xs font-extrabold uppercase text-[var(--color-ink-muted)] whitespace-nowrap hidden md:table-cell">NOTE</th>
               <th 
                 onClick={() => toggleSort('amount')}
                 style={{ fontFamily: 'var(--font-display)' }} 
-                className="text-right p-3.5 text-xs font-extrabold uppercase text-[var(--color-ink)] cursor-pointer select-none hover:bg-[rgba(0,0,0,0.03)]"
+                className="text-right p-2 sm:p-3.5 text-[10px] sm:text-xs font-extrabold uppercase text-[var(--color-ink)] cursor-pointer select-none hover:bg-[rgba(0,0,0,0.03)] whitespace-nowrap"
               >
-                <div className="flex items-center justify-end gap-1.5">
+                <div className="flex items-center justify-end gap-1">
                   AMOUNT
-                  <ArrowUpDown className="h-3 w-3 text-[var(--color-ink-muted)]" />
+                  <ArrowUpDown className="h-3 w-3 text-[var(--color-ink-muted)] shrink-0" />
                 </div>
               </th>
-              <th className="p-3.5 w-[80px]"></th>
+              <th className="p-2 sm:p-3.5 w-[60px] sm:w-[80px]"></th>
             </tr>
           </thead>
           <tbody>
@@ -145,12 +145,12 @@ export function ExpenseTable({ onEdit }: ExpenseTableProps) {
 
                 return (
                   <tr key={exp.id} className="border-b border-[var(--color-ink-muted)] border-opacity-20 hover:bg-[rgba(0,0,0,0.015)] transition-colors duration-100">
-                    <td style={{ fontFamily: 'var(--font-mono)' }} className="p-3.5 text-xs font-bold">{new Date(exp.date).toLocaleDateString()}</td>
-                    <td style={{ fontFamily: 'var(--font-display)' }} className="p-3.5 text-xs font-extrabold uppercase text-[var(--color-ink)]">{exp.vendor}</td>
-                    <td style={{ fontFamily: 'var(--font-display)' }} className="p-3.5 text-xs font-semibold uppercase text-[var(--color-ink-muted)]">{categoryName}</td>
-                    <td style={{ fontFamily: 'var(--font-mono)' }} className="p-3.5 text-xs text-[var(--color-ink-muted)] max-w-[180px] truncate">{exp.note || '-'}</td>
-                    <td style={{ fontFamily: 'var(--font-mono)' }} className="p-3.5 text-xs font-bold text-right text-[var(--color-ink)]">{formatNaira(Number(exp.amount))}</td>
-                    <td className="p-3.5">
+                    <td style={{ fontFamily: 'var(--font-mono)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs font-bold whitespace-nowrap">{new Date(exp.date).toLocaleDateString()}</td>
+                    <td style={{ fontFamily: 'var(--font-display)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs font-extrabold uppercase text-[var(--color-ink)] whitespace-nowrap truncate max-w-[100px] sm:max-w-none">{exp.vendor}</td>
+                    <td style={{ fontFamily: 'var(--font-display)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs font-semibold uppercase text-[var(--color-ink-muted)] whitespace-nowrap">{categoryName}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs text-[var(--color-ink-muted)] max-w-[120px] sm:max-w-[180px] truncate hidden md:table-cell">{exp.note || '-'}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs font-bold text-right text-[var(--color-ink)] whitespace-nowrap">{formatNaira(Number(exp.amount))}</td>
+                    <td className="p-2 sm:p-3.5">
                       <div className="flex items-center justify-end gap-1.5">
                         <button 
                           onClick={() => onEdit(exp)}

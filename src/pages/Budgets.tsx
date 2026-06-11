@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
 import { SliceSection } from "@/components/budgets/SliceSection";
 import { CategoryForm } from "@/components/budgets/CategoryForm";
+import { BentoCard } from "@/components/shared/BentoCard";
 import { Plus } from "lucide-react";
 import type { Category, Slice } from "@/store/types";
 
@@ -70,18 +71,35 @@ export default function Budgets() {
         </button>
       </div>
 
-      {/* Slices group */}
-      <div className="space-y-8">
-        {slices.map(slice => (
-          <SliceSection
-            key={slice}
-            slice={slice}
-            categories={categories}
-            categorySpends={categorySpends}
-            onEditCategory={handleEdit}
-          />
-        ))}
-      </div>
+      {/* Slices group / Onboarding Empty State */}
+      {categories.length === 0 ? (
+        <BentoCard hoverEffect={false} className="space-y-4 max-w-2xl mx-auto text-center py-12 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000000] dark:shadow-[4px_4px_0px_0px_#ffffff]">
+          <h3 
+            style={{ fontFamily: 'var(--font-display)' }}
+            className="text-xl font-extrabold uppercase text-[var(--color-ink)]"
+          >
+            START_YOUR_ARCHITECTURE
+          </h3>
+          <p 
+            style={{ fontFamily: 'var(--font-mono)' }}
+            className="text-xs text-[var(--color-ink-muted)] leading-relaxed uppercase max-w-lg mx-auto"
+          >
+            Your budget buckets are empty. Don't worry—managing money isn't about restriction; it's about giving your income a job. Tap create to set up your first spending baseline.
+          </p>
+        </BentoCard>
+      ) : (
+        <div className="space-y-8">
+          {slices.map(slice => (
+            <SliceSection
+              key={slice}
+              slice={slice}
+              categories={categories}
+              categorySpends={categorySpends}
+              onEditCategory={handleEdit}
+            />
+          ))}
+        </div>
+      )}
 
       <CategoryForm
         open={isFormOpen}
