@@ -13,6 +13,8 @@ import { InvestmentNudge } from "@/components/dashboard/InvestmentNudge";
 export default function Dashboard() {
   const profile = useAppStore(s => s.profile);
   const expenses = useAppStore(s => s.expenses);
+  const filterMonth = useAppStore(s => s.filterMonth);
+  const setFilterMonth = useAppStore(s => s.setFilterMonth);
   const [activeTab, setActiveTab] = useState<'summary' | 'buckets' | 'receipts'>('summary');
 
   const containerVariants: Variants = {
@@ -36,10 +38,20 @@ export default function Dashboard() {
 
   const username = profile?.name || 'USER';
 
+  // Generate month options dynamically: last 12 months
+  const monthOptions = [];
+  const currentDate = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    const value = d.toISOString().substring(0, 7);
+    const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+    monthOptions.push({ value, label });
+  }
+
   return (
     <div className="h-[calc(100vh-200px)] md:h-auto max-h-[calc(100vh-200px)] md:max-h-none overflow-hidden md:overflow-visible flex flex-col gap-4 md:space-y-6">
       {/* Dashboard Top bar */}
-      <div className="flex justify-between items-start md:items-center gap-1 sm:gap-3 shrink-0 flex-wrap">
+      <div className="flex justify-between items-start md:items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
             <h1 
@@ -61,6 +73,23 @@ export default function Dashboard() {
           >
             WELCOME_BACK, {username.toUpperCase()} // STATUS_CONNECTED
           </p>
+        </div>
+
+        {/* Dynamic Month/Year Dropdown Filter */}
+        <div className="flex items-center gap-2 font-mono text-xs">
+          <span className="text-[var(--color-ink-muted)] uppercase hidden sm:inline">VIEW_MONTH:</span>
+          <select
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(e.target.value)}
+            className="border-2 border-black bg-white dark:bg-zinc-900 text-black dark:text-white p-2 font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase cursor-pointer outline-none rounded-[var(--border-radius)] transition-transform active:translate-y-[1px]"
+          >
+            {monthOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+            <option value="all">ALL_TIME</option>
+          </select>
         </div>
       </div>
 

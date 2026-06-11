@@ -8,6 +8,8 @@ import type { Expense } from "@/store/types";
 
 export default function Expenses() {
   const expenses = useAppStore(s => s.expenses);
+  const filterMonth = useAppStore(s => s.filterMonth);
+  const setFilterMonth = useAppStore(s => s.setFilterMonth);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
@@ -21,6 +23,16 @@ export default function Expenses() {
     setIsFormOpen(true);
   };
 
+  // Generate month options dynamically: last 12 months
+  const monthOptions = [];
+  const currentDate = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    const value = d.toISOString().substring(0, 7);
+    const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+    monthOptions.push({ value, label });
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -28,19 +40,38 @@ export default function Expenses() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="flex flex-col items-start gap-1">
-        <h1 
-          style={{ fontFamily: 'var(--font-display)' }}
-          className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] uppercase"
-        >
-          TRANSACTIONS
-        </h1>
-        <p 
-          style={{ fontFamily: 'var(--font-mono)' }}
-          className="text-xs text-[var(--color-ink-muted)] uppercase"
-        >
-          Manage and audit your logged expenditures
-        </p>
+      <div className="flex justify-between items-start sm:items-center gap-4 flex-wrap shrink-0">
+        <div className="flex flex-col items-start gap-1">
+          <h1 
+            style={{ fontFamily: 'var(--font-display)' }}
+            className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] uppercase"
+          >
+            TRANSACTIONS
+          </h1>
+          <p 
+            style={{ fontFamily: 'var(--font-mono)' }}
+            className="text-xs text-[var(--color-ink-muted)] uppercase"
+          >
+            Manage and audit your logged expenditures
+          </p>
+        </div>
+
+        {/* Dynamic Month/Year Dropdown Filter */}
+        <div className="flex items-center gap-2 font-mono text-xs">
+          <span className="text-[var(--color-ink-muted)] uppercase hidden sm:inline">VIEW_MONTH:</span>
+          <select
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(e.target.value)}
+            className="border-2 border-black bg-white dark:bg-zinc-900 text-black dark:text-white p-2 font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase cursor-pointer outline-none rounded-[var(--border-radius)] transition-transform active:translate-y-[1px]"
+          >
+            {monthOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+            <option value="all">ALL_TIME</option>
+          </select>
+        </div>
       </div>
 
       {expenses.length === 0 ? (

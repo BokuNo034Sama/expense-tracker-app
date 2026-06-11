@@ -87,6 +87,16 @@ export type Expense         = ExpenseRow;
 export type Income          = IncomeRow;
 export type InvestmentInterest = InvestmentInterestRow;
 
+export interface MonthlySnapshot {
+  id: string;
+  user_id: string;
+  month_year: string;
+  total_income: number;
+  total_expense: number;
+  savings_rate: number;
+  top_category: string;
+}
+
 // ─── Auth State ───────────────────────────────────────────────────────────────
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -133,6 +143,7 @@ export interface AppStore {
   signInMagicLink:(email: string) => Promise<void>;
   signOut:        () => Promise<void>;
   initAuth:       () => Promise<void>; // Called once on app mount
+  archiveCurrentMonth: () => Promise<void>;
 
   // ── Profile ───────────────────────────────────────────────────────────────
   profile:            UserProfile | null;
@@ -199,4 +210,8 @@ export interface AppStore {
   // ── Budget Nudge ───────────────────────────────────────────────────────────
   hasSeenBudgetNudge: boolean;
   dismissBudgetNudge: () => void;
+
+  // ── Month Filtering ────────────────────────────────────────────────────────
+  filterMonth: string;
+  setFilterMonth: (month: string) => Promise<void>;
 }

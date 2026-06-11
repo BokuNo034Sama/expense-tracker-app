@@ -21,6 +21,29 @@ const initialPWA: PWAState = {
   isInstalled: false, hasUpdate: false, installPromptDismissed: false, deferredPrompt: null,
 };
 
+const checkAndRunRollover = async (get: () => AppStore) => {
+  const profile = get().profile;
+  if (!profile) return;
+  const currentMonth = new Date().toISOString().substring(0, 7);
+  if (!profile.last_logged_date) {
+    const todayStr = new Date().toISOString().substring(0, 10);
+    try {
+      await get().updateProfile({ last_logged_date: todayStr });
+    } catch (err) {
+      console.error('[KINY] Failed to initialize last_logged_date:', err);
+    }
+    return;
+  }
+  const lastLoggedMonth = profile.last_logged_date.substring(0, 7);
+  if (lastLoggedMonth < currentMonth) {
+    try {
+      await get().archiveCurrentMonth();
+    } catch (err) {
+      console.error('[KINY] Rollover evaluation failed:', err);
+    }
+  }
+};
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useAppStore = create<AppStore>()((set, get) => ({
@@ -66,6 +89,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           get().fetchExpenses(),
           get().fetchIncomes(),
         ]);
+        await checkAndRunRollover(get);
       } catch (err) {
         console.error('[KINY] Offline initAuth initial data fetch failed:', err);
       }
@@ -89,6 +113,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           get().fetchExpenses(),
           get().fetchIncomes(),
         ]);
+        await checkAndRunRollover(get);
       } catch (err) {
         console.error('[KINY] initAuth initial data fetch failed:', err);
       }
@@ -112,6 +137,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             get().fetchExpenses(),
             get().fetchIncomes(),
           ]);
+          await checkAndRunRollover(get);
         } catch (err) {
           console.error('[KINY] initAuth authStateChange data fetch failed:', err);
         }
@@ -123,6 +149,108 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
       }
     });
+  },
+
+  archiveCurrentMonth: async () => {
+    const uid = await getUID();
+    const profile = get().profile;
+    if (!profile || !profile.last_logged_date) {
+      const todayStr = new Date().toISOString().substring(0, 10);
+      await get().updateProfile({ last_logged_date: todayStr });
+      return;
+    }
+
+    const concludedMonth = profile.last_logged_date.substring(0, 7);
+
+    // Compute base salary and totals
+    const baseSalary = parseFloat((profile?.estimated_monthly_salary || 0) as any) || parseFloat((profile?.monthly_salary || 0) as any);
+    const concludedIncomes = get().incomes.filter(i => i.date.startsWith(concludedMonth));
+    const concludedExpenses = get().expenses.filter(e => e.date.startsWith(concludedMonth));
+
+    const totalIncome = baseSalary + concludedIncomes.reduce((sum, i) => sum + (parseFloat(i.amount as any) || 0), 0);
+    const totalExpense = concludedExpenses.reduce((sum, e) => sum + (parseFloat(e.amount as any) || 0), 0);
+    const netSavings = totalIncome - totalExpense;
+    const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
+
+    // Identify top category
+    const categoryTotals: Record<string, number> = {};
+    concludedExpenses.forEach(exp => {
+      const cat = get().categories.find(c => c.id === exp.category_id);
+      const catName = cat ? cat.name : 'Uncategorized';
+      categoryTotals[catName] = (categoryTotals[catName] || 0) + (parseFloat(exp.amount as any) || 0);
+    });
+
+    let topCategory = 'None';
+    let maxAmount = 0;
+    for (const [catName, total] of Object.entries(categoryTotals)) {
+      if (total > maxAmount) {
+        maxAmount = total;
+        topCategory = catName;
+      }
+    }
+
+    // Insert snapshot row to Supabase
+    const { error: snapshotError } = await supabase
+      .from('monthly_snapshots')
+      .insert({
+        user_id: uid,
+        month_year: concludedMonth,
+        total_income: totalIncome,
+        total_expense: totalExpense,
+        savings_rate: savingsRate,
+        top_category: topCategory,
+      });
+
+    if (snapshotError) {
+      console.error('[KINY] Failed to insert monthly snapshot:', snapshotError.message);
+      throw new Error(`[KINY] Failed to archive month: ${snapshotError.message}`);
+    }
+
+    const [yearStr, monthStr] = concludedMonth.split('-');
+    const year = parseInt(yearStr);
+    const month = parseInt(monthStr);
+    let nextYear = year;
+    let nextMonthVal = month + 1;
+    if (nextMonthVal > 12) {
+      nextMonthVal = 1;
+      nextYear += 1;
+    }
+    const nextMonthStr = `${nextYear}-${String(nextMonthVal).padStart(2, '0')}`;
+    const startOfConcludedMonth = `${concludedMonth}-01`;
+    const startOfNextMonth = `${nextMonthStr}-01`;
+
+    // Delete expenses and incomes of the concluded month in Supabase
+    const { error: expDeleteError } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('user_id', uid)
+      .gte('date', startOfConcludedMonth)
+      .lt('date', startOfNextMonth);
+
+    if (expDeleteError) {
+      console.error('[KINY] Failed to delete expenses for archive:', expDeleteError.message);
+    }
+
+    const { error: incDeleteError } = await supabase
+      .from('incomes')
+      .delete()
+      .eq('user_id', uid)
+      .gte('date', startOfConcludedMonth)
+      .lt('date', startOfNextMonth);
+
+    if (incDeleteError) {
+      console.error('[KINY] Failed to delete incomes for archive:', incDeleteError.message);
+    }
+
+    // Update last_logged_date to today
+    const todayStr = new Date().toISOString().substring(0, 10);
+    await get().updateProfile({ last_logged_date: todayStr });
+
+    // Reload the clean state arrays
+    await Promise.all([
+      get().fetchExpenses(),
+      get().fetchIncomes(),
+    ]);
   },
 
   signUp: async (email, password) => {
@@ -346,11 +474,38 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set(s => ({ loading: { ...s.loading, expenses: true } }));
     try {
       const uid = await getUID();
-      const { data, error } = await supabase
+      const filter = get().filterMonth;
+      let query = supabase
         .from('expenses')
         .select('*')
-        .eq('user_id', uid)
-        .order('date', { ascending: false });
+        .eq('user_id', uid);
+
+      if (filter !== 'all') {
+        const currentMonthStr = new Date().toISOString().substring(0, 7);
+        let startOfMonth: string;
+        let startOfNextMonth: string;
+
+        if (filter === currentMonthStr) {
+          startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+          const nextMonthObj = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+          startOfNextMonth = nextMonthObj.toISOString().split('T')[0];
+        } else {
+          const [yearStr, monthStr] = filter.split('-');
+          const year = parseInt(yearStr);
+          const month = parseInt(monthStr);
+          startOfMonth = `${filter}-01`;
+          let nextYear = year;
+          let nextMonthVal = month + 1;
+          if (nextMonthVal > 12) {
+            nextMonthVal = 1;
+            nextYear += 1;
+          }
+          startOfNextMonth = `${nextYear}-${String(nextMonthVal).padStart(2, '0')}-01`;
+        }
+        query = query.gte('date', startOfMonth).lt('date', startOfNextMonth);
+      }
+
+      const { data, error } = await query.order('date', { ascending: false });
       if (error) throw error;
       set({ expenses: (data as any) ?? [] });
     } catch (e: any) {
@@ -369,6 +524,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .single();
     if (error) throw new Error(error.message);
     set(s => ({ expenses: [data as any, ...s.expenses] }));
+    const todayStr = new Date().toISOString().substring(0, 10);
+    await get().updateProfile({ last_logged_date: todayStr });
   },
 
   updateExpense: async (id, patch) => {
@@ -396,11 +553,38 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set(s => ({ loading: { ...s.loading, incomes: true } }));
     try {
       const uid = await getUID();
-      const { data, error } = await supabase
+      const filter = get().filterMonth;
+      let query = supabase
         .from('incomes')
         .select('*')
-        .eq('user_id', uid)
-        .order('date', { ascending: false });
+        .eq('user_id', uid);
+
+      if (filter !== 'all') {
+        const currentMonthStr = new Date().toISOString().substring(0, 7);
+        let startOfMonth: string;
+        let startOfNextMonth: string;
+
+        if (filter === currentMonthStr) {
+          startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+          const nextMonthObj = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+          startOfNextMonth = nextMonthObj.toISOString().split('T')[0];
+        } else {
+          const [yearStr, monthStr] = filter.split('-');
+          const year = parseInt(yearStr);
+          const month = parseInt(monthStr);
+          startOfMonth = `${filter}-01`;
+          let nextYear = year;
+          let nextMonthVal = month + 1;
+          if (nextMonthVal > 12) {
+            nextMonthVal = 1;
+            nextYear += 1;
+          }
+          startOfNextMonth = `${nextYear}-${String(nextMonthVal).padStart(2, '0')}-01`;
+        }
+        query = query.gte('date', startOfMonth).lt('date', startOfNextMonth);
+      }
+
+      const { data, error } = await query.order('date', { ascending: false });
       if (error) throw error;
       set({ incomes: (data as any) ?? [] });
     } catch (e: any) {
@@ -419,6 +603,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .single();
     if (error) throw new Error(error.message);
     set(s => ({ incomes: [data as any, ...s.incomes] }));
+    const todayStr = new Date().toISOString().substring(0, 10);
+    await get().updateProfile({ last_logged_date: todayStr });
   },
 
   updateIncome: async (id, patch) => {
@@ -517,4 +703,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   // ── Budget Nudge ───────────────────────────────────────────────────────────
   hasSeenBudgetNudge: false,
   dismissBudgetNudge: () => set({ hasSeenBudgetNudge: true }),
+
+  // ── Month Filtering ────────────────────────────────────────────────────────
+  filterMonth: new Date().toISOString().substring(0, 7),
+  setFilterMonth: async (month) => {
+    set({ filterMonth: month });
+    await Promise.all([
+      get().fetchExpenses(),
+      get().fetchIncomes(),
+    ]);
+  },
 }));

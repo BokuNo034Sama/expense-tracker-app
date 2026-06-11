@@ -201,6 +201,39 @@ export interface Database {
         }
         Relationships: []
       }
+      monthly_snapshots: {
+        Row: {
+          id: string
+          user_id: string
+          month_year: string
+          total_income: number
+          total_expense: number
+          savings_rate: number
+          top_category: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          month_year: string
+          total_income: number
+          total_expense: number
+          savings_rate: number
+          top_category: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          month_year?: string
+          total_income?: number
+          total_expense?: number
+          savings_rate?: number
+          top_category?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
