@@ -3,7 +3,7 @@ import { supabase, getUID } from '../lib/supabaseClient';
 import { SEED_CATEGORIES, applyPriorityFlags } from '../lib/seed';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
-  Purpose, Theme,
+  Purpose, Theme, ProfileRow,
 } from './types';
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
@@ -53,12 +53,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     });
 
     if (session) {
-      await Promise.all([
-        get().fetchProfile(),
-        get().fetchCategories(),
-        get().fetchExpenses(),
-        get().fetchIncomes(),
-      ]);
+      try {
+        await Promise.all([
+          get().fetchProfile(),
+          get().fetchCategories(),
+          get().fetchExpenses(),
+          get().fetchIncomes(),
+        ]);
+      } catch (err) {
+        console.error('[KINY] initAuth initial data fetch failed:', err);
+      }
     }
 
     // Subscribe to auth state changes (login, logout, token refresh)
@@ -72,12 +76,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       });
 
       if (session) {
-        await Promise.all([
-          get().fetchProfile(),
-          get().fetchCategories(),
-          get().fetchExpenses(),
-          get().fetchIncomes(),
-        ]);
+        try {
+          await Promise.all([
+            get().fetchProfile(),
+            get().fetchCategories(),
+            get().fetchExpenses(),
+            get().fetchIncomes(),
+          ]);
+        } catch (err) {
+          console.error('[KINY] initAuth authStateChange data fetch failed:', err);
+        }
       } else {
         // Clear all data on sign out
         set({
@@ -140,10 +148,53 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         .select('*')
         .eq('id', uid)
         .single();
-      if (error) throw error;
-      set({ profile: data as any, theme: data.theme as Theme });
+      
+      if (error) {
+        console.warn('[KINY] fetchProfile query returned error, using fallback:', error.message);
+        const fallbackProfile: ProfileRow = {
+          id: uid,
+          name: '',
+          occupation: '',
+          monthly_salary: 0,
+          avatar_initials: '',
+          purpose: 'clarity',
+          target_savings_rate: null,
+          has_completed_onboarding: false,
+          theme: 'light',
+          has_seen_investment_nudge: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_premium: false,
+          has_supported_creator: false,
+        };
+        set({ profile: fallbackProfile, theme: 'light' });
+      } else {
+        set({ profile: data as any, theme: (data.theme as Theme) || 'light' });
+      }
     } catch (e: any) {
       set(s => ({ errors: { ...s.errors, profile: e.message } }));
+      try {
+        const uid = await getUID();
+        const fallbackProfile: ProfileRow = {
+          id: uid,
+          name: '',
+          occupation: '',
+          monthly_salary: 0,
+          avatar_initials: '',
+          purpose: 'clarity',
+          target_savings_rate: null,
+          has_completed_onboarding: false,
+          theme: 'light',
+          has_seen_investment_nudge: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_premium: false,
+          has_supported_creator: false,
+        };
+        set({ profile: fallbackProfile, theme: 'light' });
+      } catch {
+        set({ profile: null });
+      }
     } finally {
       set(s => ({ loading: { ...s.loading, profile: false } }));
     }
