@@ -12,6 +12,7 @@ interface ExpenseFormProps {
 const parseBankAlert = (text: string) => {
   let parsedAmount = '';
   let parsedVendor = '';
+  let parsedDate = '';
 
   const amountRegexes = [
     /(?:amt|amount|debit|credit|spent|paid|value)[:\s]*(?:ngn|ng|₦|\$)?\s*([\d,]+\.\d{2})/i,
@@ -48,7 +49,16 @@ const parseBankAlert = (text: string) => {
     }
   }
 
-  return { amount: parsedAmount, vendor: parsedVendor };
+  // Parse Date YYYY-MM-DD
+  const dateRegex = /(\d{4}-\d{2}-\d{2}(?:\s+[\d:]+(?:\s*[APap][Mm])?)?)/;
+  const dateMatch = text.match(dateRegex);
+  if (dateMatch && dateMatch[1]) {
+    const extractedDate = dateMatch[1];
+    const cleanDate = extractedDate.split(' ')[0].trim();
+    parsedDate = cleanDate;
+  }
+
+  return { amount: parsedAmount, vendor: parsedVendor, date: parsedDate };
 };
 
 
@@ -69,9 +79,20 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const handlePasteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     if (!val) return;
-    const { amount: parsedAmount, vendor: parsedVendor } = parseBankAlert(val);
+    const { amount: parsedAmount, vendor: parsedVendor, date: parsedDate } = parseBankAlert(val);
     if (parsedAmount) setAmount(parsedAmount);
     if (parsedVendor) setVendor(parsedVendor);
+    if (parsedDate) setDate(parsedDate);
+
+    // Auto-detect category from pasted text or parsed vendor name
+    const lowerText = val.toLowerCase();
+    const matchedCat = categories.find(c => 
+      lowerText.includes(c.name.toLowerCase()) || 
+      (parsedVendor && parsedVendor.toLowerCase().includes(c.name.toLowerCase()))
+    );
+    if (matchedCat) {
+      setCategoryId(matchedCat.id);
+    }
   };
 
 
@@ -116,10 +137,15 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
 
     setLoading(true);
     try {
+      const matchedCategory = categories.find(c => 
+        c.id === categoryId || 
+        c.name.toLowerCase() === categoryId.toLowerCase()
+      );
+
       const payload = {
         date,
         vendor: vendor.trim(),
-        category_id: categoryId || null,
+        category_id: matchedCategory ? matchedCategory.id : null,
         amount: amtVal,
         note: note.trim() || null
       };
