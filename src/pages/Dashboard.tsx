@@ -124,7 +124,8 @@ export default function Dashboard() {
             <div className="w-full h-auto">
               <SpendingChart />
             </div>
-            <div className="w-full h-auto">
+            <div className="w-full h-auto flex flex-col gap-4 mt-4">
+              <AdviceCard />
               <SpendingRadar />
             </div>
           </div>
