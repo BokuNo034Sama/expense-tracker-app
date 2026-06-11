@@ -12,6 +12,10 @@ export function Sidebar() {
   const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
   const setPWAInstalled = useAppStore(s => s.setPWAInstalled);
   const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
+  
+  const categories = useAppStore(s => s.categories);
+  const hasSeenBudgetNudge = useAppStore(s => s.hasSeenBudgetNudge);
+  const dismissBudgetNudge = useAppStore(s => s.dismissBudgetNudge);
 
   const initials = profile?.avatar_initials || 'U';
 
@@ -65,11 +69,15 @@ export function Sidebar() {
       {/* 3. Budgets Link */}
       <Link
         to="/budgets"
+        onClick={() => dismissBudgetNudge()}
         className={`p-2.5 md:p-3 border-2 border-transparent rounded-[var(--border-radius)] transition-all duration-150 relative group order-3 md:order-4
           ${location.pathname === '/budgets' ? 'bg-[var(--color-primary)] text-black border-black shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
         `}
       >
         <PieChart className="h-5 w-5" />
+        {!hasSeenBudgetNudge && categories.length === 0 && (
+          <span className="absolute top-1 right-2 h-2.5 w-2.5 rounded-full border-2 border-black bg-[var(--color-primary)] animate-pulse" />
+        )}
         <span style={{ fontFamily: 'var(--font-mono)' }} className="hidden md:group-hover:block absolute left-16 top-1/2 -translate-y-1/2 bg-black border border-white text-white px-2 py-1 rounded text-[10px] uppercase font-bold whitespace-nowrap pointer-events-none z-50 shadow-md">
           BUDGETS
         </span>

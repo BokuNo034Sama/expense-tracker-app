@@ -463,4 +463,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   // ── Privacy Controls ───────────────────────────────────────────────────────
   isDataMasked: false,
   toggleDataMasked: () => set(s => ({ isDataMasked: !s.isDataMasked })),
+
+  // ── Budget Nudge ───────────────────────────────────────────────────────────
+  hasSeenBudgetNudge: false,
+  dismissBudgetNudge: () => set({ hasSeenBudgetNudge: true }),
 }));

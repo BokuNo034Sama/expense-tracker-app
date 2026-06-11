@@ -193,4 +193,8 @@ export interface AppStore {
   // ── Privacy Controls ───────────────────────────────────────────────────────
   isDataMasked:      boolean;
   toggleDataMasked:  () => void;
+
+  // ── Budget Nudge ───────────────────────────────────────────────────────────
+  hasSeenBudgetNudge: boolean;
+  dismissBudgetNudge: () => void;
 }
