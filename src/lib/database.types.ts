@@ -22,12 +22,13 @@ export interface Database {
           theme: 'light' | 'dark'
           has_seen_investment_nudge: boolean
           created_at: string
-          updated_at: string
+           updated_at: string
           is_premium: boolean | null
           has_supported_creator: boolean | null
           financial_streak: number | null
           last_logged_date: string | null
           enabled_slices: string[] | null
+          estimated_monthly_salary: number | null
         }
         Insert: {
           id: string
@@ -47,6 +48,7 @@ export interface Database {
           financial_streak?: number | null
           last_logged_date?: string | null
           enabled_slices?: string[] | null
+          estimated_monthly_salary?: number | null
         }
         Update: {
           id?: string
@@ -66,6 +68,7 @@ export interface Database {
           financial_streak?: number | null
           last_logged_date?: string | null
           enabled_slices?: string[] | null
+          estimated_monthly_salary?: number | null
         }
         Relationships: []
       }

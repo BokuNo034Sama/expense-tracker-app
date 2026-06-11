@@ -33,6 +33,7 @@ export interface ProfileRow {
   financial_streak?:         number;
   last_logged_date?:         string;
   enabled_slices:            string[];
+  estimated_monthly_salary?: number;
 }
 
 export interface CategoryRow {

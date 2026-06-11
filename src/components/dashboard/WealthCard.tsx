@@ -17,12 +17,12 @@ export function WealthCard() {
   // Filter current month data (date prefix: "YYYY-MM")
   const currentMonthPrefix = new Date().toISOString().substring(0, 7);
 
-  const monthlyIncomeTotal = incomes
+  const baseSalary = parseFloat((profile?.estimated_monthly_salary || 0) as any);
+  const loggedIncomesSum = incomes
     .filter(i => i.date.startsWith(currentMonthPrefix))
     .reduce((sum, i) => sum + Number(i.amount), 0);
 
-  // Fallback to profile monthly salary if no income logs exist this month
-  const totalIncome = monthlyIncomeTotal > 0 ? monthlyIncomeTotal : (profile?.monthly_salary ? Number(profile.monthly_salary) : 0);
+  const totalIncome = baseSalary + loggedIncomesSum;
 
   const totalExpenses = expenses
     .filter(e => e.date.startsWith(currentMonthPrefix))

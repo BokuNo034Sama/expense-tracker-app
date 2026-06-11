@@ -15,8 +15,15 @@ export function useAdviceEngine() {
   const exps = expenses.map(mapExpense);
   const incs = incomes.map(mapIncome);
 
+  const baseSalary = parseFloat((profile?.estimated_monthly_salary || 0) as any);
+  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+  const loggedIncomesSum = incomes
+    .filter(i => i.date.startsWith(currentMonthPrefix))
+    .reduce((sum, i) => sum + Number(i.amount), 0);
+  const totalIncome = baseSalary + loggedIncomesSum;
+
   return {
-    advice: generateAdvice(profile.purpose, cats, exps, incs),
+    advice: generateAdvice(profile.purpose, cats, exps, incs, totalIncome),
     projection: getNextMonthProjection(cats, exps, profile.purpose, profile.target_savings_rate ?? null),
   };
 }

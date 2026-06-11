@@ -185,6 +185,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           name: '',
           occupation: '',
           monthly_salary: 0,
+          estimated_monthly_salary: 0,
           avatar_initials: '',
           purpose: 'clarity',
           target_savings_rate: null,
@@ -206,6 +207,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const profileWithSlices = {
           ...(data as any),
           enabled_slices: (data as any).enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription'],
+          estimated_monthly_salary: data.monthly_salary,
         };
         set({ profile: profileWithSlices, theme: (data.theme as Theme) || 'light' });
       }
@@ -218,6 +220,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           name: '',
           occupation: '',
           monthly_salary: 0,
+          estimated_monthly_salary: 0,
           avatar_initials: '',
           purpose: 'clarity',
           target_savings_rate: null,

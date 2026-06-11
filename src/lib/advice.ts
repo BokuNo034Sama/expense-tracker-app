@@ -15,12 +15,12 @@ export function generateAdvice(
   purpose: string,
   categories: any[],
   expenses: any[],
-  incomes: any[]
+  _incomes: any[],
+  totalIncome: number
 ): AdviceItem[] {
   const items: AdviceItem[] = [];
 
   // Calculate totals
-  const totalIncome = incomes.reduce((sum, i) => sum + Number(i.amount), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const savings = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
