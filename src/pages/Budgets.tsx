@@ -73,19 +73,28 @@ export default function Budgets() {
 
       {/* Slices group / Onboarding Empty State */}
       {categories.length === 0 ? (
-        <BentoCard hoverEffect={false} className="space-y-4 max-w-2xl mx-auto text-center py-12 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000000] dark:shadow-[4px_4px_0px_0px_#ffffff]">
-          <h3 
+        <BentoCard hoverEffect={false} className="space-y-6 max-w-2xl mx-auto text-center py-12 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000000] dark:shadow-[4px_4px_0px_0px_#ffffff] flex flex-col items-center">
+          <div className="space-y-3">
+            <h3 
+              style={{ fontFamily: 'var(--font-display)' }}
+              className="text-xl font-extrabold uppercase text-[var(--color-ink)]"
+            >
+              YOUR_BUCKETS_ARE_DRY
+            </h3>
+            <p 
+              style={{ fontFamily: 'var(--font-mono)' }}
+              className="text-xs text-[var(--color-ink-muted)] leading-relaxed uppercase max-w-lg mx-auto"
+            >
+              Your budget buckets are completely empty. Budgeting isn't about moving like a miser; it's about giving your money a strict assignment before your village people assign it for you. Tap below to create your first spending baseline.
+            </p>
+          </div>
+          <button
+            onClick={handleCreate}
             style={{ fontFamily: 'var(--font-display)' }}
-            className="text-xl font-extrabold uppercase text-[var(--color-ink)]"
+            className="px-5 py-3 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-2"
           >
-            START_YOUR_ARCHITECTURE
-          </h3>
-          <p 
-            style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-xs text-[var(--color-ink-muted)] leading-relaxed uppercase max-w-lg mx-auto"
-          >
-            Your budget buckets are empty. Don't worry—managing money isn't about restriction; it's about giving your income a job. Tap create to set up your first spending baseline.
-          </p>
+            [ + DEFINE_A_BUCKET ]
+          </button>
         </BentoCard>
       ) : (
         <div className="space-y-8">

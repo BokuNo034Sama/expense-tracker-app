@@ -56,19 +56,28 @@ export default function Expenses() {
       </div>
 
       {expenses.length === 0 ? (
-        <BentoCard hoverEffect={false} className="space-y-4 max-w-2xl mx-auto text-center py-12 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000000] dark:shadow-[4px_4px_0px_0px_#ffffff]">
-          <h3 
+        <BentoCard hoverEffect={false} className="space-y-6 max-w-2xl mx-auto text-center py-12 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000000] dark:shadow-[4px_4px_0px_0px_#ffffff] flex flex-col items-center">
+          <div className="space-y-3">
+            <h3 
+              style={{ fontFamily: 'var(--font-display)' }}
+              className="text-xl font-extrabold uppercase text-[var(--color-ink)]"
+            >
+              NO_RECEIPTS_YET?_GOD_WHEN?
+            </h3>
+            <p 
+              style={{ fontFamily: 'var(--font-mono)' }}
+              className="text-xs text-[var(--color-ink-muted)] leading-relaxed uppercase max-w-lg mx-auto"
+            >
+              Every legendary wealth run starts with a single log. Whether it's a ₦1,500 data top-up, quick transport, or heavy infrastructure, track it right now to activate your automated advice metrics.
+            </p>
+          </div>
+          <button
+            onClick={handleCreate}
             style={{ fontFamily: 'var(--font-display)' }}
-            className="text-xl font-extrabold uppercase text-[var(--color-ink)]"
+            className="px-5 py-3 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-2"
           >
-            FIRST_LOG_IS_THE_HARDEST
-          </h3>
-          <p 
-            style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-xs text-[var(--color-ink-muted)] leading-relaxed uppercase max-w-lg mx-auto"
-          >
-            Every big wealth journey starts with a single coffee or grocery log. Track your very first transaction right now to activate your automated Kiny advice metrics.
-          </p>
+            [ + DROP_A_RECEIPT ]
+          </button>
         </BentoCard>
       ) : (
         <ExpenseTable onEdit={handleEdit} />

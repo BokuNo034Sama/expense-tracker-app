@@ -252,10 +252,10 @@ export function OnboardingOverlay() {
                     >
                       <div>
                         <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
-                          Expense Clarity
+                          SAPA_EARLY_WARNING_SYSTEM
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
-                          Track everything to find clarity and patterns in your daily spending.
+                          For tracking baseline costs so you stop asking where your money vanished to.
                         </div>
                       </div>
                       {purpose === 'clarity' && (
@@ -264,7 +264,7 @@ export function OnboardingOverlay() {
                         </span>
                       )}
                     </button>
-
+ 
                     <button
                       type="button"
                       onClick={() => setPurpose('saving')}
@@ -277,10 +277,10 @@ export function OnboardingOverlay() {
                     >
                       <div>
                         <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
-                          Wealth Building
+                          ACTIVE_WEALTH_ENGINE
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
-                          Grow your net worth with focus on investment nudges & priority saving rates.
+                          Prioritizes aggressive tracking, investment nudges, and wealth multiplication.
                         </div>
                       </div>
                       {purpose === 'saving' && (
@@ -289,7 +289,7 @@ export function OnboardingOverlay() {
                         </span>
                       )}
                     </button>
-
+ 
                     <button
                       type="button"
                       onClick={() => setPurpose('habit')}
@@ -302,10 +302,10 @@ export function OnboardingOverlay() {
                     >
                       <div>
                         <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
-                          Habit Correction
+                          SUBSCRIPTION_URGENT_CARE
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
-                          Monitor subscriptions, analyze categories, and trim unnecessary outflows.
+                          Flags recurring streaming plans, hidden data leaks, and unnecessary auto-debits.
                         </div>
                       </div>
                       {purpose === 'habit' && (
