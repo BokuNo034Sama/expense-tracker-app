@@ -6,7 +6,7 @@ import { unparse } from "papaparse";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
-import { mapCategory, mapExpense } from "../lib/format";
+import { mapCategory, mapExpense, parseLocalDate } from "../lib/format";
 
 export function ExportMenu() {
   const expenses = useAppStore(s => s.expenses);
@@ -19,7 +19,7 @@ export function ExportMenu() {
 
   const handleExportCSV = () => {
     const data = mappedExpenses.map(e => ({
-      Date: format(new Date(e.date), "yyyy-MM-dd"),
+      Date: format(parseLocalDate(e.date), "yyyy-MM-dd"),
       Vendor: e.vendor,
       Category: mappedCategories.find(c => c.id === e.categoryId)?.name || "Unknown",
       "Amount (₦)": e.amount,
@@ -44,7 +44,7 @@ export function ExportMenu() {
     doc.text(`GENERATED_ON: ${format(new Date(), "MMM dd, yyyy")}`, 14, 22);
 
     const tableData = mappedExpenses.map(e => [
-      format(new Date(e.date), "MMM dd, yyyy"),
+      format(parseLocalDate(e.date), "MMM dd, yyyy"),
       e.vendor.toUpperCase(),
       (mappedCategories.find(c => c.id === e.categoryId)?.name || "Unknown").toUpperCase(),
       `N${e.amount.toLocaleString()}`,

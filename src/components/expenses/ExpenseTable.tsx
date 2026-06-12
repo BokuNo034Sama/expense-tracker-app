@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store';
+import { parseLocalDate } from '../../lib/format';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Trash2, Edit2, ArrowUpDown } from 'lucide-react';
 import type { Expense } from '../../store/types';
@@ -145,7 +146,7 @@ export function ExpenseTable({ onEdit }: ExpenseTableProps) {
 
                 return (
                   <tr key={exp.id} className="border-b border-[var(--color-ink-muted)] border-opacity-20 hover:bg-[rgba(0,0,0,0.015)] transition-colors duration-100">
-                    <td style={{ fontFamily: 'var(--font-mono)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs font-bold whitespace-nowrap">{new Date(exp.date).toLocaleDateString()}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs font-bold whitespace-nowrap">{parseLocalDate(exp.date).toLocaleDateString()}</td>
                     <td style={{ fontFamily: 'var(--font-display)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs font-extrabold uppercase text-[var(--color-ink)] whitespace-nowrap truncate max-w-[100px] sm:max-w-none">{exp.vendor}</td>
                     <td style={{ fontFamily: 'var(--font-display)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs font-semibold uppercase text-[var(--color-ink-muted)] whitespace-nowrap">{categoryName}</td>
                     <td style={{ fontFamily: 'var(--font-mono)' }} className="p-2 sm:p-3.5 text-[10px] sm:text-xs text-[var(--color-ink-muted)] max-w-[120px] sm:max-w-[180px] truncate hidden md:table-cell">{exp.note || '-'}</td>

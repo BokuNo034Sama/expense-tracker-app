@@ -1,4 +1,5 @@
 import { useAppStore } from '../../store';
+import { parseLocalDate } from '../../lib/format';
 import { BentoCard } from '../shared/BentoCard';
 import * as Icons from 'lucide-react';
 
@@ -64,7 +65,7 @@ export function RecentExpenses() {
                         style={{ fontFamily: 'var(--font-mono)' }}
                         className="text-[9px] text-[var(--color-ink-muted)] uppercase"
                       >
-                        {categoryName} • {new Date(exp.date).toLocaleDateString()}
+                        {categoryName} • {parseLocalDate(exp.date).toLocaleDateString()}
                       </div>
                     </div>
                   </div>

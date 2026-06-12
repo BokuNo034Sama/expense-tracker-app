@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../../store';
+import { parseLocalDate } from '../../lib/format';
 import { BentoCard } from '../shared/BentoCard';
 import { IncomeForm } from './IncomeForm';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -68,7 +69,7 @@ export function IncomeList() {
             <tbody>
               {incomes.map((inc) => (
                 <tr key={inc.id} className="border-b border-[var(--color-ink-muted)] border-opacity-20 hover:bg-[rgba(0,0,0,0.02)] transition-colors duration-100">
-                  <td style={{ fontFamily: 'var(--font-mono)' }} className="py-3 text-xs font-bold">{new Date(inc.date).toLocaleDateString()}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)' }} className="py-3 text-xs font-bold">{parseLocalDate(inc.date).toLocaleDateString()}</td>
                   <td style={{ fontFamily: 'var(--font-display)' }} className="py-3 text-xs font-extrabold uppercase">{inc.source}</td>
                   <td style={{ fontFamily: 'var(--font-mono)' }} className="py-3 text-xs text-[var(--color-ink-muted)] truncate max-w-[150px]">{inc.note || '-'}</td>
                   <td style={{ fontFamily: 'var(--font-mono)' }} className="py-3 text-xs font-bold text-right">{formatNaira(Number(inc.amount))}</td>
