@@ -16,6 +16,13 @@
   --font-mono:         'Consolas', monospace;
   --sidebar-width:     72px;
   --sidebar-bg:        #000000;
+
+  /* Neubrutalist PRD Mappings */
+  --color-brand-primary: var(--color-primary);
+  --color-text-main:     var(--color-ink);
+  --color-text-muted:    var(--color-ink-muted);
+  --color-border:        var(--color-ink);
+  --shadow-neubrutalist:  var(--shadow-card);
 }
 
 [data-theme="dark"] {
@@ -26,4 +33,11 @@
   --border-default:    2px solid #FFFFFF;
   --shadow-card:       4px 4px 0px 0px #FFFFFF;
   --shadow-card-hover: 6px 6px 0px 0px #FFFFFF;
+
+  /* Neubrutalist PRD Mappings */
+  --color-brand-primary: var(--color-primary);
+  --color-text-main:     var(--color-ink);
+  --color-text-muted:    var(--color-ink-muted);
+  --color-border:        var(--color-ink);
+  --shadow-neubrutalist:  var(--shadow-card);
 }
