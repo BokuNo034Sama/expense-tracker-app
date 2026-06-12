@@ -64,3 +64,22 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// Satisfies PWA install criteria: fetch event handler
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).catch((err) => {
+        console.warn('[KINY] Fetch failed offline:', err);
+        if (event.request.mode === 'navigate') {
+          return caches.match('/offline.html');
+        }
+      });
+    })
+  );
+});

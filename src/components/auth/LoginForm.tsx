@@ -20,6 +20,16 @@ export function LoginForm() {
   const signUp = useAppStore(s => s.signUp);
   const signInMagicLink = useAppStore(s => s.signInMagicLink);
   const serverError = useAppStore(s => s.errors.auth);
+  const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
+  const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`[KINY] Install prompt outcome: ${outcome}`);
+    setDeferredPrompt(null);
+  };
 
   const validate = () => {
     setLocalError(null);
@@ -241,6 +251,17 @@ export function LoginForm() {
                 className="w-full py-2.5 mt-2 bg-transparent text-[var(--color-ink)] hover:text-[var(--color-ink-muted)] border-[var(--border-default)] border-dashed rounded-[var(--border-radius)] text-xs font-bold uppercase transition-all duration-100"
               >
                 {useMagicLink ? 'USE PASSWORD INSTEAD' : 'SEND MAGIC LINK'}
+              </button>
+            )}
+
+            {deferredPrompt && (
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                style={{ fontFamily: 'var(--font-display)' }}
+                className="w-full py-3 mt-4 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-extrabold text-xs uppercase transition-all duration-100 flex items-center justify-center gap-2"
+              >
+                [ 📲 INSTALL_KINY_OS ]
               </button>
             )}
 

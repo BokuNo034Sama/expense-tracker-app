@@ -10,6 +10,16 @@ export default function ProfilePage() {
   const theme = useAppStore(s => s.theme);
   const setTheme = useAppStore(s => s.setTheme);
   const signOut = useAppStore(s => s.signOut);
+  const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
+  const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`[KINY] Install prompt outcome: ${outcome}`);
+    setDeferredPrompt(null);
+  };
 
   const [name, setName] = useState('');
   const [occupation, setOccupation] = useState('');
@@ -247,6 +257,19 @@ export default function ProfilePage() {
                 </div>
               )}
             </form>
+
+            {deferredPrompt && (
+              <div className="pt-6 border-t border-[var(--color-ink)] border-dashed">
+                <button
+                  type="button"
+                  onClick={handleInstallClick}
+                  style={{ fontFamily: 'var(--font-display)' }}
+                  className="w-full py-3 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-extrabold text-xs uppercase transition-all duration-100 flex items-center justify-center gap-2"
+                >
+                  [ 📲 INSTALL_KINY_OS ]
+                </button>
+              </div>
+            )}
 
             {/* Sign Out Card Button */}
             <div className="pt-6 border-t border-[var(--color-ink)] border-dashed flex justify-between gap-4">
