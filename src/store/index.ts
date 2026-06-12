@@ -525,7 +525,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     if (error) throw new Error(error.message);
     set(s => ({ expenses: [data as any, ...s.expenses] }));
     const todayStr = new Date().toISOString().substring(0, 10);
-    await get().updateProfile({ last_logged_date: todayStr });
+    try {
+      await get().updateProfile({ last_logged_date: todayStr });
+    } catch (error) {
+      console.error("Silent profile logging update failed", error);
+    }
   },
 
   updateExpense: async (id, patch) => {
@@ -604,7 +608,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     if (error) throw new Error(error.message);
     set(s => ({ incomes: [data as any, ...s.incomes] }));
     const todayStr = new Date().toISOString().substring(0, 10);
-    await get().updateProfile({ last_logged_date: todayStr });
+    try {
+      await get().updateProfile({ last_logged_date: todayStr });
+    } catch (error) {
+      console.error("Silent profile logging update failed", error);
+    }
   },
 
   updateIncome: async (id, patch) => {
