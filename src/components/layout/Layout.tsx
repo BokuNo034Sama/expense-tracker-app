@@ -30,8 +30,8 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center gap-3">
             {profile && profile.current_streak !== undefined && profile.current_streak > 0 && (
               <div 
-                style={{ border: '2px solid black', fontFamily: 'var(--font-mono)' }}
-                className="px-3 py-1.5 bg-[var(--color-danger)] text-white font-extrabold text-xs uppercase shadow-[var(--shadow-btn-active)] rounded-[var(--border-radius)] whitespace-nowrap shrink-0"
+                style={{ fontFamily: 'var(--font-mono)' }}
+                className="px-3 py-1.5 bg-[var(--color-danger)] text-white font-extrabold text-xs uppercase border-2 border-[var(--color-border)] shadow-[var(--shadow-btn-active)] rounded-[var(--border-radius)] whitespace-nowrap shrink-0"
               >
                 🔥 {profile.current_streak}_DAY_STREAK
               </div>

@@ -31,8 +31,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] p-4">
         <div 
-          style={{ border: 'var(--border-default)', fontFamily: 'var(--font-display)' }} 
-          className="bg-[var(--color-surface)] text-[var(--color-ink)] px-8 py-6 rounded-[var(--border-radius)] shadow-[var(--shadow-card)] font-bold text-center uppercase tracking-widest animate-pulse"
+          style={{ fontFamily: 'var(--font-display)' }} 
+          className="bg-[var(--color-surface)] text-[var(--color-text-main)] px-8 py-6 border-2 border-[var(--color-border)] rounded-[var(--border-radius)] shadow-[var(--shadow-neubrutalist)] font-bold text-center uppercase tracking-widest animate-pulse"
         >
           LOADING_KINY_OS...
         </div>

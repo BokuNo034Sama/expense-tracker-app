@@ -99,7 +99,7 @@ export function OnboardingOverlay() {
         {/* Progress Bar */}
         <div className="h-3 w-full bg-[var(--color-surface)] border-[var(--border-default)] rounded-full mb-6 overflow-hidden">
           <div 
-            className="h-full bg-[var(--color-primary)] border-r-[var(--border-default)] transition-all duration-300"
+            className="h-full bg-[var(--color-brand-primary)] border-r-[var(--border-default)] transition-all duration-300"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -276,20 +276,20 @@ export function OnboardingOverlay() {
                           style={{ border: 'var(--border-default)' }}
                           className={`w-full p-4 text-left rounded-[var(--border-radius)] flex items-center justify-between transition-all duration-100 ${
                             purpose === p.id
-                              ? 'bg-[var(--color-primary)] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
-                              : 'bg-[var(--color-surface)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
+                              ? 'bg-[var(--color-brand-primary)] text-[#000000] font-bold shadow-[var(--shadow-card)] -translate-x-[2px] -translate-y-[2px]'
+                              : 'bg-[var(--color-surface)] text-[var(--color-text-main)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)]'
                           }`}
                         >
                           <div>
-                            <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-ink)]">
+                            <div style={{ fontFamily: 'var(--font-display)' }} className="text-sm uppercase font-bold text-[var(--color-text-main)]">
                               {p.title}
                             </div>
-                            <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] mt-1 leading-relaxed">
+                            <div style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
                               {p.description}
                             </div>
                           </div>
                           {purpose === p.id && (
-                            <span className="font-bold text-xs bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-ink)]">
+                            <span className="font-bold text-xs bg-black text-[var(--color-brand-primary)] px-2 py-0.5 rounded border border-black">
                               ACTIVE
                             </span>
                           )}
@@ -319,7 +319,7 @@ export function OnboardingOverlay() {
                               type="button"
                               onClick={() => setSavingsRate(rate)}
                               style={{ fontFamily: 'var(--font-mono)' }}
-                              className={`py-2 text-center text-xs font-bold border-[var(--border-default)] rounded-[var(--border-radius)] transition-all duration-100 ${savingsRate === rate ? 'bg-[var(--color-primary)] shadow-[var(--shadow-btn-active)] translate-x-[0.5px] translate-y-[0.5px]' : 'bg-[var(--color-surface)]'}`}
+                              className={`py-2 text-center text-xs font-bold border-[var(--border-default)] rounded-[var(--border-radius)] transition-all duration-100 ${savingsRate === rate ? 'bg-[var(--color-brand-primary)] text-[#000000] shadow-[var(--shadow-btn-active)] translate-x-[0.5px] translate-y-[0.5px]' : 'bg-[var(--color-surface)]'}`}
                             >
                               {rate}%
                             </button>
@@ -354,7 +354,7 @@ export function OnboardingOverlay() {
                 type="button"
                 onClick={handleNext}
                 style={{ fontFamily: 'var(--font-display)' }}
-                className="px-6 py-3 bg-[var(--color-ink)] text-[var(--color-primary)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100"
+                className="px-6 py-3 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100"
               >
                 NEXT →
               </button>
@@ -365,7 +365,7 @@ export function OnboardingOverlay() {
                 disabled={saving}
                 style={{ fontFamily: 'var(--font-display)' }}
                 className={`
-                  px-6 py-3 bg-[var(--color-ink)] text-[var(--color-primary)] border-[var(--border-default)] 
+                  px-6 py-3 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] 
                   rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] 
                   hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] 
                   active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs 

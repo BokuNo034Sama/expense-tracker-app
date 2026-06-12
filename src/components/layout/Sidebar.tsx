@@ -44,7 +44,7 @@ export function Sidebar() {
       <Link
         to="/"
         className={`p-2.5 md:p-3 border-2 border-transparent rounded-[var(--border-radius)] transition-all duration-150 relative group order-1 md:order-2
-          ${location.pathname === '/' ? 'bg-[var(--color-primary)] text-black border-black shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
+          ${location.pathname === '/' ? 'bg-[var(--color-brand-primary)] text-[#000000] border-[var(--color-border)] shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
         `}
       >
         <LayoutDashboard className="h-5 w-5" />
@@ -57,7 +57,7 @@ export function Sidebar() {
       <Link
         to="/expenses"
         className={`p-2.5 md:p-3 border-2 border-transparent rounded-[var(--border-radius)] transition-all duration-150 relative group order-2 md:order-3
-          ${location.pathname === '/expenses' ? 'bg-[var(--color-primary)] text-black border-black shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
+          ${location.pathname === '/expenses' ? 'bg-[var(--color-brand-primary)] text-[#000000] border-[var(--color-border)] shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
         `}
       >
         <Receipt className="h-5 w-5" />
@@ -71,7 +71,7 @@ export function Sidebar() {
         to="/budgets"
         onClick={() => dismissBudgetNudge()}
         className={`p-2.5 md:p-3 border-2 border-transparent rounded-[var(--border-radius)] transition-all duration-150 relative group order-3 md:order-4
-          ${location.pathname === '/budgets' ? 'bg-[var(--color-primary)] text-black border-black shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
+          ${location.pathname === '/budgets' ? 'bg-[var(--color-brand-primary)] text-[#000000] border-[var(--color-border)] shadow-[var(--shadow-btn-active)]' : 'text-gray-400 hover:text-white hover:bg-neutral-900'}
         `}
       >
         <PieChart className="h-5 w-5" />
@@ -100,7 +100,7 @@ export function Sidebar() {
       >
         <div 
           style={{ fontFamily: 'var(--font-display)' }}
-          className="w-9 h-9 md:w-10 md:h-10 bg-[var(--color-primary)] text-black border-2 border-black rounded-full flex items-center justify-center font-extrabold text-xs md:text-sm shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-150 uppercase"
+          className="w-9 h-9 md:w-10 md:h-10 bg-[var(--color-brand-primary)] text-[#000000] border-2 border-[var(--color-border)] rounded-full flex items-center justify-center font-extrabold text-xs md:text-sm shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-150 uppercase"
         >
           {initials}
         </div>
@@ -118,7 +118,7 @@ export function Sidebar() {
       {!isInstalled && deferredPrompt && (
         <button
           onClick={handleInstallPWA}
-          className="p-2.5 md:p-3 border-2 border-black bg-[var(--color-primary)] text-black rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-150 relative group order-6 md:order-6"
+          className="p-2.5 md:p-3 border-2 border-[var(--color-border)] bg-[var(--color-brand-primary)] text-[#000000] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-150 relative group order-6 md:order-6"
         >
           <ArrowDownToLine className="h-5 w-5" />
           <span style={{ fontFamily: 'var(--font-mono)' }} className="hidden md:group-hover:block absolute left-16 top-1/2 -translate-y-1/2 bg-black border border-white text-white px-2 py-1 rounded text-[10px] uppercase font-bold whitespace-nowrap pointer-events-none z-50 shadow-md">

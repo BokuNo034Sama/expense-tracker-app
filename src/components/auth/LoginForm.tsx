@@ -84,7 +84,7 @@ export function LoginForm() {
     }
   };
 
-  const activeTabClass = "bg-[var(--color-primary)] text-[var(--color-ink)] font-bold";
+  const activeTabClass = "bg-[var(--color-brand-primary)] text-[#000000] font-bold";
   const inactiveTabClass = "bg-transparent text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]";
 
   return (
@@ -92,12 +92,7 @@ export function LoginForm() {
       <div className="w-full max-w-[420px]">
         {/* Logo/Wordmark */}
         <div className="flex justify-center mb-6">
-          <div 
-            style={{ fontFamily: 'var(--font-display)' }}
-            className="bg-[var(--color-ink)] text-[var(--color-primary)] px-6 py-2 border-[var(--border-default)] rounded-full shadow-[var(--shadow-btn)] font-extrabold text-2xl tracking-wider uppercase select-none"
-          >
-            Kiny
-          </div>
+          <img src="/logo.svg" alt="Kiny Logo" className="w-16 h-16 mx-auto mb-6 object-contain" />
         </div>
 
         <BentoCard hoverEffect={false} className="w-full">
@@ -220,7 +215,7 @@ export function LoginForm() {
               disabled={loading}
               style={{ fontFamily: 'var(--font-display)' }}
               className={`
-                w-full mt-6 py-4 bg-[var(--color-ink)] text-[var(--color-primary)] 
+                w-full mt-6 py-4 bg-[var(--color-brand-primary)] text-[#000000] 
                 border-[var(--border-default)] rounded-[var(--border-radius)] 
                 shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] 
                 hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] 
@@ -259,7 +254,7 @@ export function LoginForm() {
                 type="button"
                 onClick={handleInstallClick}
                 style={{ fontFamily: 'var(--font-display)' }}
-                className="w-full py-3 mt-4 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-extrabold text-xs uppercase transition-all duration-100 flex items-center justify-center gap-2"
+                className="w-full py-3 mt-4 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-extrabold text-xs uppercase transition-all duration-100 flex items-center justify-center gap-2"
               >
                 [ 📲 INSTALL_KINY_OS ]
               </button>
@@ -279,7 +274,7 @@ export function LoginForm() {
             {successMsg && (
               <div 
                 style={{ fontFamily: 'var(--font-mono)' }}
-                className="bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] p-3 text-xs font-bold text-center uppercase mt-4"
+                className="bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] rounded-[var(--border-radius)] p-3 text-xs font-bold text-center uppercase mt-4"
               >
                 {successMsg}
               </div>

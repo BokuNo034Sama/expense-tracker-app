@@ -75,7 +75,7 @@ export default function Expenses() {
       </div>
 
       {expenses.length === 0 ? (
-        <BentoCard hoverEffect={false} className="space-y-6 max-w-2xl mx-auto text-center py-12 border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_#000000] dark:shadow-[4px_4px_0px_0px_#ffffff] flex flex-col items-center">
+        <BentoCard hoverEffect={false} className="space-y-6 max-w-2xl mx-auto text-center py-12 flex flex-col items-center">
           <div className="space-y-3">
             <h3 
               style={{ fontFamily: 'var(--font-display)' }}
@@ -93,7 +93,7 @@ export default function Expenses() {
           <button
             onClick={handleCreate}
             style={{ fontFamily: 'var(--font-display)' }}
-            className="px-5 py-3 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-2"
+            className="px-5 py-3 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-2"
           >
             [ + DROP_A_RECEIPT ]
           </button>
@@ -103,7 +103,7 @@ export default function Expenses() {
           <ExpenseTable onEdit={handleEdit} />
           <button
             onClick={handleCreate}
-            className="bg-[var(--color-primary)] border-2 border-black font-mono font-bold p-3 shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-100 w-full block text-center mt-6 text-black uppercase text-xs rounded-[var(--border-radius)] cursor-pointer"
+            className="bg-[var(--color-brand-primary)] border-2 border-[var(--color-border)] font-mono font-bold p-3 shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-100 w-full block text-center mt-6 text-[#000000] uppercase text-xs rounded-[var(--border-radius)] cursor-pointer"
           >
             [ + REPORT_NEW_EXPENDITURE ]
           </button>

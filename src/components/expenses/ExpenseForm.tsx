@@ -166,7 +166,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-[var(--border-default)] rounded-[var(--border-radius)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] text-[var(--color-ink)] p-6">
+      <DialogContent className="border-2 border-[var(--color-border)] rounded-[var(--border-radius)] bg-[var(--color-surface)] shadow-[var(--shadow-neubrutalist)] text-[var(--color-text-main)] p-6">
         <DialogHeader className="border-b border-[var(--color-ink)] border-dashed pb-3 mb-4">
           <DialogTitle 
             style={{ fontFamily: 'var(--font-display)' }}
@@ -325,7 +325,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
               disabled={isSubmitting}
               style={{ fontFamily: 'var(--font-display)' }}
               className={`
-                px-5 py-3 bg-[var(--color-ink)] text-[var(--color-primary)] border-[var(--border-default)] 
+                px-5 py-3 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] 
                 rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] 
                 hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] 
                 active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs 

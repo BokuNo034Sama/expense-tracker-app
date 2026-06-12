@@ -89,7 +89,7 @@ export function ExpenseTable({ onEdit }: ExpenseTableProps) {
       </div>
 
       {/* Table Container */}
-      <div className="w-full overflow-x-auto border-2 border-black dark:border-white rounded-[12px] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
+      <div className="w-full overflow-x-auto border-2 border-[var(--color-border)] rounded-[var(--border-radius)] bg-[var(--color-surface)] text-[var(--color-text-main)] shadow-[var(--shadow-neubrutalist)]">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b-[var(--border-default)] bg-[var(--color-surface)]">

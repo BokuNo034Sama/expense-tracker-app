@@ -98,15 +98,15 @@ export function SpendingRadar() {
         <div className="h-[250px] w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
-              <PolarGrid stroke="var(--color-ink-muted)" strokeDasharray="2 2" opacity={0.3} />
+              <PolarGrid stroke="var(--color-text-muted)" strokeDasharray="2 2" opacity={0.3} />
               <PolarAngleAxis 
                 dataKey="subject" 
-                tick={{ fill: 'var(--color-ink)', fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 'bold' }} 
+                tick={{ fill: 'var(--color-text-main)', fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 'bold' }} 
               />
               <PolarRadiusAxis 
                 angle={30} 
                 domain={[0, 100]} 
-                tick={{ fill: 'var(--color-ink-muted)', fontSize: 8, fontFamily: 'var(--font-mono)' }}
+                tick={{ fill: 'var(--color-text-main)', fontSize: 8, fontFamily: 'var(--font-mono)' }}
               />
               <Radar 
                 name="ACTUAL_SPEND %" 

@@ -17,8 +17,7 @@ export function CreatorAppreciationBanner() {
 
   return (
     <div 
-      style={{ border: 'var(--border-default)', boxShadow: 'var(--shadow-card)' }}
-      className="bg-[var(--color-surface)] text-[var(--color-ink)] p-5 rounded-[var(--border-radius)] flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-200"
+      className="bg-[var(--color-surface)] text-[var(--color-text-main)] border-2 border-[var(--color-border)] shadow-[var(--shadow-neubrutalist)] p-5 rounded-[var(--border-radius)] flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-200"
     >
       <div className="space-y-1.5 flex-1">
         <h4 style={{ fontFamily: 'var(--font-display)' }} className="text-sm font-extrabold uppercase tracking-wide">
@@ -34,8 +33,8 @@ export function CreatorAppreciationBanner() {
           href="https://paystack.shop/pay/o5osm4vqf3"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontFamily: 'var(--font-display)', border: 'var(--border-default)', boxShadow: 'var(--shadow-btn)' }}
-          className="bg-[var(--color-primary)] text-black px-5 py-3 rounded-[var(--border-radius)] font-extrabold text-xs uppercase tracking-wide hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] transition-all duration-100 whitespace-nowrap"
+          style={{ fontFamily: 'var(--font-display)' }}
+          className="bg-[var(--color-brand-primary)] text-[#000000] border-2 border-[var(--color-border)] px-5 py-3 rounded-[var(--border-radius)] font-extrabold text-xs uppercase tracking-wide hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] shadow-[var(--shadow-btn)] transition-all duration-100 whitespace-nowrap"
         >
           [ SEND_THE_CREATOR_A_DRINK ↗ ]
         </a>

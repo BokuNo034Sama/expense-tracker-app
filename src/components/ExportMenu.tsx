@@ -80,14 +80,14 @@ export function ExportMenu() {
           <button
             onClick={handleExportCSV}
             style={{ fontFamily: 'var(--font-mono)' }}
-            className="w-full text-left py-2 px-3 hover:bg-[var(--color-primary)] hover:text-[var(--color-ink)] text-xs font-bold uppercase rounded-[calc(var(--border-radius)-4px)] transition-colors duration-100"
+            className="w-full text-left py-2 px-3 hover:bg-[var(--color-brand-primary)] hover:text-[#000000] text-xs font-bold uppercase rounded-[calc(var(--border-radius)-4px)] transition-colors duration-100"
           >
             EXPORT_AS_CSV
           </button>
           <button
             onClick={handleExportPDF}
             style={{ fontFamily: 'var(--font-mono)' }}
-            className="w-full text-left py-2 px-3 hover:bg-[var(--color-primary)] hover:text-[var(--color-ink)] text-xs font-bold uppercase rounded-[calc(var(--border-radius)-4px)] transition-colors duration-100"
+            className="w-full text-left py-2 px-3 hover:bg-[var(--color-brand-primary)] hover:text-[#000000] text-xs font-bold uppercase rounded-[calc(var(--border-radius)-4px)] transition-colors duration-100"
           >
             EXPORT_AS_PDF
           </button>

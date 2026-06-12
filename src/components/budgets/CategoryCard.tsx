@@ -53,7 +53,7 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
         <div className="flex items-center gap-2.5 min-w-0">
           <span 
             style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-[9px] font-bold bg-[var(--color-ink)] text-[var(--color-primary)] px-2 py-0.5 border border-[var(--color-ink)] rounded-full uppercase shrink-0"
+            className="text-[9px] font-bold bg-[var(--color-brand-primary)] text-[#000000] px-2 py-0.5 border border-[var(--color-border)] rounded-full uppercase shrink-0"
           >
             {category.slice}
           </span>
@@ -120,7 +120,7 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
               setIsExpanded(!isExpanded);
             }}
             style={{ fontFamily: 'var(--font-mono)' }}
-            className="px-2 py-0.5 border border-black bg-[var(--color-primary)] text-black rounded text-[10px] font-bold shadow-[1px_1px_0px_#000] active:translate-y-[1px] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] cursor-pointer transition-all uppercase"
+            className="px-2 py-0.5 border border-[var(--color-border)] bg-[var(--color-brand-primary)] text-[#000000] rounded text-[10px] font-bold shadow-[1px_1px_0px_#000] active:translate-y-[1px] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] cursor-pointer transition-all uppercase"
           >
             {isExpanded ? 'CLOSE' : 'ADJUST'}
           </button>
@@ -158,7 +158,7 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
         {category.is_priority && (
           <div 
             style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-[8px] bg-[var(--color-primary)] text-[var(--color-ink)] font-bold px-2 py-0.5 border border-[var(--color-ink)] rounded-full inline-block mt-2 uppercase"
+            className="text-[8px] bg-[var(--color-brand-primary)] text-[#000000] font-bold px-2 py-0.5 border border-[var(--color-border)] rounded-full inline-block mt-2 uppercase"
           >
             ★ PRIORITY_TARGET
           </div>
@@ -191,7 +191,7 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-[var(--color-primary)] text-xs font-mono p-2 border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] font-bold uppercase rounded-[var(--border-radius)] cursor-pointer disabled:opacity-50 shrink-0"
+                  className="bg-[var(--color-brand-primary)] text-[#000000] text-xs font-mono p-2 border border-[var(--color-border)] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] font-bold uppercase rounded-[var(--border-radius)] cursor-pointer disabled:opacity-50 shrink-0"
                 >
                   {submitting ? '...' : 'UPDATE_CAP_✓'}
                 </button>

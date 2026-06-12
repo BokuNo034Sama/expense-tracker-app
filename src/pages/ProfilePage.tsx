@@ -227,7 +227,7 @@ export default function ProfilePage() {
                   disabled={saving}
                   style={{ fontFamily: 'var(--font-display)' }}
                   className={`
-                    px-5 py-2.5 bg-[var(--color-ink)] text-[var(--color-primary)] border-[var(--border-default)] 
+                    px-5 py-2.5 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] 
                     rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] 
                     hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-card)] active:translate-x-[0.5px] 
                     active:translate-y-[0.5px] active:shadow-[var(--shadow-btn-active)] font-extrabold text-xs 
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={handleInstallClick}
                   style={{ fontFamily: 'var(--font-display)' }}
-                  className="w-full py-3 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-extrabold text-xs uppercase transition-all duration-100 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-extrabold text-xs uppercase transition-all duration-100 flex items-center justify-center gap-2"
                 >
                   [ 📲 INSTALL_KINY_OS ]
                 </button>
@@ -308,7 +308,7 @@ export default function ProfilePage() {
                   <label
                     key={slice}
                     style={{ cursor: 'pointer' }}
-                    className="border-2 border-black bg-[var(--color-surface)] p-3 flex justify-between items-center font-mono text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] select-none hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all duration-100"
+                    className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] p-3 flex justify-between items-center font-mono text-xs shadow-[var(--shadow-btn-active)] select-none hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all duration-100"
                   >
                     <span className="font-bold uppercase">{slice.replace('_', ' ')}</span>
                     <input
@@ -335,7 +335,7 @@ export default function ProfilePage() {
                 disabled={isSavingMatrix}
                 style={{ fontFamily: 'var(--font-display)' }}
                 className={`
-                  px-5 py-2.5 bg-[var(--color-ink)] text-[var(--color-primary)] border-[var(--border-default)] 
+                  px-5 py-2.5 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] 
                   rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] 
                   hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-card)] active:translate-x-[0.5px] 
                   active:translate-y-[0.5px] active:shadow-[var(--shadow-btn-active)] font-extrabold text-xs 

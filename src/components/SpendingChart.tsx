@@ -55,20 +55,20 @@ export function SpendingChart() {
       <div className="h-[250px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="var(--color-ink-muted)" opacity={0.3} />
+            <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="var(--color-text-muted)" opacity={0.3} />
             <XAxis 
               dataKey="date" 
               fontSize={10} 
               tickLine={false} 
               axisLine={false} 
-              tick={{ fill: 'var(--color-ink)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }} 
+              tick={{ fill: 'var(--color-text-main)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }} 
             />
             <YAxis 
               fontSize={10} 
               tickLine={false} 
               axisLine={false} 
               tickFormatter={value => `₦${value.toLocaleString()}`} 
-              tick={{ fill: 'var(--color-ink)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}
+              tick={{ fill: 'var(--color-text-main)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}
             />
             <Tooltip 
               cursor={{ fill: 'rgba(0,0,0,0.05)' }} 

@@ -97,11 +97,9 @@ export default function Dashboard() {
       {expenses.length === 0 && (
         <div 
           style={{ 
-            border: 'var(--border-default)', 
-            boxShadow: 'var(--shadow-card)',
             fontFamily: 'var(--font-mono)' 
           }}
-          className="bg-[var(--color-surface)] text-[var(--color-ink)] p-4 rounded-[var(--border-radius)] text-xs font-bold leading-relaxed transition-all duration-200 shrink-0"
+          className="bg-[var(--color-surface)] text-[var(--color-text-main)] border-2 border-[var(--color-border)] shadow-[var(--shadow-neubrutalist)] p-4 rounded-[var(--border-radius)] text-xs font-bold leading-relaxed transition-all duration-200 shrink-0"
         >
           🚀 WELCOME_TO_KINY! Your finance OS is online. To get started and generate your automated advice metrics, use the sidebar actions to log your current fixed categories and add your first expense entry.
         </div>

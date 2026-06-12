@@ -37,7 +37,7 @@ export function InvestmentNudge() {
   };
 
   return (
-    <BentoCard className="border-[var(--color-ink)] bg-[var(--color-surface)] border-2 shadow-[var(--shadow-card)] p-5 relative overflow-hidden col-span-full">
+    <BentoCard className="p-5 relative overflow-hidden col-span-full">
       {clickedType ? (
         <div 
           style={{ fontFamily: 'var(--font-mono)' }}
@@ -50,7 +50,7 @@ export function InvestmentNudge() {
           <div className="space-y-1">
             <h4 
               style={{ fontFamily: 'var(--font-display)' }}
-              className="text-xs font-bold bg-[var(--color-primary)] text-[var(--color-ink)] border border-[var(--color-ink)] px-2 py-0.5 rounded-full inline-block uppercase mb-1.5"
+              className="text-xs font-bold bg-[var(--color-brand-primary)] text-[#000000] border border-[var(--color-border)] px-2 py-0.5 rounded-full inline-block uppercase mb-1.5"
             >
               ★ WEALTH_BUILDER_INTELLIGENCE
             </h4>
@@ -75,7 +75,7 @@ export function InvestmentNudge() {
                 disabled={loading}
                 onClick={() => handleInterestClick(type)}
                 style={{ fontFamily: 'var(--font-mono)' }}
-                className="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-primary)] hover:text-black text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[10px] font-bold shadow-[var(--shadow-btn)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-[var(--shadow-btn-active)] uppercase transition-all duration-100 disabled:opacity-50"
+                className="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-brand-primary)] hover:text-[#000000] text-[var(--color-text-main)] border-2 border-[var(--color-border)] rounded-[var(--border-radius)] text-[10px] font-bold shadow-[var(--shadow-btn)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-[var(--shadow-btn-active)] uppercase transition-all duration-100 disabled:opacity-50"
               >
                 {type}
               </button>

@@ -40,7 +40,7 @@ export function IncomeList() {
         <button
           onClick={handleAdd}
           style={{ fontFamily: 'var(--font-display)' }}
-          className="px-3 py-1.5 bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-1.5"
+          className="px-3 py-1.5 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-1.5"
         >
           <Plus className="h-3 w-3" />
           ADD_INCOME
