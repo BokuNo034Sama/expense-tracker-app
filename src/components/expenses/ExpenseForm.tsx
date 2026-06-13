@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import type { Expense } from '../../store/types';
+import { GoogleGenerativeAI as GoogleGenAI } from '@google/generative-ai';
 
 interface ExpenseFormProps {
   open: boolean;
@@ -80,6 +81,131 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Helper mapper utility to link AI flags safely to your local budgeting buckets
+  const mapCategoryToWorkspace = (suggestion: string): string => {
+    const clean = (suggestion || "").toLowerCase();
+    
+    // Look for utility match
+    if (clean.includes("util") || clean.includes("power") || clean.includes("bill")) {
+      const match = categories.find(c => {
+        const name = c.name.toLowerCase();
+        return name.includes("util") || name.includes("power") || name.includes("bill") || name.includes("elect") || name.includes("general");
+      });
+      if (match) return match.id;
+    }
+    
+    // Look for feeding/groceries match
+    if (clean.includes("food") || clean.includes("shop") || clean.includes("feed")) {
+      const match = categories.find(c => {
+        const name = c.name.toLowerCase();
+        return name.includes("feed") || name.includes("food") || name.includes("grocer") || name.includes("shop");
+      });
+      if (match) return match.id;
+    }
+    
+    // Safely default back to basic tracking, strictly avoiding protected family tokens
+    const generalMatch = categories.find(c => {
+      const name = c.name.toLowerCase();
+      return name.includes("general") || name.includes("transport") || c.is_basic;
+    });
+    if (generalMatch) return generalMatch.id;
+    
+    return categories[0]?.id || "";
+  };
+
+  // Replace your existing file/image processing trigger with this explicit function
+  const handleDirectReceiptOCR = async (file: File) => {
+    // 1. Instantly clear form states to prevent stale caching leakage
+    setVendorName("INGESTING_IMAGE_DATA...");
+    setAmount("");
+    setMemo("Analyzing receipt tokens...");
+    setCategoryId("");
+    setErrorMsg(null);
+    setIsParsing(true);
+
+    try {
+      // 2. Fetch the Vite-exposed key directly from the browser context
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("VITE_GEMINI_API_KEY is missing from your configuration context.");
+      }
+
+      // 3. Convert image file to pure Base64 inline tracking fragments
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Cleanly strip the data URL prefix headers
+          const pureBase64 = result.split(',')[1];
+          resolve(pureBase64);
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
+
+      // 4. Initialize Gemini directly in the client layout thread
+      const genAI = new GoogleGenAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          responseMimeType: "application/json" // Force strict machine-readable strings
+        }
+      });
+
+      const systemPrompt = `You are an expert financial OCR engine for Kiny Personal Finance OS.
+Analyze the uploaded transaction screenshot, debit alert, or invoice.
+Extract the transaction date, the exact currency amount as a float, the vendor or beneficiary merchant, and the narration note.
+Return ONLY a valid JSON object matching this structural schema exactly, without code blocks or markdown:
+{
+  "vendor": "string name",
+  "amount": number,
+  "date": "YYYY-MM-DD",
+  "memo": "string notes",
+  "category_suggestion": "utilities or food or shopping"
+}`;
+
+      // 5. Fire direct API call to Google's edge switches
+      const result = await model.generateContent([
+        systemPrompt,
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: file.type || "image/jpeg"
+          }
+        }
+      ]);
+
+      const response = await result.response;
+      const rawText = response.text();
+      
+      // 6. Safe JSON Extraction
+      const cleanJSON = JSON.parse(rawText.trim());
+
+      // 7. Auto-fill the form with genuine transaction properties
+      setVendorName(cleanJSON.vendor || "Unknown Vendor");
+      setAmount(cleanJSON.amount ? cleanJSON.amount.toString() : "0.00");
+      setTransactionDate(cleanJSON.date || new Date().toISOString().split('T')[0]);
+      setMemo(cleanJSON.memo || "Parsed via Kiny AI OCR Engine");
+      setCategoryId(mapCategoryToWorkspace(cleanJSON.category_suggestion));
+
+    } catch (err: any) {
+      console.error("❌ Kiny Engine Parser Misfire:", err);
+      setErrorMsg("ERROR: Receipt parsing failed. Falling back to manual entry.");
+      
+      // Reset inputs on true crash so user isn't stuck with "INGESTING..." strings
+      setVendorName("MANUAL_ENTRY_REQUIRED");
+      setAmount("");
+      setMemo("Failed to parse receipt image automatically.");
+      
+      const basicCat = categories.find(c => c.is_basic) || categories[0];
+      if (basicCat) {
+        setCategoryId(basicCat.id);
+      }
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
   const handleImageFile = (file: File) => {
     const validExtensions = ['jpg', 'jpeg', 'png'];
     const fileExt = file.name.split('.').pop()?.toLowerCase();
@@ -87,119 +213,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       setErrorMsg('Invalid format. Strictly limited to .jpg, .jpeg, and .png.');
       return;
     }
-
-    setIsParsing(true);
-    setErrorMsg(null);
-
-    // Instantly clear form states to prevent caching old values
-    setVendorName('');
-    setAmount('');
-    setTransactionDate(new Date().toISOString().split('T')[0]);
-    setMemo('');
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64Str = event.target?.result as string;
-      console.log('[KINY] Base64 Image Ingested. Length:', base64Str.length);
-
-      try {
-        // Replace process.env with Vite's native meta environment reader
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-        if (!apiKey) {
-          console.error("Missing Gemini API Key configuration.");
-        }
-
-        let data;
-        if (apiKey) {
-          console.log('[KINY] Direct client-side Gemini OCR call.');
-          const base64Data = base64Str.replace(/^data:image\/\w+;base64,/, '');
-          const mimeType = base64Str.match(/^data:(image\/\w+);base64,/)?.[1] || file.type;
-          
-          const prompt = "You are an expert financial OCR parser for Kiny Personal Finance OS. Analyze the provided banking transaction screenshot or receipt. Extract the true transaction date, the exact currency amount as a float number, the vendor or beneficiary name, and the transaction narration or memo. Return ONLY a valid JSON object matching this schema, without markdown formatting blocks: { \"vendor\": string, \"amount\": number, \"date\": string, \"memo\": string, \"category_suggestion\": string }";
-          
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { text: prompt },
-                    { inlineData: { mimeType, data: base64Data } }
-                  ]
-                }
-              ]
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error(`Gemini API returned status ${response.status}`);
-          }
-
-          const result = await response.json();
-          const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-          data = JSON.parse(cleanJson);
-        } else {
-          // Fallback mock
-          const isPocketOrScreenshot = base64Str.length > 50000;
-          data = {
-            vendor: isPocketOrScreenshot ? "Ikeja Electric Prepaid (@pocket_power)" : "INGESTED_MERCHANT",
-            amount: isPocketOrScreenshot ? 3500.00 : 120.00,
-            date: isPocketOrScreenshot ? "2026-05-26" : new Date().toISOString().split('T')[0],
-            memo: isPocketOrScreenshot 
-              ? "Bill payment for Ikeja Electricity recharge (pocket_p2p_2866688638339669)" 
-              : "Parsed from screen snapshot",
-            category_suggestion: isPocketOrScreenshot ? "utilities" : "general"
-          };
-        }
-
-        setVendorName(data.vendor || 'INGESTED_MERCHANT');
-        setAmount(data.amount ? data.amount.toString() : '0.00');
-        setTransactionDate(data.date || new Date().toISOString().split('T')[0]);
-        setMemo(data.memo || 'Parsed from screen snapshot');
-
-        const suggestion = (data.category_suggestion || '').toLowerCase();
-        let matchedCat = categories.find(c => {
-          const nameLower = c.name.toLowerCase();
-          return nameLower.includes(suggestion) || 
-                 nameLower.includes('bill') || 
-                 nameLower.includes('util') || 
-                 nameLower.includes('power') || 
-                 nameLower.includes('elect') || 
-                 nameLower.includes('general');
-        });
-
-        if (!matchedCat) {
-          matchedCat = categories.find(c => c.is_basic);
-        }
-
-        if (!matchedCat && categories.length > 0) {
-          matchedCat = categories[0];
-        }
-
-        if (matchedCat) {
-          setCategoryId(matchedCat.id);
-        }
-      } catch (err) {
-        const error = err as Error;
-        console.error('[KINY] Receipt parsing failed:', error);
-        setErrorMsg('Receipt parsing failed. Falling back to manual entry.');
-        setVendorName('MANUAL_ENTRY_REQUIRED');
-        setAmount('');
-        setMemo('Failed to parse receipt image automatically');
-      } finally {
-        setIsParsing(false);
-      }
-    };
-
-    reader.onerror = () => {
-      setIsParsing(false);
-      setErrorMsg('Failed to process screenshot file.');
-    };
-
-    reader.readAsDataURL(file);
+    handleDirectReceiptOCR(file);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
