@@ -115,14 +115,12 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
 
   // Replace your existing file/image processing trigger with this explicit function
   const handleDirectReceiptOCR = async (file: File) => {
-    setFormState((prev: any) => ({
-      ...prev,
-      vendor_name: "CONNECTING_TO_STABLE_V1...",
-      amount: 0,
-      memo_or_note: "Analyzing receipt tokens...",
-      spending_category: ""
-    }));
-    setError(null);
+    setVendorName("CONNECTING_TO_STABLE_V1...");
+    setAmount("");
+    setMemo("Analyzing receipt tokens...");
+    setCategoryId("");
+    setErrorMsg(null);
+    setIsParsing(true);
 
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -169,26 +167,26 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
 
       const cleanJSON = JSON.parse(rawText);
 
-      setFormState((prev: any) => ({
-        ...prev,
-        vendor_name: cleanJSON.vendor || "Unknown Merchant",
-        amount: cleanJSON.amount || 0,
-        transaction_date: cleanJSON.date || new Date().toISOString().split('T')[0],
-        memo_or_note: cleanJSON.memo || "Processed via Kiny AI OCR Edge",
-        spending_category: cleanJSON.category_suggestion || ""
-      }));
+      setVendorName(cleanJSON.vendor || "Unknown Merchant");
+      setAmount(cleanJSON.amount ? cleanJSON.amount.toString() : "0.00");
+      setTransactionDate(cleanJSON.date || new Date().toISOString().split('T')[0]);
+      setMemo(cleanJSON.memo || "Processed via Kiny AI OCR Edge");
+      setCategoryId(mapCategoryToWorkspace(cleanJSON.category_suggestion));
 
     } catch (err: any) {
       console.error("❌ Kiny Engine Parser Misfire:", err);
-      setError(`ERROR: [Gemini Execution Fail]: ${err.message || err}`);
+      setErrorMsg(`ERROR: [Gemini Execution Fail]: ${err.message || err}`);
 
-      setFormState((prev: any) => ({
-        ...prev,
-        vendor_name: "MANUAL_ENTRY_REQUIRED",
-        amount: 0.00,
-        memo_or_note: "Failed to parse receipt image automatically.",
-        spending_category: "BASIC"
-      }));
+      setVendorName("MANUAL_ENTRY_REQUIRED");
+      setAmount("");
+      setMemo("Failed to parse receipt image automatically.");
+      
+      const basicCat = categories.find(c => c.is_basic) || categories[0];
+      if (basicCat) {
+        setCategoryId(basicCat.id);
+      }
+    } finally {
+      setIsParsing(false);
     }
   };
 
