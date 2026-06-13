@@ -68,11 +68,11 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const updateExpense = useAppStore(s => s.updateExpense);
   const categories = useAppStore(s => s.categories);
 
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [vendor, setVendor] = useState('');
+  const [transactionDate, setTransactionDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [vendorName, setVendorName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
+  const [memo, setMemo] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -92,52 +92,64 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
     setErrorMsg(null);
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const base64Str = event.target?.result as string;
       console.log('[KINY] Base64 Image Ingested. Length:', base64Str.length);
 
-      const fileNameLower = file.name.toLowerCase();
-      const isPocketOrScreenshot = fileNameLower.includes('screenshot') || fileNameLower.includes('pocket') || fileNameLower.includes('app');
+      try {
+        const response = await fetch('/api/parser/receipt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            image: base64Str,
+            fileType: file.type
+          })
+        });
 
-      // Simulate ingestion engine OCR parsing
-      setTimeout(() => {
-        setIsParsing(false);
-        
-        if (isPocketOrScreenshot) {
-          setVendor('Ikeja Electric Prepaid (@pocket_power)');
-          setAmount('3500.00');
-          setDate('2026-05-26');
-          setNote('Bill payment for Ikeja Electricity recharge (pocket_p2p_2866688638339669)');
-
-          // Match category for utilities/bills
-          let matchedCat = categories.find(c => {
-            const nameLower = c.name.toLowerCase();
-            return nameLower.includes('bill') || nameLower.includes('util') || nameLower.includes('power') || nameLower.includes('elect') || nameLower.includes('general');
-          });
-
-          // Fall back to basic categories (non-family tokens)
-          if (!matchedCat) {
-            matchedCat = categories.find(c => c.is_basic);
-          }
-
-          // Fall back to any category
-          if (!matchedCat && categories.length > 0) {
-            matchedCat = categories[0];
-          }
-
-          if (matchedCat) {
-            setCategoryId(matchedCat.id);
-          }
-        } else {
-          setVendor('INGESTED_MERCHANT');
-          setAmount('120.00');
-          setNote('Parsed from screen snapshot');
-          
-          if (categories.length > 0) {
-            setCategoryId(categories[0].id);
-          }
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`);
         }
-      }, 1500);
+
+        const data = await response.json();
+        setVendorName(data.vendor || 'INGESTED_MERCHANT');
+        setAmount(data.amount ? data.amount.toString() : '0.00');
+        setTransactionDate(data.date || new Date().toISOString().split('T')[0]);
+        setMemo(data.memo || 'Parsed from screen snapshot');
+
+        const suggestion = (data.category_suggestion || '').toLowerCase();
+        let matchedCat = categories.find(c => {
+          const nameLower = c.name.toLowerCase();
+          return nameLower.includes(suggestion) || 
+                 nameLower.includes('bill') || 
+                 nameLower.includes('util') || 
+                 nameLower.includes('power') || 
+                 nameLower.includes('elect') || 
+                 nameLower.includes('general');
+        });
+
+        if (!matchedCat) {
+          matchedCat = categories.find(c => c.is_basic);
+        }
+
+        if (!matchedCat && categories.length > 0) {
+          matchedCat = categories[0];
+        }
+
+        if (matchedCat) {
+          setCategoryId(matchedCat.id);
+        }
+      } catch (err) {
+        const error = err as Error;
+        console.error('[KINY] Receipt parsing failed:', error);
+        setErrorMsg('Receipt parsing failed. Falling back to manual entry.');
+        setVendorName('MANUAL_ENTRY_REQUIRED');
+        setAmount('');
+        setMemo('Failed to parse receipt image automatically');
+      } finally {
+        setIsParsing(false);
+      }
     };
 
     reader.onerror = () => {
@@ -170,8 +182,8 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
     if (!val) return;
     const { amount: parsedAmount, vendor: parsedVendor, date: parsedDate } = parseBankAlert(val);
     if (parsedAmount) setAmount(parsedAmount);
-    if (parsedVendor) setVendor(parsedVendor);
-    if (parsedDate) setDate(parsedDate);
+    if (parsedVendor) setVendorName(parsedVendor);
+    if (parsedDate) setTransactionDate(parsedDate);
 
     // Auto-detect category from pasted text or parsed vendor name
     const lowerText = val.toLowerCase();
@@ -188,17 +200,17 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   useEffect(() => {
     if (open) {
       if (expense) {
-        setDate(expense.date);
-        setVendor(expense.vendor);
+        setTransactionDate(expense.date);
+        setVendorName(expense.vendor);
         setCategoryId(expense.category_id || '');
         setAmount(expense.amount.toString());
-        setNote(expense.note || '');
+        setMemo(expense.note || '');
       } else {
-        setDate(new Date().toISOString().split('T')[0]);
-        setVendor('');
+        setTransactionDate(new Date().toISOString().split('T')[0]);
+        setVendorName('');
         setCategoryId(categories[0]?.id || '');
         setAmount('');
-        setNote('');
+        setMemo('');
       }
       setIsParsing(false);
       setErrorMsg(null);
@@ -215,7 +227,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       return;
     }
 
-    if (!vendor.trim()) {
+    if (!vendorName.trim()) {
       setErrorMsg('Vendor name is required');
       return;
     }
@@ -234,11 +246,11 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       );
 
       const payload = {
-        date,
-        vendor: vendor.trim(),
+        date: transactionDate,
+        vendor: vendorName.trim(),
         category_id: matchedCategory ? matchedCategory.id : null,
         amount: amtVal,
-        note: note.trim() || null
+        note: memo.trim() || null
       };
 
       if (expense) {
@@ -335,8 +347,8 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
               type="text"
               required
               placeholder="e.g. Shoprite, Uber, Spar"
-              value={vendor}
-              onChange={e => setVendor(e.target.value)}
+              value={vendorName}
+              onChange={e => setVendorName(e.target.value)}
               style={{ fontFamily: 'var(--font-mono)' }}
               className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
             />
@@ -397,8 +409,8 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             <input
               type="date"
               required
-              value={date}
-              onChange={e => setDate(e.target.value)}
+              value={transactionDate}
+              onChange={e => setTransactionDate(e.target.value)}
               style={{ fontFamily: 'var(--font-mono)' }}
               className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
             />
@@ -415,8 +427,8 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             <input
               type="text"
               placeholder="Add optional notes..."
-              value={note}
-              onChange={e => setNote(e.target.value)}
+              value={memo}
+              onChange={e => setMemo(e.target.value)}
               style={{ fontFamily: 'var(--font-mono)' }}
               className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
             />

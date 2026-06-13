@@ -7,6 +7,41 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   plugins: [
     react(),
+    {
+      name: 'mock-api',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url === '/api/parser/receipt' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => {
+              body += chunk;
+            });
+            req.on('end', () => {
+              try {
+                const parsed = JSON.parse(body);
+                const image = parsed.image || '';
+                const isPocketOrScreenshot = image.length > 50000;
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                  vendor: isPocketOrScreenshot ? "Ikeja Electric Prepaid (@pocket_power)" : "INGESTED_MERCHANT",
+                  amount: isPocketOrScreenshot ? 3500.00 : 120.00,
+                  date: isPocketOrScreenshot ? "2026-05-26" : new Date().toISOString().split('T')[0],
+                  memo: isPocketOrScreenshot 
+                    ? "Bill payment for Ikeja Electricity recharge (pocket_p2p_2866688638339669)" 
+                    : "Parsed from screen snapshot",
+                  category_suggestion: isPocketOrScreenshot ? "utilities" : "general"
+                }));
+              } catch {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON request payload' }));
+              }
+            });
+            return;
+          }
+          next();
+        });
+      }
+    },
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
