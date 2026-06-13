@@ -19,6 +19,16 @@ export type Theme          = 'light' | 'dark';
 export type SyncStatus     = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
 export type InvestmentType = 'Stocks' | 'Mutual Funds' | 'ETFs';
 
+export interface InvestmentTrigger {
+  id: string;
+  assetClass: 'Stock' | 'Mutual Fund' | 'ETF';
+  name: string;
+  targetThreshold: number;
+  currentProgress: number;
+  targetPlatform: string;
+  status: 'PENDING' | 'THRESHOLD_MET';
+}
+
 // ─── Database Row Shapes (snake_case mirrors Supabase columns) ─────────────────
 
 export interface ProfileRow {
@@ -255,4 +265,12 @@ export interface AppStore {
   // ── Month Filtering ────────────────────────────────────────────────────────
   filterMonth: string;
   setFilterMonth: (month: string) => Promise<void>;
+
+  // ── Deep Wealth Analytics ──────────────────────────────────────────────────
+  totalMonthlyIncome: number;
+  totalMonthlyExpenses: number;
+  netMonthlySurplus: number;
+  investmentTriggers: InvestmentTrigger[];
+  activeWealthBanner: string | null;
+  dismissWealthBanner: () => void;
 }

@@ -9,12 +9,15 @@ import { BudgetProgress } from "@/components/dashboard/BudgetProgress";
 import { RecentExpenses } from "@/components/dashboard/RecentExpenses";
 import { SpendingRadar } from "@/components/dashboard/SpendingRadar";
 import { InvestmentNudge } from "@/components/dashboard/InvestmentNudge";
+import { WealthAnalytics } from "@/components/analytics/WealthAnalytics";
 
 export default function Dashboard() {
   const profile = useAppStore(s => s.profile);
   const expenses = useAppStore(s => s.expenses);
   const filterMonth = useAppStore(s => s.filterMonth);
   const setFilterMonth = useAppStore(s => s.setFilterMonth);
+  const activeWealthBanner = useAppStore(s => s.activeWealthBanner);
+  const dismissWealthBanner = useAppStore(s => s.dismissWealthBanner);
   const [activeTab, setActiveTab] = useState<'summary' | 'buckets' | 'receipts'>('summary');
 
   const containerVariants: Variants = {
@@ -48,8 +51,22 @@ export default function Dashboard() {
     monthOptions.push({ value, label });
   }
 
+  const isWealthEnabled = profile?.enabled_slices?.includes('Wealth') ?? true;
+
   return (
     <div className="h-[calc(100vh-200px)] md:h-auto max-h-[calc(100vh-200px)] md:max-h-none overflow-hidden md:overflow-visible flex flex-col gap-4 md:space-y-6">
+      {/* Wealth Banner Alert */}
+      {activeWealthBanner && (
+        <div className="bg-[#C6EF4E] text-black border-4 border-black p-4 font-mono font-extrabold text-xs uppercase flex justify-between items-center shadow-[4px_4px_0px_0px_#000000] rounded-[var(--border-radius)] mb-2 animate-[pulse_1s_infinite] shrink-0">
+          <span>{activeWealthBanner}</span>
+          <button 
+            onClick={dismissWealthBanner}
+            className="ml-4 bg-black text-white px-2 py-1 text-[10px] border border-white hover:bg-zinc-800 transition-colors uppercase cursor-pointer shrink-0"
+          >
+            DISMISS
+          </button>
+        </div>
+      )}
       {/* Dashboard Top bar */}
       <div className="flex justify-between items-start md:items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
         <div>
@@ -146,6 +163,7 @@ export default function Dashboard() {
         {activeTab === 'summary' && (
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0 pb-4">
             <WealthCard />
+            {isWealthEnabled && <WealthAnalytics />}
             <SummaryCard type="totalSpent" />
             <SummaryCard type="topCategory" />
             <div className="w-full h-auto">
@@ -186,6 +204,12 @@ export default function Dashboard() {
         <motion.div variants={itemVariants} className="md:col-span-1 lg:col-span-1">
           <SummaryCard type="topCategory" />
         </motion.div>
+
+        {isWealthEnabled && (
+          <motion.div variants={itemVariants} className="col-span-full">
+            <WealthAnalytics />
+          </motion.div>
+        )}
 
         {/* Row 2: Transactions & Chart */}
         <motion.div variants={itemVariants} className="md:col-span-1 lg:col-span-1">

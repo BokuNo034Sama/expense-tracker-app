@@ -3,6 +3,7 @@ import { supabase, getUID } from '../lib/supabaseClient';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
+  InvestmentTrigger,
 } from './types';
 import { parseLocalDate } from '../lib/format';
 
@@ -95,6 +96,70 @@ const checkAndRunRollover = async (get: () => AppStore) => {
   }
 };
 
+const recalculateWealthMetrics = (
+  set: (state: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void,
+  get: () => AppStore,
+  isInitialLoad = false
+) => {
+  const profile = get().profile;
+  const incomes = get().incomes || [];
+  const expenses = get().expenses || [];
+
+  const today = new Date();
+  const localMonthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+  const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || profile?.monthly_salary || 0));
+
+  const currentMonthIncomes = incomes.filter((i: Income) => i.date.startsWith(localMonthPrefix));
+  const currentMonthExpenses = expenses.filter((e: Expense) => e.date.startsWith(localMonthPrefix));
+
+  const totalMonthlyIncome = baseSalary + currentMonthIncomes.reduce((sum: number, i: Income) => sum + Number(i.amount), 0);
+  const totalMonthlyExpenses = currentMonthExpenses.reduce((sum: number, e: Expense) => sum + Number(e.amount), 0);
+  const netMonthlySurplus = totalMonthlyIncome - totalMonthlyExpenses;
+
+  const currentTriggers: InvestmentTrigger[] = get().investmentTriggers || [];
+  let bannerTriggered = false;
+  let newBannerMessage = get().activeWealthBanner || null;
+
+  const updatedTriggers = currentTriggers.map((trigger: InvestmentTrigger): InvestmentTrigger => {
+    const progress = Math.max(0, netMonthlySurplus);
+    const oldStatus = trigger.status;
+    const newStatus: 'PENDING' | 'THRESHOLD_MET' = progress >= trigger.targetThreshold ? 'THRESHOLD_MET' : 'PENDING';
+
+    if (oldStatus === 'PENDING' && newStatus === 'THRESHOLD_MET' && !isInitialLoad) {
+      bannerTriggered = true;
+      newBannerMessage = `MILESTONE MET: You've crossed the threshold for ${trigger.name} (₦${trigger.targetThreshold.toLocaleString()})!`;
+
+      // Trigger Push Notification directly via Service Worker
+      if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification(`Wealth Milestone Met! 🚀`, {
+            body: `Your surplus reached ₦${netMonthlySurplus.toLocaleString()}. You can now invest in ${trigger.name} on ${trigger.targetPlatform}!`,
+            icon: '/logo.svg',
+            vibrate: [200, 100, 200],
+            tag: trigger.id,
+            renotify: true
+          } as any);
+        }).catch((err) => console.error('[API] Push notification error:', err));
+      }
+    }
+
+    return {
+      ...trigger,
+      currentProgress: progress,
+      status: newStatus
+    };
+  });
+
+  set({
+    totalMonthlyIncome,
+    totalMonthlyExpenses,
+    netMonthlySurplus,
+    investmentTriggers: updatedTriggers,
+    ...(bannerTriggered ? { activeWealthBanner: newBannerMessage } : {})
+  });
+};
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useAppStore = create<AppStore>()((set, get) => ({
@@ -143,6 +208,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           get().fetchIncomes(),
         ]);
         await checkAndRunRollover(get);
+        recalculateWealthMetrics(set, get, true);
       } catch (err) {
         console.error('[KINY] Offline initAuth initial data fetch failed:', err);
       }
@@ -167,6 +233,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           get().fetchIncomes(),
         ]);
         await checkAndRunRollover(get);
+        recalculateWealthMetrics(set, get, true);
       } catch (err) {
         console.error('[KINY] initAuth initial data fetch failed:', err);
       }
@@ -191,6 +258,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             get().fetchIncomes(),
           ]);
           await checkAndRunRollover(get);
+          recalculateWealthMetrics(set, get, true);
         } catch (err) {
           console.error('[KINY] initAuth authStateChange data fetch failed:', err);
         }
@@ -304,6 +372,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       get().fetchExpenses(),
       get().fetchIncomes(),
     ]);
+    recalculateWealthMetrics(set, get, true);
   },
 
   signUp: async (email, password) => {
@@ -426,6 +495,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }
     } finally {
       set(s => ({ loading: { ...s.loading, profile: false } }));
+      recalculateWealthMetrics(set, get, true);
     }
   },
 
@@ -472,6 +542,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     if (error) throw new Error(`[KINY] Profile update failed: ${error.message}`);
 
     await get().fetchProfile();
+    recalculateWealthMetrics(set, get, false);
   },
 
   updateProfile: async (patch) => {
@@ -480,6 +551,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const { error } = await supabase.from('profiles').update(patch as any).eq('id', uid);
     if (error) throw new Error(`[KINY] Profile update failed: ${error.message}`);
     await get().fetchProfile();
+    recalculateWealthMetrics(set, get, false);
   },
 
   // ── Categories ─────────────────────────────────────────────────────────────
@@ -573,6 +645,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       set(s => ({ errors: { ...s.errors, expenses: err.message } }));
     } finally {
       set(s => ({ loading: { ...s.loading, expenses: false } }));
+      recalculateWealthMetrics(set, get, true);
     }
   },
 
@@ -590,6 +663,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     } catch (error) {
       console.error("Silent profile logging update failed", error);
     }
+    recalculateWealthMetrics(set, get, false);
   },
 
   updateExpense: async (id, patch) => {
@@ -601,12 +675,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .single();
     if (error) throw new Error(error.message);
     set(s => ({ expenses: s.expenses.map(e => e.id === id ? (data as Expense) : e) }));
+    recalculateWealthMetrics(set, get, false);
   },
 
   deleteExpense: async (id) => {
     const { error } = await supabase.from('expenses').delete().eq('id', id);
     if (error) throw new Error(error.message);
     set(s => ({ expenses: s.expenses.filter(e => e.id !== id) }));
+    recalculateWealthMetrics(set, get, false);
   },
 
   // ── Incomes ────────────────────────────────────────────────────────────────
@@ -656,6 +732,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       set(s => ({ errors: { ...s.errors, incomes: err.message } }));
     } finally {
       set(s => ({ loading: { ...s.loading, incomes: false } }));
+      recalculateWealthMetrics(set, get, true);
     }
   },
 
@@ -673,6 +750,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     } catch (error) {
       console.error("Silent profile logging update failed", error);
     }
+    recalculateWealthMetrics(set, get, false);
   },
 
   updateIncome: async (id, patch) => {
@@ -684,12 +762,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .single();
     if (error) throw new Error(error.message);
     set(s => ({ incomes: s.incomes.map(i => i.id === id ? (data as Income) : i) }));
+    recalculateWealthMetrics(set, get, false);
   },
 
   deleteIncome: async (id) => {
     const { error } = await supabase.from('incomes').delete().eq('id', id);
     if (error) throw new Error(error.message);
     set(s => ({ incomes: s.incomes.filter(i => i.id !== id) }));
+    recalculateWealthMetrics(set, get, false);
   },
 
   // ── Investment Intelligence ─────────────────────────────────────────────────
@@ -774,6 +854,18 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   hasSeenBudgetNudge: false,
   dismissBudgetNudge: () => set({ hasSeenBudgetNudge: true }),
 
+  // ── Deep Wealth Analytics ──────────────────────────────────────────────────
+  totalMonthlyIncome: 0,
+  totalMonthlyExpenses: 0,
+  netMonthlySurplus: 0,
+  activeWealthBanner: null,
+  dismissWealthBanner: () => set({ activeWealthBanner: null }),
+  investmentTriggers: [
+    { id: 'trigger-stock', assetClass: 'Stock', name: 'US High Growth Equities Goal', targetThreshold: 150000, currentProgress: 0, targetPlatform: 'Bamboo', status: 'PENDING' },
+    { id: 'trigger-fund', assetClass: 'Mutual Fund', name: 'Naira Inflation-Shield Fund Goal', targetThreshold: 100000, currentProgress: 0, targetPlatform: 'Cowrywise', status: 'PENDING' },
+    { id: 'trigger-etf', assetClass: 'ETF', name: 'Global Tech Index ETF Goal', targetThreshold: 50000, currentProgress: 0, targetPlatform: 'Trove', status: 'PENDING' }
+  ],
+
   // ── Month Filtering ────────────────────────────────────────────────────────
   filterMonth: new Date().toISOString().substring(0, 7),
   setFilterMonth: async (month) => {
@@ -782,5 +874,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       get().fetchExpenses(),
       get().fetchIncomes(),
     ]);
+    recalculateWealthMetrics(set, get, true);
   },
 }));
