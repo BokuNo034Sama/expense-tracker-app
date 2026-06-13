@@ -96,6 +96,11 @@ const checkAndRunRollover = async (get: () => AppStore) => {
   }
 };
 
+interface CustomNotificationOptions extends NotificationOptions {
+  vibrate?: number[];
+  renotify?: boolean;
+}
+
 const recalculateWealthMetrics = (
   set: (state: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void,
   get: () => AppStore,
@@ -139,7 +144,7 @@ const recalculateWealthMetrics = (
             vibrate: [200, 100, 200],
             tag: trigger.id,
             renotify: true
-          } as any);
+          } as CustomNotificationOptions);
         }).catch((err) => console.error('[API] Push notification error:', err));
       }
     }

@@ -91,6 +91,12 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
     setIsParsing(true);
     setErrorMsg(null);
 
+    // Instantly clear form states to prevent caching old values
+    setVendorName('');
+    setAmount('');
+    setTransactionDate(new Date().toISOString().split('T')[0]);
+    setMemo('');
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       const base64Str = event.target?.result as string;
