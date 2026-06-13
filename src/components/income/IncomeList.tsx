@@ -29,7 +29,7 @@ export function IncomeList() {
   };
 
   return (
-    <BentoCard hoverEffect={false} className="w-full">
+    <BentoCard hoverEffect={false} className="w-full dark:bg-[#1A1A1A] dark:border-white dark:border-4 dark:shadow-[4px_4px_0px_0px_#FFFFFF]">
       <div className="flex justify-between items-center pb-4 border-b border-[var(--color-ink)] border-dashed mb-4">
         <h3 
           style={{ fontFamily: 'var(--font-display)' }}
@@ -91,7 +91,7 @@ export function IncomeList() {
                             <Trash2 className="h-3 w-3 text-[var(--color-danger)]" />
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-56 border-[var(--border-default)] rounded-[var(--border-radius)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4" align="end">
+                        <PopoverContent className="w-56 border-[var(--border-default)] dark:border-white rounded-[var(--border-radius)] bg-[var(--color-surface)] dark:bg-[#1A1A1A] shadow-[var(--shadow-card)] dark:shadow-[4px_4px_0px_0px_#FFFFFF] p-4" align="end">
                           <div className="space-y-3">
                             <h4 style={{ fontFamily: 'var(--font-display)' }} className="font-extrabold text-xs uppercase text-[var(--color-ink)]">DELETE_INCOME?</h4>
                             <p style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] leading-relaxed uppercase">This action cannot be undone.</p>

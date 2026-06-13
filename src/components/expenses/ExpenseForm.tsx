@@ -190,12 +190,15 @@ Return ONLY a valid JSON object matching this structural schema exactly, without
 
     } catch (err: any) {
       console.error("❌ Kiny Engine Parser Misfire:", err);
-      setErrorMsg("ERROR: Receipt parsing failed. Falling back to manual entry.");
+      
+      // CRITICAL DEBUGGER: Print the exact error on the UI
+      const precisionMessage = err.message || JSON.stringify(err);
+      setErrorMsg(`ERROR: ${precisionMessage}`);
       
       // Reset inputs on true crash so user isn't stuck with "INGESTING..." strings
       setVendorName("MANUAL_ENTRY_REQUIRED");
       setAmount("");
-      setMemo("Failed to parse receipt image automatically.");
+      setMemo(`Failed: ${precisionMessage.substring(0, 60)}...`);
       
       const basicCat = categories.find(c => c.is_basic) || categories[0];
       if (basicCat) {

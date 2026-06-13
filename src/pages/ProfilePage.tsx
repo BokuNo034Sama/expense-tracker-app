@@ -121,7 +121,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 dark:bg-[#000000] min-h-screen -mx-4 md:-mx-8 px-4 md:px-8 py-6">
       <div>
         <h1 
           style={{ fontFamily: 'var(--font-display)' }}
@@ -140,7 +140,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
         {/* Left Side: Profile Form */}
         <div className="space-y-6">
-          <BentoCard hoverEffect={false} className="space-y-6">
+          <BentoCard hoverEffect={false} className="space-y-6 dark:bg-[#1A1A1A] dark:border-white dark:border-4 dark:shadow-[4px_4px_0px_0px_#FFFFFF]">
             <div className="border-b border-[var(--color-ink)] border-dashed pb-3">
               <h3 
                 style={{ fontFamily: 'var(--font-display)' }}
@@ -155,7 +155,7 @@ export default function ProfilePage() {
               <div>
                 <label 
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
+                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] dark:text-[#E4E4E7] uppercase mb-1.5"
                 >
                   USER_DISPLAY_NAME
                 </label>
@@ -165,7 +165,7 @@ export default function ProfilePage() {
                   value={name}
                   onChange={e => setName(e.target.value)}
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
+                  className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] dark:text-white outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
                 />
               </div>
 
@@ -173,7 +173,7 @@ export default function ProfilePage() {
               <div>
                 <label 
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
+                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] dark:text-[#E4E4E7] uppercase mb-1.5"
                 >
                   OCCUPATION
                 </label>
@@ -182,7 +182,7 @@ export default function ProfilePage() {
                   value={occupation}
                   onChange={e => setOccupation(e.target.value)}
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
+                  className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] dark:text-white outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
                 />
               </div>
 
@@ -190,7 +190,7 @@ export default function ProfilePage() {
               <div>
                 <label 
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
+                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] dark:text-[#E4E4E7] uppercase mb-1.5"
                 >
                   ESTIMATED_MONTHLY_SALARY (₦)
                 </label>
@@ -200,7 +200,7 @@ export default function ProfilePage() {
                   value={salaryStr}
                   onChange={e => setSalaryStr(e.target.value)}
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
+                  className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] dark:text-white outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
                 />
               </div>
 
@@ -245,7 +245,7 @@ export default function ProfilePage() {
               {successMsg && (
                 <div 
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  className="bg-[var(--color-primary)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] p-3 text-xs font-bold text-center uppercase"
+                  className="bg-[#CCFF00] text-black dark:text-black font-black border-[var(--border-default)] rounded-[var(--border-radius)] p-3 text-xs text-center uppercase"
                 >
                   {successMsg}
                 </div>
@@ -288,7 +288,7 @@ export default function ProfilePage() {
           </BentoCard>
 
           {/* Neubrutalist Slice Configuration Card */}
-          <BentoCard hoverEffect={false} className="space-y-6">
+          <BentoCard hoverEffect={false} className="space-y-6 dark:bg-[#1A1A1A] dark:border-white dark:border-4 dark:shadow-[4px_4px_0px_0px_#FFFFFF]">
             <div className="border-b border-[var(--color-ink)] border-dashed pb-3">
               <h3 
                 style={{ fontFamily: 'var(--font-display)' }}
@@ -298,7 +298,7 @@ export default function ProfilePage() {
               </h3>
               <p 
                 style={{ fontFamily: 'var(--font-mono)' }}
-                className="text-[10px] text-[var(--color-ink-muted)] uppercase mt-1"
+                className="text-[10px] text-[var(--color-ink-muted)] dark:text-[#E4E4E7] uppercase mt-1"
               >
                 Enable or disable budget slice buckets in your workspace.
               </p>
@@ -328,7 +328,7 @@ export default function ProfilePage() {
             <div className="pt-4 border-t border-[var(--color-ink)] border-dashed flex justify-between items-center">
               <span 
                 style={{ fontFamily: 'var(--font-mono)' }}
-                className="text-[10px] text-[var(--color-ink-muted)] uppercase"
+                className="text-[10px] text-[var(--color-ink-muted)] dark:text-[#E4E4E7] uppercase"
               >
                 {selectedSlices.length} SLICE(S) ACTIVE
               </span>
