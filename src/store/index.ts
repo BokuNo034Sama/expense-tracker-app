@@ -4,6 +4,7 @@ import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
 } from './types';
+import { parseLocalDate } from '../lib/format';
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
 
@@ -21,12 +22,62 @@ const initialPWA: PWAState = {
   isInstalled: false, hasUpdate: false, installPromptDismissed: false, deferredPrompt: null,
 };
 
+// ─── Date & Streak Helpers ────────────────────────────────────────────────────
+
+export const getLocalDateString = (): string => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const updateLoggingStreak = async (get: () => AppStore) => {
+  const profile = get().profile;
+  if (!profile) return;
+
+  const todayStr = getLocalDateString();
+  const lastLoggedStr = profile.last_logged_date;
+
+  let newCurrentStreak = profile.current_streak || 0;
+  let newFinancialStreak = profile.financial_streak || 0;
+
+  if (!lastLoggedStr) {
+    newCurrentStreak = 1;
+    newFinancialStreak = 1;
+  } else {
+    const lastLoggedDate = parseLocalDate(lastLoggedStr);
+    const todayDate = parseLocalDate(todayStr);
+
+    const diffTime = todayDate.getTime() - lastLoggedDate.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      newCurrentStreak += 1;
+      newFinancialStreak += 1;
+    } else if (diffDays > 1) {
+      newCurrentStreak = 1;
+      newFinancialStreak = 1;
+    } else if (diffDays === 0) {
+      if (newCurrentStreak === 0) newCurrentStreak = 1;
+      if (newFinancialStreak === 0) newFinancialStreak = 1;
+    }
+  }
+
+  await get().updateProfile({
+    last_logged_date: todayStr,
+    current_streak: newCurrentStreak,
+    financial_streak: newFinancialStreak,
+  });
+};
+
 const checkAndRunRollover = async (get: () => AppStore) => {
   const profile = get().profile;
   if (!profile) return;
-  const currentMonth = new Date().toISOString().substring(0, 7);
+  const today = new Date();
+  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   if (!profile.last_logged_date) {
-    const todayStr = new Date().toISOString().substring(0, 10);
+    const todayStr = getLocalDateString();
     try {
       await get().updateProfile({ last_logged_date: todayStr });
     } catch (err) {
@@ -157,7 +208,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const uid = await getUID();
     const profile = get().profile;
     if (!profile || !profile.last_logged_date) {
-      const todayStr = new Date().toISOString().substring(0, 10);
+      const todayStr = getLocalDateString();
       await get().updateProfile({ last_logged_date: todayStr });
       return;
     }
@@ -245,7 +296,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     }
 
     // Update last_logged_date to today
-    const todayStr = new Date().toISOString().substring(0, 10);
+    const todayStr = getLocalDateString();
     await get().updateProfile({ last_logged_date: todayStr });
 
     // Reload the clean state arrays
@@ -534,9 +585,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .single();
     if (error) throw new Error(error.message);
     set(s => ({ expenses: [data as Expense, ...s.expenses] }));
-    const todayStr = new Date().toISOString().substring(0, 10);
     try {
-      await get().updateProfile({ last_logged_date: todayStr });
+      await updateLoggingStreak(get);
     } catch (error) {
       console.error("Silent profile logging update failed", error);
     }
@@ -618,9 +668,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .single();
     if (error) throw new Error(error.message);
     set(s => ({ incomes: [data as Income, ...s.incomes] }));
-    const todayStr = new Date().toISOString().substring(0, 10);
     try {
-      await get().updateProfile({ last_logged_date: todayStr });
+      await updateLoggingStreak(get);
     } catch (error) {
       console.error("Silent profile logging update failed", error);
     }
