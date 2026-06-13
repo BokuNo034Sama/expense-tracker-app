@@ -63,7 +63,6 @@ const parseBankAlert = (text: string) => {
   return { amount: parsedAmount, vendor: parsedVendor, date: parsedDate };
 };
 
-
 export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const addExpense = useAppStore(s => s.addExpense);
   const updateExpense = useAppStore(s => s.updateExpense);
@@ -81,11 +80,9 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Helper mapper utility to link AI flags safely to your local budgeting buckets
   const mapCategoryToWorkspace = (suggestion: string): string => {
     const clean = (suggestion || "").toLowerCase();
 
-    // Look for utility match
     if (clean.includes("util") || clean.includes("power") || clean.includes("bill")) {
       const match = categories.find(c => {
         const name = c.name.toLowerCase();
@@ -94,7 +91,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       if (match) return match.id;
     }
 
-    // Look for feeding/groceries match
     if (clean.includes("food") || clean.includes("shop") || clean.includes("feed")) {
       const match = categories.find(c => {
         const name = c.name.toLowerCase();
@@ -103,7 +99,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       if (match) return match.id;
     }
 
-    // Safely default back to basic tracking, strictly avoiding protected family tokens
     const generalMatch = categories.find(c => {
       const name = c.name.toLowerCase();
       return name.includes("general") || name.includes("transport") || c.is_basic;
@@ -113,7 +108,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
     return categories[0]?.id || "";
   };
 
-  // Replace your existing file/image processing trigger with this explicit function
   const handleDirectReceiptOCR = async (file: File) => {
     setVendorName("CONNECTING_TO_STABLE_V1...");
     setAmount("");
@@ -126,6 +120,13 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) throw new Error("VITE_GEMINI_API_KEY missing from system.");
 
+      // HARDENED FIX: Read layout binary data chunk to determine valid MIME type parameters
+      let safeMimeType = file.type;
+      if (!safeMimeType) {
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        safeMimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+      }
+
       const base64Data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve((reader.result as string).split(',')[1]);
@@ -133,27 +134,26 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         reader.readAsDataURL(file);
       });
 
-      // Clean, direct instantiation matching your newly installed package version
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const systemPrompt = `You are a financial parsing engine. Analyze this transaction screenshot or receipt.
-    Extract values and return a valid JSON object matching these exact fields.
-    Do not include any conversational commentary or markdown block headers. Return ONLY the raw JSON format:
-    {
-      "vendor": "String identifying the merchant bank or store",
-      "amount": float,
-      "date": "YYYY-MM-DD",
-      "memo": "Clean narration or transaction note",
-      "category_suggestion": "utilities or food or shopping"
-    }`;
+      Extract values and return a valid JSON object matching these exact fields.
+      Do not include any conversational commentary or markdown block headers like \`\`\`json. Return ONLY the raw JSON format string:
+      {
+        "vendor": "String identifying the merchant bank or store",
+        "amount": float,
+        "date": "YYYY-MM-DD",
+        "memo": "Clean narration or transaction note",
+        "category_suggestion": "utilities or food or shopping"
+      }`;
 
       const result = await model.generateContent([
         systemPrompt,
         {
           inlineData: {
             data: base64Data,
-            mimeType: file.type || "image/jpeg"
+            mimeType: safeMimeType
           }
         }
       ]);
@@ -180,7 +180,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       setVendorName("MANUAL_ENTRY_REQUIRED");
       setAmount("");
       setMemo("Failed to parse receipt image automatically.");
-      
+
       const basicCat = categories.find(c => c.is_basic) || categories[0];
       if (basicCat) {
         setCategoryId(basicCat.id);
@@ -229,7 +229,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
     if (parsedVendor) setVendorName(parsedVendor);
     if (parsedDate) setTransactionDate(parsedDate);
 
-    // Auto-detect category from pasted text or parsed vendor name
     const lowerText = val.toLowerCase();
     const matchedCat = categories.find(c =>
       lowerText.includes(c.name.toLowerCase()) ||
@@ -239,7 +238,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       setCategoryId(matchedCat.id);
     }
   };
-
 
   useEffect(() => {
     if (open) {
@@ -330,7 +328,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Quick Parser */}
           {!expense && (
             <div className="border-2 border-dashed border-[var(--color-ink-muted)] rounded-[var(--border-radius)] p-3 bg-white/5">
               <label
@@ -384,7 +381,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             </div>
           )}
 
-          {/* Vendor Name */}
           <div>
             <label
               style={{ fontFamily: 'var(--font-mono)' }}
@@ -403,7 +399,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             />
           </div>
 
-          {/* Category Select */}
           <div>
             <label
               style={{ fontFamily: 'var(--font-mono)' }}
@@ -426,7 +421,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             </select>
           </div>
 
-          {/* Amount field */}
           <div>
             <label
               style={{ fontFamily: 'var(--font-mono)' }}
@@ -447,7 +441,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             />
           </div>
 
-          {/* Date field */}
           <div>
             <label
               style={{ fontFamily: 'var(--font-mono)' }}
@@ -465,7 +458,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             />
           </div>
 
-          {/* Note field */}
           <div>
             <label
               style={{ fontFamily: 'var(--font-mono)' }}
@@ -486,7 +478,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
           {errorMsg && (
             <div
               style={{ fontFamily: 'var(--font-mono)' }}
-              className="bg-[var(--color-surface)] border-l-4 border-l-[var(--color-danger)] border-[var(--border-default)] text-[var(--color-danger)] rounded-[var(--border-radius)] p-3 text-xs font-bold mt-4"
+              className="bg-[var(--color-surface)] border-l-4 border-l-[var(--color-danger)] border-[var(--border-default)] text-[var(--color-danger)] rounded-[var(--border-radius)] p-3 text-xs font-bold mt-4 animate-shake"
             >
               ERROR: {errorMsg}
             </div>
