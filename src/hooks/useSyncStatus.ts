@@ -39,5 +39,5 @@ export function useSyncStatus() {
     return () => {
       supabase.removeChannel(channel).catch(console.error);
     };
-  }, [auth.status, auth.user?.id, setSyncStatus, fetchExpenses, fetchIncomes, fetchCategories]);
+  }, [auth.status, auth.user, setSyncStatus, fetchExpenses, fetchIncomes, fetchCategories]);
 }

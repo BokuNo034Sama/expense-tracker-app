@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
@@ -69,8 +70,9 @@ export function IncomeForm({ open, onOpenChange, income }: IncomeFormProps) {
         await addIncome(payload);
       }
       onOpenChange(false);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'An error occurred while saving income.');
+    } catch (err) {
+      const error = err as Error;
+      setErrorMsg(error.message || 'An error occurred while saving income.');
     } finally {
       setIsSubmitting(false);
     }

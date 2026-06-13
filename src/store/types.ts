@@ -1,5 +1,14 @@
 import type { User, Session } from '@supabase/supabase-js';
 
+export interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
+
 // ─── Domain Primitives ────────────────────────────────────────────────────────
 
 export type Purpose        = 'clarity' | 'saving' | 'habit' | (string & {});
@@ -29,7 +38,7 @@ export interface ProfileRow {
   has_supported_creator?:    boolean;
   current_streak?:           number;
   last_active_date?:         string;
-  push_subscription?:        any;
+  push_subscription?:        unknown;
   financial_streak?:         number;
   last_logged_date?:         string;
   enabled_slices:            string[];
@@ -87,6 +96,38 @@ export type Expense         = ExpenseRow;
 export type Income          = IncomeRow;
 export type InvestmentInterest = InvestmentInterestRow;
 
+export interface MappedCategory {
+  id: string;
+  name: string;
+  icon: string;
+  slice: Slice;
+  budgetLimit: number;
+  isBasic: boolean;
+  isPriority: boolean;
+  isSubscription: boolean;
+  createdAt: string;
+}
+
+export interface MappedExpense {
+  id: string;
+  date: string;
+  vendor: string;
+  categoryId: string;
+  amount: number;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MappedIncome {
+  id: string;
+  source: IncomeSource;
+  amount: number;
+  date: string;
+  note?: string;
+  createdAt: string;
+}
+
 export interface MonthlySnapshot {
   id: string;
   user_id: string;
@@ -113,7 +154,7 @@ export interface PWAState {
   isInstalled:            boolean;
   hasUpdate:              boolean;
   installPromptDismissed: boolean;
-  deferredPrompt:         any;
+  deferredPrompt:         BeforeInstallPromptEvent | null;
 }
 
 // ─── Loading & Error Slices ───────────────────────────────────────────────────
@@ -197,7 +238,7 @@ export interface AppStore {
   setPWAInstalled:   (v: boolean) => void;
   setPWAUpdate:      (v: boolean) => void;
   dismissInstallPrompt: () => void;
-  setDeferredPrompt: (prompt: any) => void;
+  setDeferredPrompt: (prompt: BeforeInstallPromptEvent | null) => void;
 
   // ── Session Re-validation ──────────────────────────────────────────────────
   isRevalidating:    boolean;

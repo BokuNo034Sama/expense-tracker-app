@@ -81,6 +81,7 @@ export function SpendingChart() {
                 fontSize: '11px',
                 fontWeight: 'bold'
               }}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(value: any) => [`₦${value.toLocaleString()}`, 'SPENT']}
               labelFormatter={(label) => `DATE: ${label}`}
             />

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
@@ -33,9 +34,9 @@ const parseBankAlert = (text: string) => {
   }
 
   const vendorRegexes = [
-    /(?:at|to|ref|merchant|desc|description|payee)[:\s]+([A-Za-z0-9\s\.\-_]{3,20})/i,
-    /paid\s+(?:to|at)\s+([A-Za-z0-9\s\.\-_]{3,20})/i,
-    /purchase\s+(?:at|on)\s+([A-Za-z0-9\s\.\-_]{3,20})/i
+    /(?:at|to|ref|merchant|desc|description|payee)[:\s]+([A-Za-z0-9\s._-]{3,20})/i,
+    /paid\s+(?:to|at)\s+([A-Za-z0-9\s._-]{3,20})/i,
+    /purchase\s+(?:at|on)\s+([A-Za-z0-9\s._-]{3,20})/i
   ];
 
   for (const regex of vendorRegexes) {
@@ -157,8 +158,9 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         await addExpense(payload);
       }
       onOpenChange(false);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'An error occurred while saving the expense.');
+    } catch (err) {
+      const error = err as Error;
+      setErrorMsg(error.message || 'An error occurred while saving the expense.');
     } finally {
       setIsSubmitting(false);
     }

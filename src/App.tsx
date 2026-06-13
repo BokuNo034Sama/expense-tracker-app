@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useAppStore } from './store';
+import type { BeforeInstallPromptEvent } from './store/types';
 import { AuthGate } from './components/auth/AuthGate';
 import { Layout } from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -21,7 +22,7 @@ export default function App() {
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
     const handleFocus = () => {

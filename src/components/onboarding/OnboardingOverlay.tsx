@@ -56,8 +56,9 @@ export function OnboardingOverlay() {
         monthlySalary,
         purpose === 'saving' ? savingsRate : undefined
       );
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to complete onboarding');
+    } catch (err) {
+      const error = err as Error;
+      setErrorMsg(error.message || 'Failed to complete onboarding');
       setSaving(false);
     }
   };

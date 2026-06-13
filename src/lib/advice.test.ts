@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateAdvice, getNextMonthProjection } from './advice';
+import type { MappedCategory, MappedExpense } from '../store/types';
 
 describe('generateAdvice', () => {
   it('should return welcome advice if there are no expenses logged', () => {
@@ -19,7 +20,13 @@ describe('generateAdvice', () => {
       { id: 'exp-2', categoryId: 'cat-2', amount: 80000, date: '2026-06-11', vendor: 'Spar' }
     ];
 
-    const advice = generateAdvice('saving', categories, expenses, [], 500000);
+    const advice = generateAdvice(
+      'saving',
+      categories as unknown as MappedCategory[],
+      expenses as unknown as MappedExpense[],
+      [],
+      500000
+    );
     const overrunAdvice = advice.find(a => a.id === 'budget_overrun');
     expect(overrunAdvice).toBeDefined();
     expect(overrunAdvice?.type).toBe('warning');
@@ -32,7 +39,13 @@ describe('generateAdvice', () => {
     const expenses = [{ id: 'exp-1', categoryId: 'cat-1', amount: 450000 }];
     
     // totalIncome: 500000, totalExpenses: 450000 -> savings: 50000 -> 10% savings rate
-    const advice = generateAdvice('saving', categories, expenses, [], 500000);
+    const advice = generateAdvice(
+      'saving',
+      categories as unknown as MappedCategory[],
+      expenses as unknown as MappedExpense[],
+      [],
+      500000
+    );
     const savingsAdvice = advice.find(a => a.id === 'low_savings');
     expect(savingsAdvice).toBeDefined();
     expect(savingsAdvice?.type).toBe('warning');
@@ -44,7 +57,13 @@ describe('generateAdvice', () => {
     const expenses = [{ id: 'exp-1', categoryId: 'cat-1', amount: 300000 }];
     
     // totalIncome: 500000, totalExpenses: 300000 -> savings: 200000 -> 40% savings rate
-    const advice = generateAdvice('saving', categories, expenses, [], 500000);
+    const advice = generateAdvice(
+      'saving',
+      categories as unknown as MappedCategory[],
+      expenses as unknown as MappedExpense[],
+      [],
+      500000
+    );
     const savingsAdvice = advice.find(a => a.id === 'high_savings');
     expect(savingsAdvice).toBeDefined();
     expect(savingsAdvice?.type).toBe('success');
@@ -60,7 +79,13 @@ describe('generateAdvice', () => {
     ];
     
     // totalIncome: 500000, subscriptionSpend: 50000 -> 10% of income (which is >8%)
-    const advice = generateAdvice('habit', categories, expenses, [], 500000);
+    const advice = generateAdvice(
+      'habit',
+      categories as unknown as MappedCategory[],
+      expenses as unknown as MappedExpense[],
+      [],
+      500000
+    );
     const subAdvice = advice.find(a => a.id === 'sub_heavy');
     expect(subAdvice).toBeDefined();
     expect(subAdvice?.type).toBe('warning');
@@ -74,7 +99,7 @@ describe('getNextMonthProjection', () => {
       { id: 'exp-1', amount: 100000 },
       { id: 'exp-2', amount: 50000 }
     ];
-    const projection = getNextMonthProjection([], expenses, 'saving', 20);
+    const projection = getNextMonthProjection([], expenses as unknown as MappedExpense[], 'saving', 20);
     expect(projection).toHaveLength(3);
     expect(projection[0].projectedExpenses).toBe(150000);
     expect(projection[0].projectedSavings).toBe(30000); // 150000 * 0.20

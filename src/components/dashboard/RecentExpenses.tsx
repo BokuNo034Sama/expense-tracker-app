@@ -17,7 +17,7 @@ export function RecentExpenses() {
   const recent = expenses.slice(0, 5);
 
   const renderIcon = (iconName: string) => {
-    const LucideIcon = (Icons as any)[iconName] || Icons.HelpCircle;
+    const LucideIcon = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[iconName] || Icons.HelpCircle;
     return <LucideIcon className="h-4 w-4" />;
   };
 

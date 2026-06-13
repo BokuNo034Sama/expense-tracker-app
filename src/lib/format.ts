@@ -1,11 +1,11 @@
-import type { CategoryRow, ExpenseRow, IncomeRow } from '../store/types';
+import type { CategoryRow, ExpenseRow, IncomeRow, MappedCategory, MappedExpense, MappedIncome } from '../store/types';
 
 export function parseLocalDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
 
-export const mapCategory = (r: CategoryRow) => ({
+export const mapCategory = (r: CategoryRow): MappedCategory => ({
   id: r.id,
   name: r.name,
   icon: r.icon,
@@ -17,7 +17,7 @@ export const mapCategory = (r: CategoryRow) => ({
   createdAt: r.created_at,
 });
 
-export const mapExpense = (r: ExpenseRow) => ({
+export const mapExpense = (r: ExpenseRow): MappedExpense => ({
   id: r.id,
   date: r.date,
   vendor: r.vendor,
@@ -28,7 +28,7 @@ export const mapExpense = (r: ExpenseRow) => ({
   updatedAt: r.updated_at,
 });
 
-export const mapIncome = (r: IncomeRow) => ({
+export const mapIncome = (r: IncomeRow): MappedIncome => ({
   id: r.id,
   source: r.source,
   amount: Number(r.amount),

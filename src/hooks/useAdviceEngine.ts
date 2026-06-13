@@ -15,7 +15,7 @@ export function useAdviceEngine() {
   const exps = expenses.map(mapExpense);
   const incs = incomes.map(mapIncome);
 
-  const baseSalary = parseFloat((profile?.estimated_monthly_salary || 0) as any);
+  const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || 0));
   const currentMonthPrefix = new Date().toISOString().substring(0, 7);
   const loggedIncomesSum = incomes
     .filter(i => i.date.startsWith(currentMonthPrefix))

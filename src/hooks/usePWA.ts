@@ -38,9 +38,9 @@ export function usePWA() {
       const urlBase64ToUint8Array = (base64String: string) => {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
         const base64 = (base64String + padding)
-          .replace(/\-/g, '+')
+          .replace(/-/g, '+')
           .replace(/_/g, '/');
-        const cleanBase64 = base64.replace(/[^A-Za-z0-9\+\/]/g, '');
+        const cleanBase64 = base64.replace(new RegExp('[^A-Za-z0-9+/]', 'g'), '');
         const rawData = window.atob(cleanBase64);
         const outputArray = new Uint8Array(rawData.length);
         for (let i = 0; i < rawData.length; ++i) {

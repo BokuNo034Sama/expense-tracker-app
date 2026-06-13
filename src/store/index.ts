@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { supabase, getUID } from '../lib/supabaseClient';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
-  Theme, ProfileRow,
+  Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
 } from './types';
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
@@ -69,7 +69,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                 cachedSession = parsed.currentSession || null;
                 break;
               }
-            } catch (e) {}
+            } catch {
+              // Ignore cache parsing errors
+            }
           }
         }
       }
@@ -163,12 +165,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const concludedMonth = profile.last_logged_date.substring(0, 7);
 
     // Compute base salary and totals
-    const baseSalary = parseFloat((profile?.estimated_monthly_salary || 0) as any) || parseFloat((profile?.monthly_salary || 0) as any);
+    const baseSalary = Number(profile?.estimated_monthly_salary || 0) || Number(profile?.monthly_salary || 0);
     const concludedIncomes = get().incomes.filter(i => i.date.startsWith(concludedMonth));
     const concludedExpenses = get().expenses.filter(e => e.date.startsWith(concludedMonth));
 
-    const totalIncome = baseSalary + concludedIncomes.reduce((sum, i) => sum + (parseFloat(i.amount as any) || 0), 0);
-    const totalExpense = concludedExpenses.reduce((sum, e) => sum + (parseFloat(e.amount as any) || 0), 0);
+    const totalIncome = baseSalary + concludedIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const totalExpense = concludedExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const netSavings = totalIncome - totalExpense;
     const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
 
@@ -177,7 +179,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     concludedExpenses.forEach(exp => {
       const cat = get().categories.find(c => c.id === exp.category_id);
       const catName = cat ? cat.name : 'Uncategorized';
-      categoryTotals[catName] = (categoryTotals[catName] || 0) + (parseFloat(exp.amount as any) || 0);
+      categoryTotals[catName] = (categoryTotals[catName] || 0) + (Number(exp.amount) || 0);
     });
 
     let topCategory = 'None';
@@ -332,15 +334,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         };
         set({ profile: fallbackProfile, theme: 'light' });
       } else {
-        const profileWithSlices = {
-          ...(data as any),
-          enabled_slices: (data as any).enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription'],
-          estimated_monthly_salary: data.monthly_salary,
+        const row = data as unknown as ProfileRow;
+        const profileWithSlices: ProfileRow = {
+          ...row,
+          enabled_slices: row.enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription'],
+          estimated_monthly_salary: row.monthly_salary,
         };
-        set({ profile: profileWithSlices, theme: (data.theme as Theme) || 'light' });
+        set({ profile: profileWithSlices, theme: (row.theme as Theme) || 'light' });
       }
-    } catch (e: any) {
-      set(s => ({ errors: { ...s.errors, profile: e.message } }));
+    } catch (e) {
+      const err = e as Error;
+      set(s => ({ errors: { ...s.errors, profile: err.message } }));
       try {
         const uid = await getUID();
         const fallbackProfile: ProfileRow = {
@@ -411,6 +415,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
     const { error } = await supabase
       .from('profiles')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update(profilePatch as any)
       .eq('id', uid);
     if (error) throw new Error(`[KINY] Profile update failed: ${error.message}`);
@@ -420,6 +425,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   updateProfile: async (patch) => {
     const uid = await getUID();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from('profiles').update(patch as any).eq('id', uid);
     if (error) throw new Error(`[KINY] Profile update failed: ${error.message}`);
     await get().fetchProfile();
@@ -439,9 +445,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         .eq('user_id', uid)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      set({ categories: (data as any) ?? [] });
-    } catch (e: any) {
-      set(s => ({ errors: { ...s.errors, categories: e.message } }));
+      set({ categories: (data as Category[]) ?? [] });
+    } catch (e) {
+      const err = e as Error;
+      set(s => ({ errors: { ...s.errors, categories: err.message } }));
     } finally {
       set(s => ({ loading: { ...s.loading, categories: false } }));
     }
@@ -449,12 +456,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   addCategory: async (c) => {
     const uid = await getUID();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from('categories').insert({ ...c, user_id: uid } as any);
     if (error) throw new Error(error.message);
     await get().fetchCategories();
   },
 
   updateCategory: async (id, patch) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from('categories').update(patch as any).eq('id', id);
     if (error) throw new Error(error.message);
     await get().fetchCategories();
@@ -507,9 +516,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
       const { data, error } = await query.order('date', { ascending: false });
       if (error) throw error;
-      set({ expenses: (data as any) ?? [] });
-    } catch (e: any) {
-      set(s => ({ errors: { ...s.errors, expenses: e.message } }));
+      set({ expenses: (data as Expense[]) ?? [] });
+    } catch (e) {
+      const err = e as Error;
+      set(s => ({ errors: { ...s.errors, expenses: err.message } }));
     } finally {
       set(s => ({ loading: { ...s.loading, expenses: false } }));
     }
@@ -519,11 +529,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const uid = await getUID();
     const { data, error } = await supabase
       .from('expenses')
-      .insert({ ...e, user_id: uid } as any)
+      .insert({ ...e, user_id: uid } as unknown as Expense)
       .select()
       .single();
     if (error) throw new Error(error.message);
-    set(s => ({ expenses: [data as any, ...s.expenses] }));
+    set(s => ({ expenses: [data as Expense, ...s.expenses] }));
     const todayStr = new Date().toISOString().substring(0, 10);
     try {
       await get().updateProfile({ last_logged_date: todayStr });
@@ -535,12 +545,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   updateExpense: async (id, patch) => {
     const { data, error } = await supabase
       .from('expenses')
-      .update(patch as any)
+      .update(patch as unknown as Partial<Expense>)
       .eq('id', id)
       .select()
       .single();
     if (error) throw new Error(error.message);
-    set(s => ({ expenses: s.expenses.map(e => e.id === id ? (data as any) : e) }));
+    set(s => ({ expenses: s.expenses.map(e => e.id === id ? (data as Expense) : e) }));
   },
 
   deleteExpense: async (id) => {
@@ -590,9 +600,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
       const { data, error } = await query.order('date', { ascending: false });
       if (error) throw error;
-      set({ incomes: (data as any) ?? [] });
-    } catch (e: any) {
-      set(s => ({ errors: { ...s.errors, incomes: e.message } }));
+      set({ incomes: (data as Income[]) ?? [] });
+    } catch (e) {
+      const err = e as Error;
+      set(s => ({ errors: { ...s.errors, incomes: err.message } }));
     } finally {
       set(s => ({ loading: { ...s.loading, incomes: false } }));
     }
@@ -602,11 +613,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const uid = await getUID();
     const { data, error } = await supabase
       .from('incomes')
-      .insert({ ...i, user_id: uid } as any)
+      .insert({ ...i, user_id: uid } as unknown as Income)
       .select()
       .single();
     if (error) throw new Error(error.message);
-    set(s => ({ incomes: [data as any, ...s.incomes] }));
+    set(s => ({ incomes: [data as Income, ...s.incomes] }));
     const todayStr = new Date().toISOString().substring(0, 10);
     try {
       await get().updateProfile({ last_logged_date: todayStr });
@@ -618,12 +629,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   updateIncome: async (id, patch) => {
     const { data, error } = await supabase
       .from('incomes')
-      .update(patch as any)
+      .update(patch as unknown as Partial<Income>)
       .eq('id', id)
       .select()
       .single();
     if (error) throw new Error(error.message);
-    set(s => ({ incomes: s.incomes.map(i => i.id === id ? (data as any) : i) }));
+    set(s => ({ incomes: s.incomes.map(i => i.id === id ? (data as Income) : i) }));
   },
 
   deleteIncome: async (id) => {
@@ -640,15 +651,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     const uid = await getUID();
     const { data, error } = await supabase
       .from('investment_interests')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .insert({ type, wealth_balance_at_click: wealthBalance, user_id: uid } as any)
       .select()
       .single();
     if (error) throw new Error(error.message);
-    set(s => ({ investmentInterests: [...s.investmentInterests, data as any] }));
+    set(s => ({ investmentInterests: [...s.investmentInterests, data as InvestmentInterest] }));
 
-    // Also persist nudge-seen flag
     await supabase
       .from('profiles')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ has_seen_investment_nudge: true } as any)
       .eq('id', uid);
   },
@@ -662,6 +674,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     document.documentElement.dataset.theme = t;
     try {
       const uid = await getUID();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await supabase.from('profiles').update({ theme: t } as any).eq('id', uid);
     } catch {
       // Theme is non-critical — silently fail if not logged in

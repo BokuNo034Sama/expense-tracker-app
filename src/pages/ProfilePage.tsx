@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { BentoCard } from '../components/shared/BentoCard';
@@ -78,8 +79,9 @@ export default function ProfilePage() {
         avatar_initials: avatarInitials
       });
       setSuccessMsg('PROFILE_UPDATED_SUCCESSFULLY');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to update profile.');
+    } catch (err) {
+      const error = err as Error;
+      setErrorMsg(error.message || 'Failed to update profile.');
     } finally {
       setSaving(false);
     }
@@ -106,8 +108,9 @@ export default function ProfilePage() {
         enabled_slices: selectedSlices
       });
       setSuccessMsg('FINANCIAL_ARCHITECTURE_SAVED');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to save matrix.');
+    } catch (err) {
+      const error = err as Error;
+      setErrorMsg(error.message || 'Failed to save matrix.');
     } finally {
       setIsSavingMatrix(false);
     }

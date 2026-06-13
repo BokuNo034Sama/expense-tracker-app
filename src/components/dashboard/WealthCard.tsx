@@ -17,7 +17,7 @@ export function WealthCard() {
   // Filter current month data (date prefix: "YYYY-MM")
   const currentMonthPrefix = new Date().toISOString().substring(0, 7);
 
-  const baseSalary = parseFloat((profile?.estimated_monthly_salary || 0) as any);
+  const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || 0));
   const loggedIncomesSum = incomes
     .filter(i => i.date.startsWith(currentMonthPrefix))
     .reduce((sum, i) => sum + Number(i.amount), 0);

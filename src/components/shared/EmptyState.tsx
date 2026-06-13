@@ -10,7 +10,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon = 'FolderOpen', title, message, action }: EmptyStateProps) {
   const renderIcon = () => {
-    const LucideIcon = (Icons as any)[icon] || Icons.FolderOpen;
+    const LucideIcon = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[icon] || Icons.FolderOpen;
     return <LucideIcon className="h-10 w-10 text-[var(--color-ink-muted)] mb-3" />;
   };
 

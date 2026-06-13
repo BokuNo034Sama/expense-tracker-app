@@ -77,8 +77,9 @@ export function LoginForm() {
           await signIn(email.trim(), password);
         }
       }
-    } catch (err: any) {
-      setLocalError(err.message || 'An authentication error occurred');
+    } catch (err) {
+      const error = err as Error;
+      setLocalError(error.message || 'An authentication error occurred');
     } finally {
       setLoading(false);
     }

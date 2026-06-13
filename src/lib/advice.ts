@@ -1,3 +1,5 @@
+import type { MappedCategory, MappedExpense, MappedIncome } from '../store/types';
+
 export interface AdviceItem {
   id: string;
   type: 'info' | 'warning' | 'success';
@@ -13,9 +15,9 @@ export interface ProjectionItem {
 
 export function generateAdvice(
   purpose: string,
-  categories: any[],
-  expenses: any[],
-  _incomes: any[],
+  categories: MappedCategory[],
+  expenses: MappedExpense[],
+  _incomes: MappedIncome[],
   totalIncome: number
 ): AdviceItem[] {
   const items: AdviceItem[] = [];
@@ -113,8 +115,8 @@ export function generateAdvice(
 }
 
 export function getNextMonthProjection(
-  _categories: any[],
-  expenses: any[],
+  _categories: MappedCategory[],
+  expenses: MappedExpense[],
   purpose: string,
   targetSavingsRate: number | null
 ): ProjectionItem[] {
