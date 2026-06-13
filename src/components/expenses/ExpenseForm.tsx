@@ -148,10 +148,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       // Ensure it targeting stable v1 paths for gemini-1.5-flash
       const model = genAI.getGenerativeModel(
         {
-          model: 'gemini-1.5-flash',
-          generationConfig: {
-            responseMimeType: "application/json" // Force strict machine-readable strings
-          }
+          model: 'gemini-1.5-flash'
         },
         { apiVersion: 'v1' }
       );
@@ -159,7 +156,9 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       const systemPrompt = `You are an expert financial OCR engine for Kiny Personal Finance OS.
 Analyze the uploaded transaction screenshot, debit alert, or invoice.
 Extract the transaction date, the exact currency amount as a float, the vendor or beneficiary merchant, and the narration note.
-Return ONLY a valid JSON object matching this structural schema exactly, without code blocks or markdown:
+
+Return a pure raw JSON string payload with the fields: vendor, amount, date, memo, and category_suggestion.
+Your response MUST be a valid JSON object matching the following structure:
 {
   "vendor": "string name",
   "amount": number,
@@ -183,7 +182,11 @@ Return ONLY a valid JSON object matching this structural schema exactly, without
       const rawText = response.text();
       
       // 6. Safe JSON Extraction
-      const cleanJSON = JSON.parse(rawText.trim());
+      let cleanedText = rawText.trim();
+      // Defensive regex to clean out markdown code blocks (```json ... ``` or ``` ... ```) if present
+      cleanedText = cleanedText.replace(/^```(?:json)?\s*/i, '');
+      cleanedText = cleanedText.replace(/\s*```$/i, '');
+      const cleanJSON = JSON.parse(cleanedText.trim());
 
       // 7. Auto-fill the form with genuine transaction properties
       setVendorName(cleanJSON.vendor || "Unknown Vendor");
