@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import type { Expense } from '../../store/types';
-import { GoogleGenerativeAI as GoogleGenAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface ExpenseFormProps {
   open: boolean;
@@ -144,14 +144,9 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       });
 
       // 4. Initialize Gemini directly in the client layout thread
-      const genAI = new GoogleGenAI(apiKey);
+      const genAI = new GoogleGenerativeAI(apiKey);
       // Ensure it targeting stable v1 paths for gemini-1.5-flash
-      const model = genAI.getGenerativeModel(
-        {
-          model: 'gemini-1.5-flash'
-        },
-        { apiVersion: 'v1' }
-      );
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const systemPrompt = `You are an expert financial OCR engine for Kiny Personal Finance OS.
 Analyze the uploaded transaction screenshot, debit alert, or invoice.
