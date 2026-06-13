@@ -145,12 +145,16 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
 
       // 4. Initialize Gemini directly in the client layout thread
       const genAI = new GoogleGenAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          responseMimeType: "application/json" // Force strict machine-readable strings
-        }
-      });
+      // Ensure it targeting stable v1 paths for gemini-1.5-flash
+      const model = genAI.getGenerativeModel(
+        {
+          model: 'gemini-1.5-flash',
+          generationConfig: {
+            responseMimeType: "application/json" // Force strict machine-readable strings
+          }
+        },
+        { apiVersion: 'v1' }
+      );
 
       const systemPrompt = `You are an expert financial OCR engine for Kiny Personal Finance OS.
 Analyze the uploaded transaction screenshot, debit alert, or invoice.
