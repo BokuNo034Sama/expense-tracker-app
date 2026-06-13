@@ -84,7 +84,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   // Helper mapper utility to link AI flags safely to your local budgeting buckets
   const mapCategoryToWorkspace = (suggestion: string): string => {
     const clean = (suggestion || "").toLowerCase();
-    
+
     // Look for utility match
     if (clean.includes("util") || clean.includes("power") || clean.includes("bill")) {
       const match = categories.find(c => {
@@ -93,7 +93,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       });
       if (match) return match.id;
     }
-    
+
     // Look for feeding/groceries match
     if (clean.includes("food") || clean.includes("shop") || clean.includes("feed")) {
       const match = categories.find(c => {
@@ -102,67 +102,54 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       });
       if (match) return match.id;
     }
-    
+
     // Safely default back to basic tracking, strictly avoiding protected family tokens
     const generalMatch = categories.find(c => {
       const name = c.name.toLowerCase();
       return name.includes("general") || name.includes("transport") || c.is_basic;
     });
     if (generalMatch) return generalMatch.id;
-    
+
     return categories[0]?.id || "";
   };
 
   // Replace your existing file/image processing trigger with this explicit function
   const handleDirectReceiptOCR = async (file: File) => {
-    // 1. Instantly clear form states to prevent stale caching leakage
-    setVendorName("INGESTING_IMAGE_DATA...");
-    setAmount("");
-    setMemo("Analyzing receipt tokens...");
-    setCategoryId("");
-    setErrorMsg(null);
-    setIsParsing(true);
+    setFormState((prev: any) => ({
+      ...prev,
+      vendor_name: "CONNECTING_TO_STABLE_V1...",
+      amount: 0,
+      memo_or_note: "Analyzing receipt tokens...",
+      spending_category: ""
+    }));
+    setError(null);
 
     try {
-      // 2. Fetch the Vite-exposed key directly from the browser context
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error("VITE_GEMINI_API_KEY is missing from your configuration context.");
-      }
+      if (!apiKey) throw new Error("VITE_GEMINI_API_KEY missing from system.");
 
-      // 3. Convert image file to pure Base64 inline tracking fragments
       const base64Data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Cleanly strip the data URL prefix headers
-          const pureBase64 = result.split(',')[1];
-          resolve(pureBase64);
-        };
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
         reader.onerror = (err) => reject(err);
         reader.readAsDataURL(file);
       });
 
-      // 4. Initialize Gemini directly in the client layout thread
+      // Clean, direct instantiation matching your newly installed package version
       const genAI = new GoogleGenerativeAI(apiKey);
-      // Ensure it targeting stable v1 paths for gemini-1.5-flash
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-      const systemPrompt = `You are an expert financial OCR engine for Kiny Personal Finance OS.
-Analyze the uploaded transaction screenshot, debit alert, or invoice.
-Extract the transaction date, the exact currency amount as a float, the vendor or beneficiary merchant, and the narration note.
+      const systemPrompt = `You are a financial parsing engine. Analyze this transaction screenshot or receipt.
+    Extract values and return a valid JSON object matching these exact fields.
+    Do not include any conversational commentary or markdown block headers. Return ONLY the raw JSON format:
+    {
+      "vendor": "String identifying the merchant bank or store",
+      "amount": float,
+      "date": "YYYY-MM-DD",
+      "memo": "Clean narration or transaction note",
+      "category_suggestion": "utilities or food or shopping"
+    }`;
 
-Return a pure raw JSON string payload with the fields: vendor, amount, date, memo, and category_suggestion.
-Your response MUST be a valid JSON object matching the following structure:
-{
-  "vendor": "string name",
-  "amount": number,
-  "date": "YYYY-MM-DD",
-  "memo": "string notes",
-  "category_suggestion": "utilities or food or shopping"
-}`;
-
-      // 5. Fire direct API call to Google's edge switches
       const result = await model.generateContent([
         systemPrompt,
         {
@@ -174,40 +161,34 @@ Your response MUST be a valid JSON object matching the following structure:
       ]);
 
       const response = await result.response;
-      const rawText = response.text();
-      
-      // 6. Safe JSON Extraction
-      let cleanedText = rawText.trim();
-      // Defensive regex to clean out markdown code blocks (```json ... ``` or ``` ... ```) if present
-      cleanedText = cleanedText.replace(/^```(?:json)?\s*/i, '');
-      cleanedText = cleanedText.replace(/\s*```$/i, '');
-      const cleanJSON = JSON.parse(cleanedText.trim());
+      let rawText = response.text().trim();
 
-      // 7. Auto-fill the form with genuine transaction properties
-      setVendorName(cleanJSON.vendor || "Unknown Vendor");
-      setAmount(cleanJSON.amount ? cleanJSON.amount.toString() : "0.00");
-      setTransactionDate(cleanJSON.date || new Date().toISOString().split('T')[0]);
-      setMemo(cleanJSON.memo || "Parsed via Kiny AI OCR Engine");
-      setCategoryId(mapCategoryToWorkspace(cleanJSON.category_suggestion));
+      if (rawText.startsWith("```")) {
+        rawText = rawText.replace(/^```json/, "").replace(/^```/, "").replace(/```$/, "").trim();
+      }
+
+      const cleanJSON = JSON.parse(rawText);
+
+      setFormState((prev: any) => ({
+        ...prev,
+        vendor_name: cleanJSON.vendor || "Unknown Merchant",
+        amount: cleanJSON.amount || 0,
+        transaction_date: cleanJSON.date || new Date().toISOString().split('T')[0],
+        memo_or_note: cleanJSON.memo || "Processed via Kiny AI OCR Edge",
+        spending_category: cleanJSON.category_suggestion || ""
+      }));
 
     } catch (err: any) {
       console.error("❌ Kiny Engine Parser Misfire:", err);
-      
-      // CRITICAL DEBUGGER: Print the exact error on the UI
-      const precisionMessage = err.message || JSON.stringify(err);
-      setErrorMsg(`ERROR: ${precisionMessage}`);
-      
-      // Reset inputs on true crash so user isn't stuck with "INGESTING..." strings
-      setVendorName("MANUAL_ENTRY_REQUIRED");
-      setAmount("");
-      setMemo(`Failed: ${precisionMessage.substring(0, 60)}...`);
-      
-      const basicCat = categories.find(c => c.is_basic) || categories[0];
-      if (basicCat) {
-        setCategoryId(basicCat.id);
-      }
-    } finally {
-      setIsParsing(false);
+      setError(`ERROR: [Gemini Execution Fail]: ${err.message || err}`);
+
+      setFormState((prev: any) => ({
+        ...prev,
+        vendor_name: "MANUAL_ENTRY_REQUIRED",
+        amount: 0.00,
+        memo_or_note: "Failed to parse receipt image automatically.",
+        spending_category: "BASIC"
+      }));
     }
   };
 
@@ -252,8 +233,8 @@ Your response MUST be a valid JSON object matching the following structure:
 
     // Auto-detect category from pasted text or parsed vendor name
     const lowerText = val.toLowerCase();
-    const matchedCat = categories.find(c => 
-      lowerText.includes(c.name.toLowerCase()) || 
+    const matchedCat = categories.find(c =>
+      lowerText.includes(c.name.toLowerCase()) ||
       (parsedVendor && parsedVendor.toLowerCase().includes(c.name.toLowerCase()))
     );
     if (matchedCat) {
@@ -305,8 +286,8 @@ Your response MUST be a valid JSON object matching the following structure:
 
     setIsSubmitting(true);
     try {
-      const matchedCategory = categories.find(c => 
-        c.id === categoryId || 
+      const matchedCategory = categories.find(c =>
+        c.id === categoryId ||
         c.name.toLowerCase() === categoryId.toLowerCase()
       );
 
@@ -336,13 +317,13 @@ Your response MUST be a valid JSON object matching the following structure:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-2 border-[var(--color-border)] rounded-[var(--border-radius)] bg-[var(--color-surface)] shadow-[var(--shadow-neubrutalist)] text-[var(--color-text-main)] p-6">
         <DialogHeader className="border-b border-[var(--color-ink)] border-dashed pb-3 mb-4">
-          <DialogTitle 
+          <DialogTitle
             style={{ fontFamily: 'var(--font-display)' }}
             className="text-lg font-extrabold uppercase tracking-wide text-[var(--color-ink)]"
           >
             {expense ? 'EDIT_EXPENSE_LOG' : 'LOG_NEW_EXPENSE'}
           </DialogTitle>
-          <DialogDescription 
+          <DialogDescription
             style={{ fontFamily: 'var(--font-mono)' }}
             className="text-xs text-[var(--color-ink-muted)] uppercase"
           >
@@ -354,7 +335,7 @@ Your response MUST be a valid JSON object matching the following structure:
           {/* Quick Parser */}
           {!expense && (
             <div className="border-2 border-dashed border-[var(--color-ink-muted)] rounded-[var(--border-radius)] p-3 bg-white/5">
-              <label 
+              <label
                 style={{ fontFamily: 'var(--font-mono)' }}
                 className="block text-[10px] font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1"
               >
@@ -368,7 +349,7 @@ Your response MUST be a valid JSON object matching the following structure:
                 className="w-full px-3 py-2 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[10px] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 resize-none font-bold"
               />
 
-              <div 
+              <div
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 onClick={(e) => {
@@ -378,13 +359,13 @@ Your response MUST be a valid JSON object matching the following structure:
                 }}
                 className="mt-3 p-4 flex flex-col items-center justify-center cursor-pointer border-4 border-black bg-[#F4F4F0] dark:bg-zinc-800 text-black dark:text-white shadow-[4px_4px_0px_0px_#000000] rounded-[var(--border-radius)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
               >
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
                   onClick={(e) => e.stopPropagation()}
-                  accept=".jpg,.jpeg,.png" 
-                  className="hidden" 
+                  accept=".jpg,.jpeg,.png"
+                  className="hidden"
                 />
                 {isParsing ? (
                   <div className="flex flex-col items-center justify-center space-y-2 py-2">
@@ -394,8 +375,8 @@ Your response MUST be a valid JSON object matching the following structure:
                     </span>
                   </div>
                 ) : (
-                  <span 
-                    style={{ fontFamily: 'var(--font-mono)' }} 
+                  <span
+                    style={{ fontFamily: 'var(--font-mono)' }}
                     className="text-[10px] font-bold text-center uppercase tracking-wider leading-relaxed"
                   >
                     UPLOAD RECEIPT IMAGE (JPG/JPEG/PNG) — Drag & drop or click to browse bank screenshots.
@@ -407,7 +388,7 @@ Your response MUST be a valid JSON object matching the following structure:
 
           {/* Vendor Name */}
           <div>
-            <label 
+            <label
               style={{ fontFamily: 'var(--font-mono)' }}
               className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
             >
@@ -426,7 +407,7 @@ Your response MUST be a valid JSON object matching the following structure:
 
           {/* Category Select */}
           <div>
-            <label 
+            <label
               style={{ fontFamily: 'var(--font-mono)' }}
               className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
             >
@@ -449,7 +430,7 @@ Your response MUST be a valid JSON object matching the following structure:
 
           {/* Amount field */}
           <div>
-            <label 
+            <label
               style={{ fontFamily: 'var(--font-mono)' }}
               className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
             >
@@ -470,7 +451,7 @@ Your response MUST be a valid JSON object matching the following structure:
 
           {/* Date field */}
           <div>
-            <label 
+            <label
               style={{ fontFamily: 'var(--font-mono)' }}
               className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
             >
@@ -488,7 +469,7 @@ Your response MUST be a valid JSON object matching the following structure:
 
           {/* Note field */}
           <div>
-            <label 
+            <label
               style={{ fontFamily: 'var(--font-mono)' }}
               className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
             >
@@ -505,7 +486,7 @@ Your response MUST be a valid JSON object matching the following structure:
           </div>
 
           {errorMsg && (
-            <div 
+            <div
               style={{ fontFamily: 'var(--font-mono)' }}
               className="bg-[var(--color-surface)] border-l-4 border-l-[var(--color-danger)] border-[var(--border-default)] text-[var(--color-danger)] rounded-[var(--border-radius)] p-3 text-xs font-bold mt-4"
             >
