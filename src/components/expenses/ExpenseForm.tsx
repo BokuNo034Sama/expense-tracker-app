@@ -77,6 +77,63 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [isParsing, setIsParsing] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImageFile = (file: File) => {
+    const validExtensions = ['jpg', 'jpeg', 'png'];
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    if (!fileExt || !validExtensions.includes(fileExt)) {
+      setErrorMsg('Invalid format. Strictly limited to .jpg, .jpeg, and .png.');
+      return;
+    }
+
+    setIsParsing(true);
+    setErrorMsg(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Str = event.target?.result as string;
+      console.log('[KINY] Base64 Image Ingested. Length:', base64Str.length);
+
+      // Simulate ingestion engine OCR parsing
+      setTimeout(() => {
+        setIsParsing(false);
+        setVendor('INGESTED_MERCHANT');
+        setAmount('120.00');
+        setNote('Parsed from screen snapshot');
+        
+        if (categories.length > 0) {
+          setCategoryId(categories[0].id);
+        }
+      }, 1500);
+    };
+
+    reader.onerror = () => {
+      setIsParsing(false);
+      setErrorMsg('Failed to process screenshot file.');
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleImageFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleImageFile(e.target.files[0]);
+    }
+  };
+
   const handlePasteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     if (!val) return;
@@ -112,6 +169,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         setAmount('');
         setNote('');
       }
+      setIsParsing(false);
       setErrorMsg(null);
     }
   }, [open, expense, categories]);
@@ -201,6 +259,36 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
                 style={{ fontFamily: 'var(--font-mono)' }}
                 className="w-full px-3 py-2 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[10px] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 resize-none font-bold"
               />
+
+              <div 
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-3 p-4 flex flex-col items-center justify-center cursor-pointer border-4 border-black bg-[#F4F4F0] dark:bg-zinc-800 text-black dark:text-white shadow-[4px_4px_0px_0px_#000000] rounded-[var(--border-radius)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+              >
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  accept=".jpg,.jpeg,.png" 
+                  className="hidden" 
+                />
+                {isParsing ? (
+                  <div className="flex flex-col items-center justify-center space-y-2 py-2">
+                    <div className="w-6 h-6 border-4 border-black dark:border-white border-t-transparent animate-spin rounded-full"></div>
+                    <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] font-bold tracking-widest uppercase animate-pulse">
+                      INGESTING_IMAGE_DATA...
+                    </span>
+                  </div>
+                ) : (
+                  <span 
+                    style={{ fontFamily: 'var(--font-mono)' }} 
+                    className="text-[10px] font-bold text-center uppercase tracking-wider leading-relaxed"
+                  >
+                    UPLOAD RECEIPT IMAGE (JPG/JPEG/PNG) — Drag & drop or click to browse bank screenshots.
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
