@@ -331,58 +331,58 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Quick Parser */}
           {!expense && (
-  <div className="border-2 border-dashed border-[var(--color-ink-muted)] rounded-[var(--border-radius)] p-3 bg-white/5">
-    <label
-      style={{ fontFamily: 'var(--font-mono)' }}
-      className="block text-[10px] font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1"
-    >
-      ⚡ QUICK_PARSER // PASTE_BANK_ALERT_STRING
-    </label>
-    <textarea
-      placeholder="Paste your SMS/Bank Alert string here to autofill Vendor & Amount (e.g. Debit: NGN6,500.00 at SHOPRITE)"
-      onChange={handlePasteChange}
-      rows={2}
-      style={{ fontFamily: 'var(--font-mono)' }}
-      className="w-full px-3 py-2 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[10px] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 resize-none font-bold"
-    />
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".jpg,.jpeg,.png"
+                className="hidden"
+              />
+              <div className="border-2 border-dashed border-[var(--color-ink-muted)] rounded-[var(--border-radius)] p-3 bg-white/5">
+                <label
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="block text-[10px] font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1"
+                >
+                  ⚡ QUICK_PARSER // PASTE_BANK_ALERT_STRING
+                </label>
+                <textarea
+                  placeholder="Paste your SMS/Bank Alert string here to autofill Vendor & Amount (e.g. Debit: NGN6,500.00 at SHOPRITE)"
+                  onChange={handlePasteChange}
+                  rows={2}
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="w-full px-3 py-2 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[10px] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 resize-none font-bold"
+                />
 
-    {/* HIDDEN INPUT: Placed safely outside the clickable container row */}
-    <input
-      type="file"
-      ref={fileInputRef}
-      onChange={handleFileChange}
-      accept=".jpg,.jpeg,.png"
-      className="hidden"
-    />
-
-    <div
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        fileInputRef.current?.click();
-      }}
-      className="mt-3 p-4 flex flex-col items-center justify-center cursor-pointer border-4 border-black bg-[#F4F4F0] dark:bg-zinc-800 text-black dark:text-white shadow-[4px_4px_0px_0px_#000000] rounded-[var(--border-radius)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
-    >
-      {isParsing ? (
-        <div className="flex flex-col items-center justify-center space-y-2 py-2">
-          <div className="w-6 h-6 border-4 border-black dark:border-white border-t-transparent animate-spin rounded-full"></div>
-          <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] font-bold tracking-widest uppercase animate-pulse">
-            INGESTING_IMAGE_DATA...
-          </span>
-        </div>
-      ) : (
-        <span
-          style={{ fontFamily: 'var(--font-mono)' }}
-          className="text-[10px] font-bold text-center uppercase tracking-wider leading-relaxed"
-        >
-          UPLOAD RECEIPT IMAGE (JPG/JPEG/PNG) — Drag & drop or click to browse bank screenshots.
-        </span>
-      )}
-    </div>
-  </div>
-)}
+                <div
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  className="mt-3 p-4 flex flex-col items-center justify-center cursor-pointer border-4 border-black bg-[#F4F4F0] dark:bg-zinc-800 text-black dark:text-white shadow-[4px_4px_0px_0px_#000000] rounded-[var(--border-radius)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+                >
+                  {isParsing ? (
+                    <div className="flex flex-col items-center justify-center space-y-2 py-2">
+                      <div className="w-6 h-6 border-4 border-black dark:border-white border-t-transparent animate-spin rounded-full"></div>
+                      <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] font-bold tracking-widest uppercase animate-pulse">
+                        INGESTING_IMAGE_DATA...
+                      </span>
+                    </div>
+                  ) : (
+                    <span
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className="text-[10px] font-bold text-center uppercase tracking-wider leading-relaxed"
+                    >
+                      UPLOAD RECEIPT IMAGE (JPG/JPEG/PNG) — Drag & drop or click to browse bank screenshots.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
           <div>
             <label
