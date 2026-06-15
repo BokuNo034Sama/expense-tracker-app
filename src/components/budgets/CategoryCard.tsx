@@ -14,13 +14,15 @@ interface CategoryCardProps {
 export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
   const deleteCategory = useAppStore(s => s.deleteCategory);
   const updateCategory = useAppStore(s => s.updateCategory);
-  const expenses = useAppStore(s => s.expenses);
+  
+  // 🟢 Defensive Guard: Guarantee expenses is an array at the extraction layer
+  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses : []);
 
   const [isExpanded, setIsExpanded] = useState(false);
-  const [newLimit, setNewLimit] = useState(String(category.budget_limit || 0));
+  const [newLimit, setNewLimit] = useState(String(category?.budget_limit || 0));
   const [submitting, setSubmitting] = useState(false);
 
-  const limit = Number(category.budget_limit);
+  const limit = Number(category?.budget_limit || 0);
   const percentage = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
   const isOver = limit > 0 && spent > limit;
 
@@ -28,10 +30,12 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
-  const categoryExpenses = expenses.filter(e => e.category_id === category.id);
+  // Safe evaluation loop
+  const categoryExpenses = expenses.filter(e => e && e.category_id === category?.id);
 
   const handleUpdateLimit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!category?.id) return;
     setSubmitting(true);
     try {
       await updateCategory(category.id, { budget_limit: Number(newLimit) });
@@ -42,6 +46,8 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
       setSubmitting(false);
     }
   };
+
+  if (!category) return null;
 
   return (
     <BentoCard className="flex flex-col justify-between h-auto hover:scale-[1.01] p-0 overflow-hidden">
@@ -127,7 +133,7 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
         </div>
       </div>
 
-      {/* Main card body (always visible, holds spending figures) */}
+      {/* Main card body */}
       <div className="p-3">
         <div style={{ fontFamily: 'var(--font-mono)' }} className="text-xl font-extrabold text-[var(--color-ink)]">
           {formatNaira(spent)}
