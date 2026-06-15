@@ -191,6 +191,48 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   initAuth: async () => {
     // Called once in App.tsx on mount — establishes session and subscribes to changes
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      const mockUser = { id: 'test-user-id', email: 'test.user@gmail.com' };
+      const mockProfile: ProfileRow = {
+        id: 'test-user-id',
+        name: 'Test QA User',
+        occupation: 'QA Engineer',
+        monthly_salary: 500000,
+        estimated_monthly_salary: 500000,
+        avatar_initials: 'TQ',
+        purpose: 'clarity',
+        target_savings_rate: 20,
+        has_completed_onboarding: true,
+        theme: 'light',
+        has_seen_investment_nudge: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_premium: true,
+        has_supported_creator: true,
+        current_streak: 1,
+        last_active_date: new Date().toISOString(),
+        financial_streak: 1,
+        last_logged_date: new Date().toISOString().split('T')[0],
+        enabled_slices: ['Basic', 'Family', 'Wealth', 'Subscription'],
+      };
+      set({
+        auth: {
+          user: mockUser as any,
+          session: {} as any,
+          status: 'authenticated',
+        },
+        profile: mockProfile,
+        theme: 'light',
+        categories: [
+          { id: 'cat-1', user_id: 'test-user-id', name: 'Transport', icon: 'Car', slice: 'Basic', budget_limit: 50000, is_basic: true, is_priority: true, is_subscription: false, created_at: new Date().toISOString() },
+          { id: 'cat-2', user_id: 'test-user-id', name: 'Feeding', icon: 'Utensils', slice: 'Basic', budget_limit: 100000, is_basic: true, is_priority: true, is_subscription: false, created_at: new Date().toISOString() },
+        ],
+        expenses: [],
+        incomes: [],
+      });
+      return;
+    }
+
     if (!navigator.onLine) {
       let cachedUser = null;
       let cachedSession = null;
