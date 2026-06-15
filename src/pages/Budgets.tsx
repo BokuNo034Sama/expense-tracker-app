@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
-import { SliceSection } from "@/components/budgets/SliceSection";
+import { CategoryCard } from "@/components/budgets/CategoryCard";
 import { CategoryForm } from "@/components/budgets/CategoryForm";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { BentoCard } from "@/components/shared/BentoCard";
@@ -73,9 +73,6 @@ export default function Budgets() {
     : ['Basic', 'Family', 'Wealth', 'Subscription']) as Slice[];
 
   const targetSlices = Array.isArray(slices) ? slices : [];
-  const activeSlices = activeSliceFilter === 'all'
-    ? targetSlices
-    : targetSlices.filter(s => s === activeSliceFilter);
 
   // Filtered expenses based on selected categories/slices
   const filteredExpenses = monthlyExpenses.filter(e => {
@@ -83,6 +80,12 @@ export default function Budgets() {
     if (activeSliceFilter === 'all') return true;
     const cat = categories.find(c => c.id === e.category_id);
     return cat?.slice === activeSliceFilter;
+  });
+
+  const filteredCategories = categories.filter(c => {
+    if (!c) return false;
+    if (activeSliceFilter === 'all') return true;
+    return c.slice === activeSliceFilter;
   });
 
   // Calculate totals for Trends Breakdown
@@ -250,7 +253,7 @@ export default function Budgets() {
           {/* Budget Metric Bento Cards Section */}
           {!showTrends && (
             <div className="space-y-6">
-              {categories.length === 0 ? (
+              {filteredCategories.length === 0 ? (
                 <BentoCard hoverEffect={false} className="space-y-4 text-center py-8 flex flex-col items-center border-4 border-black rounded-none bg-white dark:bg-zinc-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                   <h3 
                     style={{ fontFamily: 'var(--font-display)' }}
@@ -266,14 +269,13 @@ export default function Budgets() {
                   </p>
                 </BentoCard>
               ) : (
-                <div className="space-y-6">
-                  {activeSlices.map(slice => (
-                    <SliceSection
-                      key={slice}
-                      slice={slice}
-                      categories={categories}
-                      categorySpends={categorySpends}
-                      onEditCategory={handleEdit}
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredCategories.map(cat => (
+                    <CategoryCard
+                      key={cat.id}
+                      category={cat}
+                      spent={categorySpends[cat.id] || 0}
+                      onEdit={handleEdit}
                     />
                   ))}
                 </div>
