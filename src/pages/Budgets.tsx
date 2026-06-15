@@ -7,8 +7,9 @@ import { BentoCard } from "@/components/shared/BentoCard";
 import type { Category, Slice } from "@/store/types";
 
 export default function Budgets() {
-  const categories = useAppStore(s => s.categories);
-  const expenses = useAppStore(s => s.expenses);
+  // 🟢 Defensive Guard: Guarantee state collections are always valid arrays before components try to read them
+  const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories : []) as Category[];
+  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses : []) as any[];
   const profile = useAppStore(s => s.profile);
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -16,13 +17,15 @@ export default function Budgets() {
 
   // Filter current month expenses (date prefix: "YYYY-MM")
   const currentMonthPrefix = new Date().toISOString().substring(0, 7);
-  const monthlyExpenses = expenses.filter(e => e.date.startsWith(currentMonthPrefix));
+  
+  // Safe filtering with a string-type check on the expense date property
+  const monthlyExpenses = expenses.filter(e => e?.date && typeof e.date === "string" && e.date.startsWith(currentMonthPrefix));
 
   // Compute spend per category
   const categorySpends: { [id: string]: number } = {};
   monthlyExpenses.forEach(e => {
-    if (e.category_id) {
-      categorySpends[e.category_id] = (categorySpends[e.category_id] || 0) + Number(e.amount);
+    if (e && e.category_id) {
+      categorySpends[e.category_id] = (categorySpends[e.category_id] || 0) + Number(e.amount || 0);
     }
   });
 
@@ -36,7 +39,10 @@ export default function Budgets() {
     setIsFormOpen(true);
   };
 
-  const slices = (profile?.enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription']) as Slice[];
+  // Safe fallback array cast if the profile configuration column hasn't updated or synced locally yet
+  const slices = (profile?.enabled_slices && Array.isArray(profile.enabled_slices)
+    ? profile.enabled_slices 
+    : ['Basic', 'Family', 'Wealth', 'Subscription']) as Slice[];
 
   return (
     <motion.div
