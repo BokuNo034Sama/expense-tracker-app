@@ -240,6 +240,9 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   };
 
   useEffect(() => {
+    // FIX: If an image is currently parsing, block the reset lifecycle from executing
+    if (isParsing) return;
+
     if (open) {
       if (expense) {
         setTransactionDate(expense.date);
@@ -254,10 +257,9 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         setAmount('');
         setMemo('');
       }
-      setIsParsing(false);
       setErrorMsg(null);
     }
-  }, [open, expense, categories]);
+  }, [open, expense, categories, isParsing]); // Add isParsing to the dependency array safely, [open, expense, categories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
