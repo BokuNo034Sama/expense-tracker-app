@@ -37,38 +37,54 @@ const updateLoggingStreak = async (get: () => AppStore) => {
   const profile = get().profile;
   if (!profile) return;
 
+  const expenses = get().expenses || [];
+  if (expenses.length === 0) {
+    await get().updateProfile({
+      current_streak: 0,
+      financial_streak: 0,
+    });
+    return;
+  }
+
+  // 1. Extract unique expense dates (e.date), turn them into local Date objects, and sort them descending (newest to oldest).
+  const uniqueDates = Array.from(new Set(expenses.map(e => e.date)))
+    .map(d => parseLocalDate(d))
+    .sort((a, b) => b.getTime() - a.getTime());
+
   const todayStr = getLocalDateString();
-  const lastLoggedStr = profile.last_logged_date;
+  const todayDate = parseLocalDate(todayStr);
 
-  let newCurrentStreak = profile.current_streak || 0;
-  let newFinancialStreak = profile.financial_streak || 0;
+  // 2. Validate if the latest entry matches either today's date context or yesterday's date context.
+  // If the gap is greater than 1 day, reset both current_streak and financial_streak metrics to 0.
+  const daysSinceLastExpense = Math.round((todayDate.getTime() - uniqueDates[0].getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (daysSinceLastExpense > 1) {
+    await get().updateProfile({
+      current_streak: 0,
+      financial_streak: 0,
+    });
+    return;
+  }
 
-  if (!lastLoggedStr) {
-    newCurrentStreak = 1;
-    newFinancialStreak = 1;
-  } else {
-    const lastLoggedDate = parseLocalDate(lastLoggedStr);
-    const todayDate = parseLocalDate(todayStr);
-
-    const diffTime = todayDate.getTime() - lastLoggedDate.getTime();
+  // 3. If valid, loop through the sorted unique date list arrays and increment the counter for every sequential back-to-back day match (diffDays === 1).
+  // Break the loop on any gap configuration greater than 1 day.
+  let computedStreak = 1;
+  for (let i = 0; i < uniqueDates.length - 1; i++) {
+    const diffTime = uniqueDates[i].getTime() - uniqueDates[i + 1].getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 1) {
-      newCurrentStreak += 1;
-      newFinancialStreak += 1;
+      computedStreak++;
     } else if (diffDays > 1) {
-      newCurrentStreak = 1;
-      newFinancialStreak = 1;
-    } else if (diffDays === 0) {
-      if (newCurrentStreak === 0) newCurrentStreak = 1;
-      if (newFinancialStreak === 0) newFinancialStreak = 1;
+      break;
     }
   }
 
+  // 4. Pass the final computed sequence score to the profile patch update routine.
   await get().updateProfile({
     last_logged_date: todayStr,
-    current_streak: newCurrentStreak,
-    financial_streak: newFinancialStreak,
+    current_streak: computedStreak,
+    financial_streak: computedStreak,
   });
 };
 

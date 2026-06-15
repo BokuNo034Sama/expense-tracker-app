@@ -32,13 +32,16 @@ vi.mock('../lib/supabaseClient', () => {
       from: vi.fn().mockImplementation((table) => {
         if (table === 'expenses' || table === 'incomes') {
           return {
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: { id: '123', amount: 100, date: '2026-06-12', vendor: 'Test', category_id: null, note: null },
-                  error: null
+            insert: vi.fn().mockImplementation((payload) => {
+              const data = Array.isArray(payload) ? payload[0] : payload;
+              return {
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: '123', amount: 100, date: '2026-06-12', vendor: 'Test', category_id: null, note: null, ...data },
+                    error: null
+                  })
                 })
-              })
+              };
             })
           };
         }
@@ -117,13 +120,14 @@ describe('useAppStore', () => {
 
     // Verify the expense was successfully added to local store state
     expect(useAppStore.getState().expenses).toHaveLength(1);
-    expect(useAppStore.getState().expenses[0].vendor).toBe('Test');
+    expect(useAppStore.getState().expenses[0].vendor).toBe('Test Vendor');
   });
 
   describe('Streak Tracking', () => {
     beforeEach(() => {
       vi.useFakeTimers();
       mockProfileUpdateError = null;
+      useAppStore.setState({ expenses: [], incomes: [] });
       mockProfileData = {
         id: 'test-user-id',
         name: 'Test User',
