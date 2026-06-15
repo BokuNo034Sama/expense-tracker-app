@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import type { Expense } from '../../store/types';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface ExpenseFormProps {
   open: boolean;
@@ -109,86 +108,101 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   };
 
   const handleDirectReceiptOCR = async (file: File) => {
-    setVendorName("CONNECTING_TO_STABLE_V1...");
-    setAmount("");
-    setMemo("Analyzing receipt tokens...");
-    setCategoryId("");
-    setErrorMsg(null);
-    setIsParsing(true);
+  setVendorName("CONNECTING_TO_RAW_EDGE...");
+  setAmount("");
+  setMemo("Analyzing receipt tokens...");
+  setCategoryId("");
+  setErrorMsg(null);
+  setIsParsing(true);
 
-    try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) throw new Error("VITE_GEMINI_API_KEY missing from system.");
+  try {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) throw new Error("VITE_GEMINI_API_KEY missing from system.");
 
-      // HARDENED FIX: Read layout binary data chunk to determine valid MIME type parameters
-      let safeMimeType = file.type;
-      if (!safeMimeType) {
-        const ext = file.name.split('.').pop()?.toLowerCase();
-        safeMimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
-      }
-
-      const base64Data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(',')[1]);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-      const systemPrompt = `You are a financial parsing engine. Analyze this transaction screenshot or receipt.
-      Extract values and return a valid JSON object matching these exact fields.
-      Do not include any conversational commentary or markdown block headers like \`\`\`json. Return ONLY the raw JSON format string:
-      {
-        "vendor": "String identifying the merchant bank or store",
-        "amount": float,
-        "date": "YYYY-MM-DD",
-        "memo": "Clean narration or transaction note",
-        "category_suggestion": "utilities or food or shopping"
-      }`;
-
-      const result = await model.generateContent([
-        systemPrompt,
-        {
-          inlineData: {
-            data: base64Data,
-            mimeType: safeMimeType
-          }
-        }
-      ]);
-
-      const response = await result.response;
-      let rawText = response.text().trim();
-
-      if (rawText.startsWith("```")) {
-        rawText = rawText.replace(/^```json/, "").replace(/^```/, "").replace(/```$/, "").trim();
-      }
-
-      const cleanJSON = JSON.parse(rawText);
-
-      setVendorName(cleanJSON.vendor || "Unknown Merchant");
-      setAmount(cleanJSON.amount ? cleanJSON.amount.toString() : "0.00");
-      setTransactionDate(cleanJSON.date || new Date().toISOString().split('T')[0]);
-      setMemo(cleanJSON.memo || "Processed via Kiny AI OCR Edge");
-      setCategoryId(mapCategoryToWorkspace(cleanJSON.category_suggestion));
-
-    } catch (err: any) {
-      console.error("❌ Kiny Engine Parser Misfire:", err);
-      setErrorMsg(`ERROR: [Gemini Execution Fail]: ${err.message || err}`);
-
-      setVendorName("MANUAL_ENTRY_REQUIRED");
-      setAmount("");
-      setMemo("Failed to parse receipt image automatically.");
-
-      const basicCat = categories.find(c => c.is_basic) || categories[0];
-      if (basicCat) {
-        setCategoryId(basicCat.id);
-      }
-    } finally {
-      setIsParsing(false);
+    let safeMimeType = file.type;
+    if (!safeMimeType) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      safeMimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
     }
-  };
+
+    const base64Data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+
+    const systemPrompt = `You are a financial parsing engine. Analyze this transaction screenshot or receipt.
+    Extract values and return a valid JSON object matching these exact fields.
+    Do not include any conversational commentary or markdown block headers like \`\`\`json. Return ONLY the raw JSON format string:
+    {
+      "vendor": "String identifying the merchant bank or store",
+      "amount": float,
+      "date": "YYYY-MM-DD",
+      "memo": "Clean narration or transaction note",
+      "category_suggestion": "utilities or food or shopping"
+    }`;
+
+    // ─── PURE REST FETCH CALL TO STABLE PRODUCTION GATEWAY ───────────────────
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: systemPrompt },
+            { 
+              inlineData: { 
+                mimeType: safeMimeType, 
+                data: base64Data 
+              } 
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Gemini Gate Failure [${res.status}]: ${errText}`);
+    }
+
+    const data = await res.json();
+    
+    // Extract the raw text stream safely from the standard response tree object
+    let rawText = data.candidates[0].content.parts[0].text.trim();
+
+    // Secondary parsing cleanup just in case the model wraps it anyway
+    if (rawText.startsWith("```")) {
+      rawText = rawText.replace(/^```json/, "").replace(/^```/, "").replace(/```$/, "").trim();
+    }
+
+    const cleanJSON = JSON.parse(rawText);
+
+    setVendorName(cleanJSON.vendor || "Unknown Merchant");
+    setAmount(cleanJSON.amount ? cleanJSON.amount.toString() : "0.00");
+    setTransactionDate(cleanJSON.date || new Date().toISOString().split('T')[0]);
+    setMemo(cleanJSON.memo || "Processed via Kiny AI OCR Edge");
+    setCategoryId(mapCategoryToWorkspace(cleanJSON.category_suggestion));
+
+  } catch (err: any) {
+    console.error("❌ Kiny Engine Parser Misfire:", err);
+    setErrorMsg(`ERROR: [REST Execution Fail]: ${err.message || err}`);
+
+    setVendorName("MANUAL_ENTRY_REQUIRED");
+    setAmount("");
+    setMemo("Failed to parse receipt image automatically.");
+    
+    const basicCat = categories.find(c => c.is_basic) || categories[0];
+    if (basicCat) {
+      setCategoryId(basicCat.id);
+    }
+  } finally {
+    setIsParsing(false);
+  }
+};
 
   const handleImageFile = (file: File) => {
     const validExtensions = ['jpg', 'jpeg', 'png'];
