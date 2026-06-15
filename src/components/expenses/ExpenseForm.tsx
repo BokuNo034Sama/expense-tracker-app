@@ -273,7 +273,8 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       }
       setErrorMsg(null);
     }
-  }, [open, expense, categories, isParsing]); // Add isParsing to the dependency array safely, [open, expense, categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, expense]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
