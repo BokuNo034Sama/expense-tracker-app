@@ -1,15 +1,26 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ExpenseTable } from "@/components/expenses/ExpenseTable";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
-import { BentoCard } from "@/components/shared/BentoCard";
 import { useAppStore } from "@/store/useAppStore";
-import type { Expense } from "@/store/types";
+import type { Expense, Category } from "@/store/types";
+
+const customStyles = `
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
 
 export default function Expenses() {
   const expenses = useAppStore(s => s.expenses);
+  const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories : []) as Category[];
   const filterMonth = useAppStore(s => s.filterMonth);
   const setFilterMonth = useAppStore(s => s.setFilterMonth);
+  
+  const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
@@ -33,83 +44,147 @@ export default function Expenses() {
     monthOptions.push({ value, label });
   }
 
+  const targetExpenses = Array.isArray(expenses) ? expenses : [];
+  
+  // Filter expenses by month first
+  const monthlyExpenses = targetExpenses.filter(e => {
+    if (!e) return false;
+    if (filterMonth === 'all') return true;
+    return e.date && typeof e.date === "string" && e.date.startsWith(filterMonth);
+  });
+
+  // Filter expenses by category next
+  const filteredExpenses = monthlyExpenses.filter(e => {
+    if (!e) return false;
+    if (filterCategory === 'all') return true;
+    return e.category_id === filterCategory;
+  });
+
+  const recordCount = filteredExpenses.length;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="w-full flex justify-center py-2 px-1"
     >
-      <div className="flex justify-between items-start sm:items-center gap-4 flex-wrap shrink-0">
-        <div className="flex flex-col items-start gap-1">
-          <h1 
-            style={{ fontFamily: 'var(--font-display)' }}
-            className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-ink)] uppercase"
+      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
+
+      <div className="w-full max-w-md flex flex-col h-[calc(100vh-140px)] border-4 border-black bg-[#F4F4F0] dark:bg-zinc-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black dark:text-white rounded-none overflow-hidden relative">
+        
+        {/* 1. FIXED COCKPIT (Top 30%) */}
+        <div className="sticky top-0 z-30 bg-[#F4F4F0] dark:bg-zinc-900 border-b-4 border-black p-3 space-y-3 select-none shrink-0">
+          
+          {/* Row 1: The Filter Strip */}
+          <div 
+            className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            TRANSACTIONS
-          </h1>
-          <p 
-            style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-xs text-[var(--color-ink-muted)] uppercase"
+            {/* Month Picker Select */}
+            <div className="relative shrink-0">
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="appearance-none pr-7 pl-3 py-1 bg-white text-black border-2 border-black rounded-none shadow-[2px_2px_0px_0px_#000000] text-[10px] font-mono font-bold focus:outline-none cursor-pointer uppercase"
+              >
+                {monthOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+                <option value="all">ALL TIME</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-black text-[9px]">
+                ▼
+              </div>
+            </div>
+
+            {/* Category Picker Select */}
+            <div className="relative shrink-0">
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="appearance-none pr-7 pl-3 py-1 bg-white text-black border-2 border-black rounded-none shadow-[2px_2px_0px_0px_#000000] text-[10px] font-mono font-bold focus:outline-none cursor-pointer uppercase"
+              >
+                <option value="all">ALL CATEGORY ▼</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-black text-[9px]">
+                ▼
+              </div>
+            </div>
+
+            {/* Record Counter Badge */}
+            <div className="px-2.5 py-1 bg-black text-[#C6EF4E] font-mono font-bold text-[9px] uppercase border-2 border-black rounded-none shrink-0 cursor-default">
+              {recordCount} {recordCount === 1 ? 'RECORD' : 'RECORDS'}
+            </div>
+          </div>
+
+          {/* Row 2: Primary Action Block */}
+          <button 
+            onClick={handleCreate}
+            className="w-full bg-[#C6EF4E] text-black text-[10px] font-mono font-black py-2.5 px-3 border-4 border-black shadow-[4px_4px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all uppercase text-center rounded-none cursor-pointer"
           >
-            Manage and audit your logged expenditures
-          </p>
+            + ADD NEW EXPENDITURE
+          </button>
         </div>
 
-        {/* Dynamic Month/Year Dropdown Filter */}
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="text-[var(--color-ink-muted)] uppercase hidden sm:inline">VIEW_MONTH:</span>
-          <select
-            value={filterMonth}
-            onChange={(e) => setFilterMonth(e.target.value)}
-            className="border-2 border-black bg-white dark:bg-zinc-900 text-black dark:text-white p-2 font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase cursor-pointer outline-none rounded-[var(--border-radius)] transition-transform active:translate-y-[1px]"
-          >
-            {monthOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-            <option value="all">ALL_TIME</option>
-          </select>
+        {/* 2. FLUID SCROLL TRENCH (Bottom 70%) */}
+        <div className="flex-1 overflow-y-auto p-3 bg-[#F4F4F0] dark:bg-zinc-900 space-y-4">
+          
+          {/* Sticky boundary column legend headers */}
+          <div className="sticky top-0 z-20 bg-black text-[#C6EF4E] text-[9px] font-mono font-bold px-3 py-2 flex justify-between uppercase border-2 border-black rounded-none shadow-[2px_2px_0px_0px_#000000]">
+            <span className="w-1/4 text-left">DATE</span>
+            <span className="w-1/4 text-left">VENDOR</span>
+            <span className="w-1/4 text-left">CATEGORY</span>
+            <span className="w-1/4 text-right">AMOUNT</span>
+          </div>
+
+          {/* Transaction Item Rows list */}
+          <div className="border-4 border-black bg-white dark:bg-zinc-800 p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-none space-y-1">
+            {filteredExpenses.length === 0 ? (
+              <div className="text-center py-8 text-[10px] font-mono text-gray-500 uppercase">
+                NO_EXPENDITURES_RECORDED
+              </div>
+            ) : (
+              filteredExpenses.map((exp: Expense) => {
+                if (!exp) return null;
+                const matchedCat = categories.find(c => c.id === exp.category_id);
+                return (
+                  <div 
+                    key={exp.id} 
+                    onClick={() => handleEdit(exp)}
+                    className="flex justify-between items-center text-[10px] font-mono py-2.5 px-1 border-b border-black/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <span className="w-1/4 text-left font-bold text-gray-400">
+                      {exp.date ? exp.date.substring(5) : 'N/A'}
+                    </span>
+                    <span className="w-1/4 text-left font-black uppercase truncate text-black dark:text-white" title={exp.vendor}>
+                      {exp.vendor || 'UNKNOWN'}
+                    </span>
+                    <span className="w-1/4 text-left truncate">
+                      <span className="bg-[#C6EF4E]/20 text-black dark:text-white px-1.5 py-0.5 border border-black/20 rounded-none font-bold text-[8px] uppercase">
+                        {matchedCat?.name || 'UNGROUPED'}
+                      </span>
+                    </span>
+                    <span className="w-1/4 text-right font-black text-black dark:text-white">
+                      ₦{Number(exp.amount || 0).toLocaleString('en-NG')}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
+
       </div>
 
-      {expenses.length === 0 ? (
-        <BentoCard hoverEffect={false} className="space-y-6 max-w-2xl mx-auto text-center py-12 flex flex-col items-center">
-          <div className="space-y-3">
-            <h3 
-              style={{ fontFamily: 'var(--font-display)' }}
-              className="text-xl font-extrabold uppercase text-[var(--color-ink)]"
-            >
-              NO_RECEIPTS_YET?_GOD_WHEN?
-            </h3>
-            <p 
-              style={{ fontFamily: 'var(--font-mono)' }}
-              className="text-xs text-[var(--color-ink-muted)] leading-relaxed uppercase max-w-lg mx-auto"
-            >
-              Every legendary wealth run starts with a single log. Whether it's a ₦1,500 data top-up, quick transport, or heavy infrastructure, track it right now to activate your automated advice metrics.
-            </p>
-          </div>
-          <button
-            onClick={handleCreate}
-            style={{ fontFamily: 'var(--font-display)' }}
-            className="px-5 py-3 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-2"
-          >
-            [ + DROP_A_RECEIPT ]
-          </button>
-        </BentoCard>
-      ) : (
-        <div className="space-y-6">
-          <ExpenseTable onEdit={handleEdit} />
-          <button
-            onClick={handleCreate}
-            className="bg-[var(--color-brand-primary)] border-2 border-[var(--color-border)] font-mono font-bold p-3 shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] transition-all duration-100 w-full block text-center mt-6 text-[#000000] uppercase text-xs rounded-[var(--border-radius)] cursor-pointer"
-          >
-            [ + REPORT_NEW_EXPENDITURE ]
-          </button>
-        </div>
-      )}
-
+      {/* Expense Form Modal */}
       <ExpenseForm
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
