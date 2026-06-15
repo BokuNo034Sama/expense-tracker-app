@@ -172,9 +172,10 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
       setMemo(cleanJSON.memo || "Processed via Kiny AI OCR Edge");
       setCategoryId(mapCategoryToWorkspace(cleanJSON.category_suggestion));
 
-    } catch (err: any) {
-      console.error("❌ Kiny Engine Parser Misfire:", err);
-      setErrorMsg(`ERROR: [REST Execution Fail]: ${err.message || err}`);
+    } catch (err) {
+      const error = err as Error;
+      console.error("❌ Kiny Engine Parser Misfire:", error);
+      setErrorMsg(`ERROR: [REST Execution Fail]: ${error.message || String(error)}`);
 
       setVendorName("MANUAL_ENTRY_REQUIRED");
       setAmount("");

@@ -4,12 +4,12 @@ import { useAppStore } from "@/store/useAppStore";
 import { SliceSection } from "@/components/budgets/SliceSection";
 import { CategoryForm } from "@/components/budgets/CategoryForm";
 import { BentoCard } from "@/components/shared/BentoCard";
-import type { Category, Slice } from "@/store/types";
+import type { Category, Slice, Expense } from "@/store/types";
 
 export default function Budgets() {
   // 🟢 Defensive Guard: Guarantee state collections are always valid arrays before components try to read them
   const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories : []) as Category[];
-  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses : []) as any[];
+  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses : []) as Expense[];
   const profile = useAppStore(s => s.profile);
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);

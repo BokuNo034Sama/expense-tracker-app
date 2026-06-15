@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { User, Session } from '@supabase/supabase-js';
 import { supabase, getUID } from '../lib/supabaseClient';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
@@ -217,8 +218,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       };
       set({
         auth: {
-          user: mockUser as any,
-          session: {} as any,
+          user: mockUser as unknown as User,
+          session: {} as unknown as Session,
           status: 'authenticated',
         },
         profile: mockProfile,
