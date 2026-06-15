@@ -108,101 +108,86 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   };
 
   const handleDirectReceiptOCR = async (file: File) => {
-  setVendorName("CONNECTING_TO_RAW_EDGE...");
-  setAmount("");
-  setMemo("Analyzing receipt tokens...");
-  setCategoryId("");
-  setErrorMsg(null);
-  setIsParsing(true);
+    setVendorName("CONNECTING_TO_RAW_EDGE...");
+    setAmount("");
+    setMemo("Analyzing receipt tokens...");
+    setCategoryId("");
+    setErrorMsg(null);
+    setIsParsing(true);
 
-  try {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) throw new Error("VITE_GEMINI_API_KEY missing from system.");
+    try {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) throw new Error("VITE_OPENAI_API_KEY missing from system.");
 
-    let safeMimeType = file.type;
-    if (!safeMimeType) {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      safeMimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
-    }
+      let safeMimeType = file.type;
+      if (!safeMimeType) {
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        safeMimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+      }
 
-    const base64Data = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(',')[1]);
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
-    });
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
 
-    const systemPrompt = `You are a financial parsing engine. Analyze this transaction screenshot or receipt.
-    Extract values and return a valid JSON object matching these exact fields.
-    Do not include any conversational commentary or markdown block headers like \`\`\`json. Return ONLY the raw JSON format string:
-    {
-      "vendor": "String identifying the merchant bank or store",
-      "amount": float,
-      "date": "YYYY-MM-DD",
-      "memo": "Clean narration or transaction note",
-      "category_suggestion": "utilities or food or shopping"
-    }`;
-
-    // ─── PURE REST FETCH CALL TO STABLE PRODUCTION GATEWAY ───────────────────
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: systemPrompt },
-            { 
-              inlineData: { 
-                mimeType: safeMimeType, 
-                data: base64Data 
-              } 
+      // ─── NATIVE OPENAI REST FETCH WITH PICTURE BINARY PAYLOAD ───────────────────
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          response_format: { type: 'json_object' },
+          messages: [
+            {
+              role: 'system',
+              content: `You are a financial parsing engine. Analyze this transaction screenshot or receipt.Extract values and return a valid JSON object matching these exact fields:{  "vendor": "String identifying the merchant bank or store",  "amount": float,  "date": "YYYY-MM-DD",  "memo": "Clean narration or transaction note",  "category_suggestion": "utilities or food or shopping"}`
+            },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Extract the transaction details from this image.' },
+                { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${base64Data}` } }
+              ]
             }
           ]
-        }]
-      })
-    });
+        })
+      });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Gemini Gate Failure [${res.status}]: ${errText}`);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`OpenAI ${res.status}: ${errText}`);
+      }
+
+      const data = await res.json();
+      const cleanJSON = JSON.parse(data.choices[0].message.content);
+
+      setVendorName(cleanJSON.vendor || "Unknown Merchant");
+      setAmount(cleanJSON.amount ? cleanJSON.amount.toString() : "0.00");
+      setTransactionDate(cleanJSON.date || new Date().toISOString().split('T')[0]);
+      setMemo(cleanJSON.memo || "Processed via Kiny AI OCR Edge");
+      setCategoryId(mapCategoryToWorkspace(cleanJSON.category_suggestion));
+
+    } catch (err: any) {
+      console.error("❌ Kiny Engine Parser Misfire:", err);
+      setErrorMsg(`ERROR: [REST Execution Fail]: ${err.message || err}`);
+
+      setVendorName("MANUAL_ENTRY_REQUIRED");
+      setAmount("");
+      setMemo("Failed to parse receipt image automatically.");
+      
+      const basicCat = categories.find(c => c.is_basic) || categories[0];
+      if (basicCat) {
+        setCategoryId(basicCat.id);
+      }
+    } finally {
+      setIsParsing(false);
     }
-
-    const data = await res.json();
-    
-    // Extract the raw text stream safely from the standard response tree object
-    let rawText = data.candidates[0].content.parts[0].text.trim();
-
-    // Secondary parsing cleanup just in case the model wraps it anyway
-    if (rawText.startsWith("```")) {
-      rawText = rawText.replace(/^```json/, "").replace(/^```/, "").replace(/```$/, "").trim();
-    }
-
-    const cleanJSON = JSON.parse(rawText);
-
-    setVendorName(cleanJSON.vendor || "Unknown Merchant");
-    setAmount(cleanJSON.amount ? cleanJSON.amount.toString() : "0.00");
-    setTransactionDate(cleanJSON.date || new Date().toISOString().split('T')[0]);
-    setMemo(cleanJSON.memo || "Processed via Kiny AI OCR Edge");
-    setCategoryId(mapCategoryToWorkspace(cleanJSON.category_suggestion));
-
-  } catch (err: any) {
-    console.error("❌ Kiny Engine Parser Misfire:", err);
-    setErrorMsg(`ERROR: [REST Execution Fail]: ${err.message || err}`);
-
-    setVendorName("MANUAL_ENTRY_REQUIRED");
-    setAmount("");
-    setMemo("Failed to parse receipt image automatically.");
-    
-    const basicCat = categories.find(c => c.is_basic) || categories[0];
-    if (basicCat) {
-      setCategoryId(basicCat.id);
-    }
-  } finally {
-    setIsParsing(false);
-  }
-};
+  };
 
   const handleImageFile = (file: File) => {
     const validExtensions = ['jpg', 'jpeg', 'png'];
@@ -254,7 +239,6 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   };
 
   useEffect(() => {
-    // FIX: If an image is currently parsing, block the reset lifecycle from executing
     if (isParsing) return;
 
     if (open) {
@@ -345,58 +329,60 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Quick Parser */}
           {!expense && (
-            <div className="border-2 border-dashed border-[var(--color-ink-muted)] rounded-[var(--border-radius)] p-3 bg-white/5">
-              <label
-                style={{ fontFamily: 'var(--font-mono)' }}
-                className="block text-[10px] font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1"
-              >
-                ⚡ QUICK_PARSER // PASTE_BANK_ALERT_STRING
-              </label>
-              <textarea
-                placeholder="Paste your SMS/Bank Alert string here to autofill Vendor & Amount (e.g. Debit: NGN6,500.00 at SHOPRITE)"
-                onChange={handlePasteChange}
-                rows={2}
-                style={{ fontFamily: 'var(--font-mono)' }}
-                className="w-full px-3 py-2 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[10px] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 resize-none font-bold"
-              />
+  <div className="border-2 border-dashed border-[var(--color-ink-muted)] rounded-[var(--border-radius)] p-3 bg-white/5">
+    <label
+      style={{ fontFamily: 'var(--font-mono)' }}
+      className="block text-[10px] font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1"
+    >
+      ⚡ QUICK_PARSER // PASTE_BANK_ALERT_STRING
+    </label>
+    <textarea
+      placeholder="Paste your SMS/Bank Alert string here to autofill Vendor & Amount (e.g. Debit: NGN6,500.00 at SHOPRITE)"
+      onChange={handlePasteChange}
+      rows={2}
+      style={{ fontFamily: 'var(--font-mono)' }}
+      className="w-full px-3 py-2 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[10px] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 resize-none font-bold"
+    />
 
-              <div
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-                className="mt-3 p-4 flex flex-col items-center justify-center cursor-pointer border-4 border-black bg-[#F4F4F0] dark:bg-zinc-800 text-black dark:text-white shadow-[4px_4px_0px_0px_#000000] rounded-[var(--border-radius)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  onClick={(e) => e.stopPropagation()}
-                  accept=".jpg,.jpeg,.png"
-                  className="hidden"
-                />
-                {isParsing ? (
-                  <div className="flex flex-col items-center justify-center space-y-2 py-2">
-                    <div className="w-6 h-6 border-4 border-black dark:border-white border-t-transparent animate-spin rounded-full"></div>
-                    <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] font-bold tracking-widest uppercase animate-pulse">
-                      INGESTING_IMAGE_DATA...
-                    </span>
-                  </div>
-                ) : (
-                  <span
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                    className="text-[10px] font-bold text-center uppercase tracking-wider leading-relaxed"
-                  >
-                    UPLOAD RECEIPT IMAGE (JPG/JPEG/PNG) — Drag & drop or click to browse bank screenshots.
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+    {/* HIDDEN INPUT: Placed safely outside the clickable container row */}
+    <input
+      type="file"
+      ref={fileInputRef}
+      onChange={handleFileChange}
+      accept=".jpg,.jpeg,.png"
+      className="hidden"
+    />
+
+    <div
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInputRef.current?.click();
+      }}
+      className="mt-3 p-4 flex flex-col items-center justify-center cursor-pointer border-4 border-black bg-[#F4F4F0] dark:bg-zinc-800 text-black dark:text-white shadow-[4px_4px_0px_0px_#000000] rounded-[var(--border-radius)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+    >
+      {isParsing ? (
+        <div className="flex flex-col items-center justify-center space-y-2 py-2">
+          <div className="w-6 h-6 border-4 border-black dark:border-white border-t-transparent animate-spin rounded-full"></div>
+          <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] font-bold tracking-widest uppercase animate-pulse">
+            INGESTING_IMAGE_DATA...
+          </span>
+        </div>
+      ) : (
+        <span
+          style={{ fontFamily: 'var(--font-mono)' }}
+          className="text-[10px] font-bold text-center uppercase tracking-wider leading-relaxed"
+        >
+          UPLOAD RECEIPT IMAGE (JPG/JPEG/PNG) — Drag & drop or click to browse bank screenshots.
+        </span>
+      )}
+    </div>
+  </div>
+)}
 
           <div>
             <label
