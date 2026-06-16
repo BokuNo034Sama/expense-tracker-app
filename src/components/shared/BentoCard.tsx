@@ -15,12 +15,10 @@ export function BentoCard({ children, delay = 0, hoverEffect = true, className =
       className={`
         bg-[var(--color-surface)] 
         text-[var(--color-text-main)] 
-        border-2 border-[var(--color-border)] 
+        border-2 border-black dark:border-white
         rounded-[var(--border-radius)] 
-        shadow-[var(--shadow-neubrutalist)] 
         p-6 
         transition-all duration-150
-        ${hoverEffect ? 'hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[var(--shadow-card-hover)]' : ''}
         ${className}
       `}
       {...props}

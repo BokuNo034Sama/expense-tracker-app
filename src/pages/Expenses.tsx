@@ -67,26 +67,23 @@ export default function Expenses() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full flex justify-center py-2 px-1"
+      className="w-full py-2 px-1 text-black dark:text-white"
     >
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
 
-      <div className="w-full max-w-md flex flex-col h-[calc(100vh-140px)] border-4 border-black bg-[#F4F4F0] dark:bg-zinc-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black dark:text-white rounded-none overflow-hidden relative">
+      <div className="w-full flex flex-col h-[calc(100vh-180px)] md:h-[calc(100vh-120px)] relative">
         
         {/* 1. FIXED COCKPIT (Top 30%) */}
-        <div className="sticky top-0 z-30 bg-[#F4F4F0] dark:bg-zinc-900 border-b-4 border-black p-3 space-y-3 select-none shrink-0">
+        <div className="bg-[var(--color-bg)] dark:bg-zinc-900 pb-3 space-y-3 select-none shrink-0 border-b-2 border-black dark:border-white">
           
           {/* Row 1: The Filter Strip */}
-          <div 
-            className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
+          <div className="flex items-center gap-2 py-0.5 text-xs font-mono font-bold">
             {/* Month Picker Select */}
             <div className="relative shrink-0">
               <select
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
-                className="appearance-none pr-7 pl-3 py-1 bg-white text-black border-2 border-black rounded-none shadow-[2px_2px_0px_0px_#000000] text-[10px] font-mono font-bold focus:outline-none cursor-pointer uppercase"
+                className="appearance-none pr-7 pl-3 py-1 bg-white text-black border-2 border-black rounded-none text-[10px] font-mono font-bold focus:outline-none cursor-pointer uppercase"
               >
                 {monthOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -100,14 +97,16 @@ export default function Expenses() {
               </div>
             </div>
 
+            <span>|</span>
+
             {/* Category Picker Select */}
             <div className="relative shrink-0">
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="appearance-none pr-7 pl-3 py-1 bg-white text-black border-2 border-black rounded-none shadow-[2px_2px_0px_0px_#000000] text-[10px] font-mono font-bold focus:outline-none cursor-pointer uppercase"
+                className="appearance-none pr-7 pl-3 py-1 bg-white text-black border-2 border-black rounded-none text-[10px] font-mono font-bold focus:outline-none cursor-pointer uppercase"
               >
-                <option value="all">ALL CATEGORY ▼</option>
+                <option value="all">ALL CATEGORIES ▼</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name.toUpperCase()}
@@ -119,8 +118,10 @@ export default function Expenses() {
               </div>
             </div>
 
+            <span>|</span>
+
             {/* Record Counter Badge */}
-            <div className="px-2.5 py-1 bg-black text-[#C6EF4E] font-mono font-bold text-[9px] uppercase border-2 border-black rounded-none shrink-0 cursor-default">
+            <div className="px-2.5 py-1 bg-black text-[#C6EF4E] font-mono font-bold text-[9px] uppercase border-2 border-black dark:border-white rounded-none shrink-0 cursor-default">
               {recordCount} {recordCount === 1 ? 'RECORD' : 'RECORDS'}
             </div>
           </div>
@@ -128,25 +129,24 @@ export default function Expenses() {
           {/* Row 2: Primary Action Block */}
           <button 
             onClick={handleCreate}
-            className="w-full bg-[#C6EF4E] text-black text-[10px] font-mono font-black py-2.5 px-3 border-4 border-black shadow-[4px_4px_0px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all uppercase text-center rounded-none cursor-pointer"
+            className="w-full bg-[#C6EF4E] text-black text-[10px] font-mono font-black py-2.5 px-3 border-2 border-black shadow-[3px_3px_0px_0px_#000000] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all uppercase text-center rounded-none cursor-pointer"
           >
             + ADD NEW EXPENDITURE
           </button>
         </div>
 
-        {/* 2. FLUID SCROLL TRENCH (Bottom 70%) */}
-        <div className="flex-1 overflow-y-auto p-3 bg-[#F4F4F0] dark:bg-zinc-900 space-y-4">
-          
-          {/* Sticky boundary column legend headers */}
-          <div className="sticky top-0 z-20 bg-black text-[#C6EF4E] text-[9px] font-mono font-bold px-3 py-2 flex justify-between uppercase border-2 border-black rounded-none shadow-[2px_2px_0px_0px_#000000]">
-            <span className="w-1/4 text-left">DATE</span>
-            <span className="w-1/4 text-left">VENDOR</span>
-            <span className="w-1/4 text-left">CATEGORY</span>
-            <span className="w-1/4 text-right">AMOUNT</span>
-          </div>
+        {/* Horizon Divider Row */}
+        <div className="bg-black text-[#C6EF4E] text-[9px] font-mono font-bold px-3 py-2 flex justify-between uppercase border-2 border-black dark:border-white rounded-none shrink-0">
+          <span className="w-1/4 text-left">DATE</span>
+          <span className="w-1/4 text-left">VENDOR</span>
+          <span className="w-1/4 text-left">CATEGORY</span>
+          <span className="w-1/4 text-right">AMOUNT</span>
+        </div>
 
+        {/* 2. FLUID SCROLL TRENCH (Bottom 70%) */}
+        <div className="flex-1 overflow-y-auto py-3 space-y-4 bg-transparent">
           {/* Transaction Item Rows list */}
-          <div className="border-4 border-black bg-white dark:bg-zinc-800 p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-none space-y-1">
+          <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 rounded-none space-y-1">
             {filteredExpenses.length === 0 ? (
               <div className="text-center py-8 text-[10px] font-mono text-gray-500 uppercase">
                 NO_EXPENDITURES_RECORDED

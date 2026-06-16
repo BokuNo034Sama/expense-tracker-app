@@ -29,7 +29,7 @@ export function IncomeList() {
   };
 
   return (
-    <BentoCard hoverEffect={false} className="w-full dark:bg-[#1A1A1A] dark:border-white dark:border-4 dark:shadow-[4px_4px_0px_0px_#FFFFFF]">
+    <BentoCard hoverEffect={false} className="w-full dark:bg-[#1A1A1A] border-2 border-black dark:border-white">
       <div className="flex justify-between items-center pb-4 border-b border-[var(--color-ink)] border-dashed mb-4">
         <h3 
           style={{ fontFamily: 'var(--font-display)' }}
@@ -40,7 +40,7 @@ export function IncomeList() {
         <button
           onClick={handleAdd}
           style={{ fontFamily: 'var(--font-display)' }}
-          className="px-3 py-1.5 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 flex items-center gap-1.5"
+          className="px-3 py-1.5 bg-[var(--color-brand-primary)] text-[#000000] border-2 border-black rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-bold text-xs uppercase transition-all duration-100 flex items-center gap-1.5"
         >
           <Plus className="h-3 w-3" />
           ADD_INCOME

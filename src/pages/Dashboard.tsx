@@ -158,7 +158,7 @@ export default function Dashboard() {
     <div className="h-[calc(100vh-200px)] md:h-auto max-h-[calc(100vh-200px)] md:max-h-none overflow-hidden md:overflow-visible flex flex-col gap-3 md:space-y-6">
       {/* Wealth Banner Alert */}
       {activeWealthBanner && (
-        <div className="bg-[#C6EF4E] text-black border-4 border-black p-4 font-mono font-extrabold text-xs uppercase flex justify-between items-center shadow-[4px_4px_0px_0px_#000000] rounded-[var(--border-radius)] mb-2 animate-[pulse_1s_infinite] shrink-0">
+        <div className="bg-[#C6EF4E] text-black border-2 border-black p-4 font-mono font-extrabold text-xs uppercase flex justify-between items-center rounded-[var(--border-radius)] mb-2 animate-[pulse_1s_infinite] shrink-0">
           <span>{activeWealthBanner}</span>
           <button 
             onClick={dismissWealthBanner}
@@ -173,7 +173,7 @@ export default function Dashboard() {
       {copiedToken && (
         <div 
           style={{ fontFamily: 'var(--font-mono)' }}
-          className="bg-[#C6EF4E] text-black border-2 border-black font-extrabold text-[11px] p-2 py-1 uppercase text-center rounded-none animate-[pulse_1s_infinite] shadow-[2px_2px_0px_0px_#000000] shrink-0"
+          className="bg-[#C6EF4E] text-black border-2 border-black font-extrabold text-[11px] p-2 py-1 uppercase text-center rounded-none animate-[pulse_1s_infinite] shrink-0"
         >
           {copiedToken}
         </div>
@@ -188,7 +188,7 @@ export default function Dashboard() {
       </div>
 
       {/* Row 2: Horizontal Utility Bar */}
-      <div className="flex items-center justify-between border-2 border-black dark:border-white p-1.5 bg-white dark:bg-zinc-800 shadow-[2px_2px_0px_0px_#000000] dark:shadow-[2px_2px_0px_0px_#FFFFFF] shrink-0 rounded-none font-mono text-xs">
+      <div className="flex items-center justify-between border-2 border-black dark:border-white p-1.5 bg-white dark:bg-zinc-800 shrink-0 rounded-none font-mono text-xs">
         {/* Left Side: compact date-filter widget */}
         <div className="flex items-center">
           <select
@@ -224,7 +224,7 @@ export default function Dashboard() {
           style={{ 
             fontFamily: 'var(--font-mono)' 
           }}
-          className="bg-[var(--color-surface)] text-[var(--color-text-main)] border-2 border-[var(--color-border)] shadow-[var(--shadow-neubrutalist)] p-3 rounded-[var(--border-radius)] text-xs font-bold leading-relaxed transition-all duration-200 shrink-0"
+          className="bg-[var(--color-surface)] text-[var(--color-text-main)] border-2 border-black dark:border-white p-3 rounded-[var(--border-radius)] text-xs font-bold leading-relaxed transition-all duration-200 shrink-0"
         >
           🚀 WELCOME_TO_KINY! Your finance OS is online. To get started and generate your automated advice metrics, use the sidebar actions to log your current fixed categories and add your first expense entry.
         </div>
@@ -236,7 +236,7 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile 4-Tab Navigation Grid */}
-      <div className="md:hidden w-full grid grid-cols-4 border-b-4 border-black dark:border-white shrink-0">
+      <div className="md:hidden w-full grid grid-cols-4 border-b-2 border-black dark:border-white shrink-0">
         {(['summary', 'analytics', 'buckets', 'receipts'] as const).map((tab) => {
           const isActive = activeTab === tab;
           return (
@@ -258,9 +258,9 @@ export default function Dashboard() {
       {/* Mobile Viewports: Conditionally rendering active tab contents */}
       <div className="flex-1 md:hidden overflow-hidden flex flex-col min-h-0">
         {activeTab === 'summary' && (
-          <div className="flex-1 flex flex-col gap-2.5 min-h-0">
+          <div className="flex-1 flex flex-col gap-2.5 min-h-0 overflow-y-auto pb-4">
             {/* The Hero Component (Full Width) */}
-            <div className="border-2 border-black dark:border-white bg-[#CCFF00] text-black p-2.5 shadow-[2px_2px_0px_0px_#000000] dark:shadow-[2px_2px_0px_0px_#FFFFFF] w-full shrink-0 rounded-none">
+            <div className="border-2 border-black dark:border-white bg-[#CCFF00] text-black p-2.5 w-full shrink-0 rounded-none">
               <div className="flex justify-between items-center">
                 <span className="text-[10px] font-bold uppercase tracking-wider font-mono text-black/75">
                   NET_MONTHLY_FLOW
@@ -281,7 +281,7 @@ export default function Dashboard() {
             {/* The 2x2 Secondary Macro-Metric Grid */}
             <div className="grid grid-cols-2 gap-2 w-full shrink-0">
               {/* Top Left: TOTAL_INCOME */}
-              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 shadow-[2px_2px_0px_0px_#000000] dark:shadow-[2px_2px_0px_0px_#FFFFFF] flex flex-col justify-between rounded-none">
+              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
                 <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
                   TOTAL_INCOME
                 </span>
@@ -291,7 +291,7 @@ export default function Dashboard() {
               </div>
 
               {/* Top Right: TOTAL_SPENT */}
-              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 shadow-[2px_2px_0px_0px_#000000] dark:shadow-[2px_2px_0px_0px_#FFFFFF] flex flex-col justify-between rounded-none">
+              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
                 <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
                   TOTAL_SPENT
                 </span>
@@ -301,7 +301,7 @@ export default function Dashboard() {
               </div>
 
               {/* Bottom Left: SAVINGS_RATE */}
-              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 shadow-[2px_2px_0px_0px_#000000] dark:shadow-[2px_2px_0px_0px_#FFFFFF] flex flex-col justify-between rounded-none">
+              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
                 <div className="flex justify-between items-center w-full">
                   <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
                     SAVINGS_RATE
@@ -320,7 +320,7 @@ export default function Dashboard() {
               </div>
 
               {/* Bottom Right: TOP_EXPENSE */}
-              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 shadow-[2px_2px_0px_0px_#000000] dark:shadow-[2px_2px_0px_0px_#FFFFFF] flex flex-col justify-between rounded-none">
+              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
                 <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
                   TOP_EXPENSE
                 </span>
@@ -336,13 +336,18 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* Financial Intelligence Chart Container */}
+            <div className="w-full shrink-0">
+              <SpendingChart />
+            </div>
           </div>
         )}
 
         {activeTab === 'analytics' && (
           <div className="flex-1 flex flex-col gap-2.5 min-h-0">
             {/* The Anchor Card (Full Width) */}
-            <div className="border-2 border-black dark:border-white p-2.5 bg-white dark:bg-zinc-800 shadow-[2px_2px_0px_0px_#000000] dark:shadow-[2px_2px_0px_0px_#FFFFFF] shrink-0 rounded-none">
+            <div className="border-2 border-black dark:border-white p-2.5 bg-white dark:bg-zinc-800 shrink-0 rounded-none">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
                   NET_FLOW_SURPLUS_MONITOR
@@ -382,7 +387,7 @@ export default function Dashboard() {
                       key={trigger.id}
                       className={`border-2 p-2 flex flex-col gap-1 transition-all duration-205 rounded-none
                         ${isMet 
-                          ? 'border-[#CCFF00] dark:border-[#CCFF00] bg-lime-50/10 dark:bg-zinc-800/20 shadow-[2px_2px_0px_0px_#CCFF00]' 
+                          ? 'border-black dark:border-white bg-lime-50/10 dark:bg-zinc-800/20' 
                           : 'border-black dark:border-white bg-white dark:bg-zinc-800'}
                       `}
                     >

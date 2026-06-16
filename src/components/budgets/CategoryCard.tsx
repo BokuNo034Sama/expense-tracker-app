@@ -47,7 +47,7 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
 
   return (
     <div 
-      className="relative flex flex-col justify-between bg-white dark:bg-zinc-800 border-2 border-black shadow-[2px_2px_0px_0px_#000000] p-2 rounded-none select-none transition-transform hover:-translate-y-[0.5px]"
+      className="relative flex flex-col justify-between bg-white dark:bg-zinc-800 border-2 border-black dark:border-white p-2 rounded-none select-none"
     >
       {/* Top Row: Name and Edit Icon */}
       <div className="flex justify-between items-start gap-1">
