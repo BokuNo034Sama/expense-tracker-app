@@ -16,7 +16,7 @@ export function BentoCard({ children, delay = 0, hoverEffect = true, className =
         bg-[var(--color-surface)] 
         text-[var(--color-text-main)] 
         border-2 border-black dark:border-white
-        rounded-[var(--border-radius)] 
+        rounded-none 
         p-6 
         transition-all duration-150
         ${className}

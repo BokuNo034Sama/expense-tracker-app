@@ -1,6 +1,5 @@
 import { useAppStore } from '../../store';
 import { parseLocalDate } from '../../lib/format';
-import { BentoCard } from '../shared/BentoCard';
 import * as Icons from 'lucide-react';
 
 export function RecentExpenses() {
@@ -22,65 +21,72 @@ export function RecentExpenses() {
   };
 
   return (
-    <BentoCard className="h-auto flex flex-col justify-between">
-      <div>
-        <h3 
-          style={{ fontFamily: 'var(--font-display)' }}
-          className="text-lg font-extrabold uppercase tracking-wide mb-4 text-[var(--color-ink)]"
+    <div className="w-full space-y-4">
+      <h3 
+        style={{ fontFamily: 'var(--font-display)' }}
+        className="text-lg font-extrabold uppercase tracking-wide text-[var(--color-ink)] dark:text-white"
+      >
+        RECENT_LOGS
+      </h3>
+
+      {recent.length === 0 ? (
+        <div 
+          style={{ fontFamily: 'var(--font-mono)' }}
+          className="text-xs text-[var(--color-ink-muted)] dark:text-zinc-400 py-8 text-center uppercase border-2 border-black dark:border-white rounded-none bg-white dark:bg-zinc-800"
         >
-          RECENT_LOGS
-        </h3>
+          No expenses recorded yet.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1">
+          {recent.map(exp => {
+            const category = categories.find(c => c.id === exp.category_id);
+            const categoryName = category?.name || 'Uncategorized';
+            const iconName = category?.icon || 'MoreHorizontal';
 
-        {recent.length === 0 ? (
-          <div 
-            style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-xs text-[var(--color-ink-muted)] py-8 text-center uppercase"
-          >
-            No expenses recorded yet.
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {recent.map(exp => {
-              const category = categories.find(c => c.id === exp.category_id);
-              const categoryName = category?.name || 'Uncategorized';
-              const iconName = category?.icon || 'MoreHorizontal';
-
-              return (
-                <div 
-                  key={exp.id}
-                  className="flex items-center justify-between p-2.5 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)]"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="p-2 bg-[var(--color-primary)] border-[var(--border-default)] rounded-full text-[var(--color-ink)] shrink-0">
-                      {renderIcon(iconName)}
-                    </div>
-                    <div className="min-w-0">
-                      <div 
-                        style={{ fontFamily: 'var(--font-display)' }}
-                        className="text-xs font-bold text-[var(--color-ink)] truncate uppercase"
-                      >
-                        {exp.vendor}
-                      </div>
-                      <div 
-                        style={{ fontFamily: 'var(--font-mono)' }}
-                        className="text-[9px] text-[var(--color-ink-muted)] uppercase"
-                      >
-                        {categoryName} • {parseLocalDate(exp.date).toLocaleDateString()}
-                      </div>
-                    </div>
+            return (
+              <div 
+                key={exp.id}
+                className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2.5 flex flex-col justify-between rounded-none gap-2.5"
+              >
+                {/* Top Section: Status Icon and Merchant Title stacked */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-1.5 bg-[var(--color-primary)] border border-black text-[var(--color-ink)] shrink-0 rounded-none">
+                    {renderIcon(iconName)}
                   </div>
-                  <div 
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                    className="text-sm font-extrabold text-[var(--color-ink)] shrink-0"
-                  >
-                    {formatNaira(Number(exp.amount))}
+                  <div className="min-w-0 flex-1">
+                    <div 
+                      style={{ fontFamily: 'var(--font-display)' }}
+                      className="text-[10px] font-extrabold text-[var(--color-ink)] dark:text-white truncate uppercase"
+                      title={exp.vendor}
+                    >
+                      {exp.vendor}
+                    </div>
+                    <div 
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className="text-[8px] text-[var(--color-ink-muted)] dark:text-zinc-400 truncate uppercase"
+                    >
+                      {categoryName}
+                    </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </BentoCard>
+
+                {/* Bottom Section: Date and Amount aligned */}
+                <div className="flex justify-between items-center mt-auto border-t border-dashed border-black/10 dark:border-white/10 pt-1.5 shrink-0">
+                  <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[8px] text-gray-400">
+                    {parseLocalDate(exp.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase()}
+                  </span>
+                  <span 
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                    className="text-xs font-black text-[var(--color-ink)] dark:text-white"
+                  >
+                    {formatNaira(Number(exp.amount))}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

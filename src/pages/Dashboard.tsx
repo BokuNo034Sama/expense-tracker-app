@@ -373,7 +373,7 @@ export default function Dashboard() {
             </div>
 
             {/* Flattened Milestone Stream List */}
-            <div className="flex-1 flex flex-col gap-1.5 overflow-y-auto pr-0.5">
+            <div className="flex-1 flex flex-col gap-1.5 overflow-y-auto pr-0.5 mb-2">
               <div className="text-[10px] font-black uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400 mb-0.5">
                 INVESTMENT_MILESTONES
               </div>
@@ -385,11 +385,7 @@ export default function Dashboard() {
                   return (
                     <div 
                       key={trigger.id}
-                      className={`border-2 p-2 flex flex-col gap-1 transition-all duration-205 rounded-none
-                        ${isMet 
-                          ? 'border-black dark:border-white bg-lime-50/10 dark:bg-zinc-800/20' 
-                          : 'border-black dark:border-white bg-white dark:bg-zinc-800'}
-                      `}
+                      className="border-2 p-2 flex flex-col gap-1 transition-all duration-205 rounded-none border-black dark:border-white bg-white dark:bg-zinc-800"
                     >
                       <div className="flex items-center justify-between w-full">
                         {/* Left Alignment: target name and structural type badge side-by-side */}
@@ -431,6 +427,30 @@ export default function Dashboard() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Financial Intelligence Block */}
+            <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-4 space-y-3 rounded-none shrink-0">
+              <h4 className="font-display font-black text-xs uppercase text-black dark:text-white">
+                FINANCIAL_INTELLIGENCE
+              </h4>
+              <div className="space-y-2">
+                {/* BUDGET_OVERRUN_ALERT */}
+                <div className="flex border border-black dark:border-white bg-[#FFFBEB] dark:bg-amber-950/20 rounded-none overflow-hidden">
+                  <div className="w-2 bg-amber-500 shrink-0" />
+                  <div className="p-2 font-mono text-[9px] font-bold text-black dark:text-white uppercase leading-normal">
+                    [BUDGET_OVERRUN_ALERT] WARNING: SEVERAL BUDGET CATEGORIES ARE APPROACHING OR HAVE SURPASSED CONFIGURED LIMITS. IMMEDIATE ADJUSTMENT RECOMMENDED.
+                  </div>
+                </div>
+
+                {/* SAVINGS_TARGET_MET */}
+                <div className="flex border border-black dark:border-white bg-lime-50/20 dark:bg-zinc-800/40 rounded-none overflow-hidden">
+                  <div className="w-2 bg-[#C6EF4E] shrink-0" />
+                  <div className="p-2 font-mono text-[9px] font-bold text-black dark:text-white uppercase leading-normal">
+                    [SAVINGS_TARGET_MET] SYSTEM_ALERT: MONTHLY SAVINGS TARGET SUCCESSFULLY REACHED. SAVINGS EFFICIENCY EXCEEDS THE THRESHOLD.
+                  </div>
+                </div>
               </div>
             </div>
           </div>

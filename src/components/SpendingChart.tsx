@@ -28,22 +28,22 @@ export function SpendingChart() {
   }, [expenses, period]);
 
   return (
-    <BentoCard hoverEffect={false} className="col-span-full lg:col-span-2 flex flex-col justify-between">
+    <BentoCard hoverEffect={false} className="col-span-full lg:col-span-2 flex flex-col justify-between rounded-none">
       <div className="flex flex-row items-center justify-between pb-4 border-b border-[var(--color-ink)] border-dashed mb-4">
         <h3 
           style={{ fontFamily: 'var(--font-display)' }}
-          className="text-lg font-extrabold uppercase tracking-wide text-[var(--color-ink)]"
+          className="text-lg font-extrabold uppercase tracking-wide text-[var(--color-ink)] dark:text-white"
         >
           SPENDING_TREND
         </h3>
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger 
             style={{ fontFamily: 'var(--font-mono)' }}
-            className="w-[140px] h-9 text-xs border-[var(--border-default)] rounded-[var(--border-radius)] bg-[var(--color-surface)] shadow-[var(--shadow-btn-active)] font-bold uppercase"
+            className="w-[140px] h-9 text-xs border-2 border-black dark:border-white rounded-none bg-[var(--color-surface)] font-bold uppercase"
           >
             <SelectValue placeholder="Select period" />
           </SelectTrigger>
-          <SelectContent className="border-[var(--border-default)] rounded-[var(--border-radius)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
+          <SelectContent className="border-2 border-black dark:border-white rounded-none bg-[var(--color-surface)]">
             <SelectItem style={{ fontFamily: 'var(--font-mono)' }} className="text-xs uppercase font-bold" value="7">LAST 7 DAYS</SelectItem>
             <SelectItem style={{ fontFamily: 'var(--font-mono)' }} className="text-xs uppercase font-bold" value="14">LAST 14 DAYS</SelectItem>
             <SelectItem style={{ fontFamily: 'var(--font-mono)' }} className="text-xs uppercase font-bold" value="30">LAST 30 DAYS</SelectItem>
@@ -74,9 +74,9 @@ export function SpendingChart() {
               cursor={{ fill: 'rgba(0,0,0,0.05)' }} 
               contentStyle={{ 
                 backgroundColor: 'var(--color-surface)', 
-                border: 'var(--border-default)', 
-                borderRadius: 'var(--border-radius)',
-                boxShadow: 'var(--shadow-card)',
+                border: '2px solid var(--color-border)', 
+                borderRadius: '0px',
+                boxShadow: 'none',
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
                 fontWeight: 'bold'
@@ -90,7 +90,7 @@ export function SpendingChart() {
               fill="var(--color-primary)" 
               stroke="var(--color-ink)"
               strokeWidth={2}
-              radius={[4, 4, 0, 0]} 
+              radius={[0, 0, 0, 0]} 
             />
           </BarChart>
         </ResponsiveContainer>
