@@ -76,15 +76,6 @@ export function BudgetProgress() {
                     /{formatNaira(limit)}
                   </span>
                 </div>
-
-                {isOver && (
-                  <div 
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                    className="absolute -top-1.5 -right-1.5 bg-[var(--color-danger)] text-white text-[7px] font-black uppercase px-1 border border-black animate-pulse rounded-none z-10"
-                  >
-                    OVER
-                  </div>
-                )}
               </div>
             );
           })}
