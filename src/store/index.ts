@@ -6,7 +6,6 @@ import type {
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
   InvestmentTrigger,
 } from './types';
-import { parseLocalDate } from '../lib/format';
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
 
@@ -26,12 +25,9 @@ const initialPWA: PWAState = {
 
 // ─── Date & Streak Helpers ────────────────────────────────────────────────────
 
-export const getLocalDateString = (): string => {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+export const getLocalDateString = (date: Date = new Date()): string => {
+  // Force en-CA format because it natively outputs clean 'YYYY-MM-DD'
+  return date.toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
 };
 
 const updateLoggingStreak = async (get: () => AppStore) => {
@@ -51,19 +47,11 @@ const updateLoggingStreak = async (get: () => AppStore) => {
   const expenseDates = new Set(expenses.map(e => e.date));
 
   // 2. Get local today and yesterday strings
-  const todayStr = getLocalDateString();
-  const todayDate = parseLocalDate(todayStr);
+  const todayStr = getLocalDateString(new Date());
 
-  const yesterdayDate = new Date(todayDate);
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  
-  const formatDateStr = (d: Date): string => {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
-  const yesterdayStr = formatDateStr(yesterdayDate);
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = getLocalDateString(yesterday);
 
   const hasTransactionToday = expenseDates.has(todayStr);
   const hasTransactionYesterday = expenseDates.has(yesterdayStr);
@@ -78,12 +66,14 @@ const updateLoggingStreak = async (get: () => AppStore) => {
   }
 
   // Evaluate the window: start from today if today has a transaction, else start from yesterday
-  let checkDate = hasTransactionToday ? todayDate : yesterdayDate;
+  let checkDate = hasTransactionToday ? new Date() : yesterday;
   let computedStreak = 0;
 
-  while (expenseDates.has(formatDateStr(checkDate))) {
+  let currentCheckStr = getLocalDateString(checkDate);
+  while (expenseDates.has(currentCheckStr)) {
     computedStreak++;
     checkDate.setDate(checkDate.getDate() - 1);
+    currentCheckStr = getLocalDateString(checkDate);
   }
 
   // 4. Pass the final computed sequence score to the profile patch update routine.
