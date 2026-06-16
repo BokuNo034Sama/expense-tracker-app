@@ -65,9 +65,10 @@ const updateLoggingStreak = async (get: () => AppStore) => {
     return;
   }
 
-  // Evaluate the window: start from today if today has a transaction, else start from yesterday
-  let checkDate = hasTransactionToday ? new Date() : yesterday;
+  // 3. Compute Streak
   let computedStreak = 0;
+  const checkDate = new Date();
+  if (!hasTransactionToday) checkDate.setDate(checkDate.getDate() - 1);
 
   let currentCheckStr = getLocalDateString(checkDate);
   while (expenseDates.has(currentCheckStr)) {
@@ -605,6 +606,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   updateProfile: async (patch) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      set(s => ({
+        profile: s.profile ? { ...s.profile, ...patch } : null
+      }));
+      recalculateWealthMetrics(set, get, false);
+      return;
+    }
     const uid = await getUID();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from('profiles').update(patch as any).eq('id', uid);
@@ -637,6 +645,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   addCategory: async (c) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      const mockCategory: Category = {
+        id: `mock-cat-${Date.now()}`,
+        user_id: 'test-user-id',
+        name: c.name,
+        icon: c.icon,
+        slice: c.slice,
+        budget_limit: c.budget_limit || 0,
+        is_basic: c.is_basic || false,
+        is_priority: c.is_priority || false,
+        is_subscription: c.is_subscription || false,
+        created_at: new Date().toISOString(),
+      };
+      set(s => ({ categories: [...s.categories, mockCategory] }));
+      return;
+    }
     const uid = await getUID();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from('categories').insert({ ...c, user_id: uid } as any);
@@ -645,6 +669,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   updateCategory: async (id, patch) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      set(s => ({
+        categories: s.categories.map(c => c.id === id ? { ...c, ...patch } : c)
+      }));
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from('categories').update(patch as any).eq('id', id);
     if (error) throw new Error(error.message);
@@ -652,6 +682,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   deleteCategory: async (id) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      set(s => ({ categories: s.categories.filter(c => c.id !== id) }));
+      return;
+    }
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) throw new Error(error.message);
     set(s => ({ categories: s.categories.filter(c => c.id !== id) }));
@@ -709,6 +743,27 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   addExpense: async (e) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      const mockExpense: Expense = {
+        id: `mock-exp-${Date.now()}`,
+        user_id: 'test-user-id',
+        date: e.date,
+        vendor: e.vendor,
+        category_id: e.category_id,
+        amount: e.amount,
+        note: e.note || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      set(s => ({ expenses: [mockExpense, ...s.expenses] }));
+      try {
+        await updateLoggingStreak(get);
+      } catch (error) {
+        console.error("Silent profile logging update failed", error);
+      }
+      recalculateWealthMetrics(set, get, false);
+      return;
+    }
     const uid = await getUID();
     const { data, error } = await supabase
       .from('expenses')
@@ -726,6 +781,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   updateExpense: async (id, patch) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      set(s => ({
+        expenses: s.expenses.map(e => e.id === id ? { ...e, ...patch } as Expense : e)
+      }));
+      recalculateWealthMetrics(set, get, false);
+      return;
+    }
     const { data, error } = await supabase
       .from('expenses')
       .update(patch as unknown as Partial<Expense>)
@@ -738,6 +800,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   deleteExpense: async (id) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      set(s => ({ expenses: s.expenses.filter(e => e.id !== id) }));
+      recalculateWealthMetrics(set, get, false);
+      return;
+    }
     const { error } = await supabase.from('expenses').delete().eq('id', id);
     if (error) throw new Error(error.message);
     set(s => ({ expenses: s.expenses.filter(e => e.id !== id) }));
@@ -796,6 +863,25 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   addIncome: async (i) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      const mockIncome: Income = {
+        id: `mock-inc-${Date.now()}`,
+        user_id: 'test-user-id',
+        date: i.date,
+        source: i.source,
+        amount: i.amount,
+        note: i.note || null,
+        created_at: new Date().toISOString(),
+      };
+      set(s => ({ incomes: [mockIncome, ...s.incomes] }));
+      try {
+        await updateLoggingStreak(get);
+      } catch (error) {
+        console.error("Silent profile logging update failed", error);
+      }
+      recalculateWealthMetrics(set, get, false);
+      return;
+    }
     const uid = await getUID();
     const { data, error } = await supabase
       .from('incomes')
@@ -813,6 +899,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   updateIncome: async (id, patch) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      set(s => ({
+        incomes: s.incomes.map(i => i.id === id ? { ...i, ...patch } as Income : i)
+      }));
+      recalculateWealthMetrics(set, get, false);
+      return;
+    }
     const { data, error } = await supabase
       .from('incomes')
       .update(patch as unknown as Partial<Income>)
@@ -825,6 +918,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   deleteIncome: async (id) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      set(s => ({ incomes: s.incomes.filter(i => i.id !== id) }));
+      recalculateWealthMetrics(set, get, false);
+      return;
+    }
     const { error } = await supabase.from('incomes').delete().eq('id', id);
     if (error) throw new Error(error.message);
     set(s => ({ incomes: s.incomes.filter(i => i.id !== id) }));
@@ -836,6 +934,20 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   investmentInterests: [],
 
   logInvestmentInterest: async (type, wealthBalance) => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
+      const mockInterest: InvestmentInterest = {
+        id: `mock-interest-${Date.now()}`,
+        user_id: 'test-user-id',
+        type,
+        wealth_balance_at_click: wealthBalance,
+        clicked_at: new Date().toISOString(),
+      };
+      set(s => ({
+        investmentInterests: [...s.investmentInterests, mockInterest],
+        profile: s.profile ? { ...s.profile, has_seen_investment_nudge: true } : null
+      }));
+      return;
+    }
     const uid = await getUID();
     const { data, error } = await supabase
       .from('investment_interests')

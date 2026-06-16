@@ -33,25 +33,21 @@ vi.mock('../../lib/supabaseClient', () => {
   };
 });
 
-// Mock global fetch for Gemini API REST calls
+// Mock global fetch for OpenAI API REST calls
 global.fetch = vi.fn().mockImplementation(() => {
   return Promise.resolve({
     ok: true,
     json: () => Promise.resolve({
-      candidates: [
+      choices: [
         {
-          content: {
-            parts: [
-              {
-                text: JSON.stringify({
-                  vendor: 'Ingested Merchant',
-                  amount: 4500.00,
-                  date: '2026-06-12',
-                  memo: 'Test Ingest',
-                  category_suggestion: 'food'
-                })
-              }
-            ]
+          message: {
+            content: JSON.stringify({
+              vendor: 'Ingested Merchant',
+              amount: 4500.00,
+              date: '2026-06-12',
+              memo: 'Test Ingest',
+              category_suggestion: 'food'
+            })
           }
         }
       ]

@@ -6,6 +6,7 @@ interface BentoCardProps extends HTMLMotionProps<'div'> {
   hoverEffect?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function BentoCard({ children, delay = 0, hoverEffect = true, className = '', ...props }: BentoCardProps) {
   return (
     <motion.div
