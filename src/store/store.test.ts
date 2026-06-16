@@ -267,6 +267,71 @@ describe('useAppStore', () => {
       expect(useAppStore.getState().profile?.financial_streak).toBe(1);
       expect(useAppStore.getState().profile?.last_logged_date).toBe('2026-06-12');
     });
+
+    it('should keep streak alive if today has no transaction but yesterday has one', async () => {
+      vi.setSystemTime(new Date('2026-06-10T12:00:00'));
+      const store = useAppStore.getState();
+      
+      // Log day 1
+      await store.fetchProfile();
+      await store.addExpense({
+        date: '2026-06-10',
+        vendor: 'Test Vendor',
+        category_id: null,
+        amount: 10,
+        note: null
+      });
+      expect(useAppStore.getState().profile?.current_streak).toBe(1);
+
+      // Advance clock to day 2 (June 11) - no expense added, but we log an income to trigger updateLoggingStreak
+      vi.setSystemTime(new Date('2026-06-11T12:00:00'));
+      await store.addIncome({
+        date: '2026-06-11',
+        source: 'Salary',
+        amount: 500,
+        note: null
+      });
+
+      // The streak should remain 1 (June 10's activity keeps the streak alive today)
+      expect(useAppStore.getState().profile?.current_streak).toBe(1);
+      expect(useAppStore.getState().profile?.financial_streak).toBe(1);
+    });
+
+    it('should preserve streak on backdated expense parsed today', async () => {
+      vi.setSystemTime(new Date('2026-06-10T12:00:00'));
+      const store = useAppStore.getState();
+      
+      // Log day 1
+      await store.fetchProfile();
+      await store.addExpense({
+        date: '2026-06-10',
+        vendor: 'Test Vendor',
+        category_id: null,
+        amount: 10,
+        note: null
+      });
+      expect(useAppStore.getState().profile?.current_streak).toBe(1);
+
+      // Advance clock to day 2 (June 11) - no logs yet
+      vi.setSystemTime(new Date('2026-06-11T12:00:00'));
+      // Advance clock to day 3 (June 12)
+      vi.setSystemTime(new Date('2026-06-12T12:00:00'));
+
+      // Log yesterday's (June 11) expense today (June 12)
+      await store.addExpense({
+        date: '2026-06-11',
+        vendor: 'Yesterday Expense',
+        category_id: null,
+        amount: 15,
+        note: null
+      });
+
+      // Since June 10 has a transaction and June 11 is now logged,
+      // today (June 12) has no transaction yet, but yesterday (June 11) does.
+      // The streak should be 2.
+      expect(useAppStore.getState().profile?.current_streak).toBe(2);
+      expect(useAppStore.getState().profile?.financial_streak).toBe(2);
+    });
   });
 });
 

@@ -47,19 +47,29 @@ const updateLoggingStreak = async (get: () => AppStore) => {
     return;
   }
 
-  // 1. Extract unique expense dates (e.date), turn them into local Date objects, and sort them descending (newest to oldest).
-  const uniqueDates = Array.from(new Set(expenses.map(e => e.date)))
-    .map(d => parseLocalDate(d))
-    .sort((a, b) => b.getTime() - a.getTime());
+  // 1. Extract unique expense dates
+  const expenseDates = new Set(expenses.map(e => e.date));
 
+  // 2. Get local today and yesterday strings
   const todayStr = getLocalDateString();
   const todayDate = parseLocalDate(todayStr);
 
-  // 2. Validate if the latest entry matches either today's date context or yesterday's date context.
-  // If the gap is greater than 1 day, reset both current_streak and financial_streak metrics to 0.
-  const daysSinceLastExpense = Math.round((todayDate.getTime() - uniqueDates[0].getTime()) / (1000 * 60 * 60 * 24));
+  const yesterdayDate = new Date(todayDate);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   
-  if (daysSinceLastExpense > 1) {
+  const formatDateStr = (d: Date): string => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+  const yesterdayStr = formatDateStr(yesterdayDate);
+
+  const hasTransactionToday = expenseDates.has(todayStr);
+  const hasTransactionYesterday = expenseDates.has(yesterdayStr);
+
+  // If both today and yesterday have no transactions, the streak is broken (0).
+  if (!hasTransactionToday && !hasTransactionYesterday) {
     await get().updateProfile({
       current_streak: 0,
       financial_streak: 0,
@@ -67,18 +77,13 @@ const updateLoggingStreak = async (get: () => AppStore) => {
     return;
   }
 
-  // 3. If valid, loop through the sorted unique date list arrays and increment the counter for every sequential back-to-back day match (diffDays === 1).
-  // Break the loop on any gap configuration greater than 1 day.
-  let computedStreak = 1;
-  for (let i = 0; i < uniqueDates.length - 1; i++) {
-    const diffTime = uniqueDates[i].getTime() - uniqueDates[i + 1].getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  // Evaluate the window: start from today if today has a transaction, else start from yesterday
+  let checkDate = hasTransactionToday ? todayDate : yesterdayDate;
+  let computedStreak = 0;
 
-    if (diffDays === 1) {
-      computedStreak++;
-    } else if (diffDays > 1) {
-      break;
-    }
+  while (expenseDates.has(formatDateStr(checkDate))) {
+    computedStreak++;
+    checkDate.setDate(checkDate.getDate() - 1);
   }
 
   // 4. Pass the final computed sequence score to the profile patch update routine.
