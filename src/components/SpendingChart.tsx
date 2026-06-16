@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { format, subDays } from "date-fns";
@@ -8,6 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 export function SpendingChart() {
   const expenses = useAppStore(s => s.expenses);
   const [period, setPeriod] = useState("30");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const chartData = useMemo(() => {
     const days = parseInt(period);
@@ -70,21 +78,23 @@ export function SpendingChart() {
               tickFormatter={value => `₦${value.toLocaleString()}`} 
               tick={{ fill: 'var(--color-text-main)', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}
             />
-            <Tooltip 
-              cursor={{ fill: 'rgba(0,0,0,0.05)' }} 
-              contentStyle={{ 
-                backgroundColor: 'var(--color-surface)', 
-                border: '2px solid var(--color-border)', 
-                borderRadius: '0px',
-                boxShadow: 'none',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
-                fontWeight: 'bold'
-              }}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(value: any) => [`₦${value.toLocaleString()}`, 'SPENT']}
-              labelFormatter={(label) => `DATE: ${label}`}
-            />
+            {!isMobile && (
+              <Tooltip 
+                cursor={{ fill: 'rgba(0,0,0,0.05)' }} 
+                contentStyle={{ 
+                  backgroundColor: 'var(--color-surface)', 
+                  border: '2px solid var(--color-border)', 
+                  borderRadius: '0px',
+                  boxShadow: 'none',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  fontWeight: 'bold'
+                }}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(value: any) => [`₦${value.toLocaleString()}`, 'SPENT']}
+                labelFormatter={(label) => `DATE: ${label}`}
+              />
+            )}
             <Bar 
               dataKey="amount" 
               fill="var(--color-primary)" 

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase, getUID } from '../lib/supabaseClient';
@@ -1048,3 +1049,55 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     recalculateWealthMetrics(set, get, true);
   },
 }));
+
+export const calculateStreakCount = (expenses: Expense[]): number => {
+  if (!expenses || expenses.length === 0) return 0;
+
+  // Extract unique expense dates in Lagos local timezone YYYY-MM-DD
+  const expenseDates = new Set(expenses.map(e => e.date));
+
+  const todayStr = getLocalDateString(new Date());
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = getLocalDateString(yesterday);
+
+  const hasTransactionToday = expenseDates.has(todayStr);
+  const hasTransactionYesterday = expenseDates.has(yesterdayStr);
+
+  if (!hasTransactionToday && !hasTransactionYesterday) {
+    return 0;
+  }
+
+  let computedStreak = 0;
+  const checkDate = new Date();
+  if (!hasTransactionToday) {
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+
+  let currentCheckStr = getLocalDateString(checkDate);
+  while (expenseDates.has(currentCheckStr)) {
+    computedStreak++;
+    checkDate.setDate(checkDate.getDate() - 1);
+    currentCheckStr = getLocalDateString(checkDate);
+  }
+
+  return computedStreak;
+};
+
+export const useCurrentStreak = () => {
+  const expenses = useAppStore(s => s.expenses);
+  const profile = useAppStore(s => s.profile);
+  const loading = useAppStore(s => s.loading.expenses);
+
+  return useMemo(() => {
+    // If we're loading and have a profile streak, return the profile streak to prevent flash to 0
+    if (loading && profile?.current_streak !== undefined) {
+      return profile.current_streak;
+    }
+    if (!expenses || expenses.length === 0) {
+      return profile?.current_streak ?? 0;
+    }
+    return calculateStreakCount(expenses);
+  }, [expenses, profile, loading]);
+};

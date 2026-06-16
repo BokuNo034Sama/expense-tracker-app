@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, type Variants } from "framer-motion";
-import { useAppStore, getLocalDateString } from "@/store/useAppStore";
+import { useAppStore, getLocalDateString, useCurrentStreak } from "@/store/useAppStore";
 import { WealthCard } from "@/components/dashboard/WealthCard";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { SpendingChart } from "@/components/SpendingChart";
@@ -65,7 +65,7 @@ export default function Dashboard() {
   const isWealthEnabled = profile?.enabled_slices?.includes('Wealth') ?? true;
 
   // Streak computations
-  const streak = profile?.current_streak || profile?.financial_streak || 0;
+  const streak = useCurrentStreak();
   const filledSegments = streak > 0 ? (streak % 5 === 0 ? 5 : streak % 5) : 0;
 
   // Naira formatters
