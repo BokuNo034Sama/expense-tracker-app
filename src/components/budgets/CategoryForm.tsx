@@ -136,39 +136,38 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
           </div>
 
           {/* Slice Selector */}
-          <div>
-            <label 
-              style={{ fontFamily: 'var(--font-mono)' }}
-              className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
-            >
+          <div className="w-full block text-left space-y-2 clear-both">
+            <label className="block text-xs font-mono tracking-wider font-bold text-black dark:text-white uppercase">
               FINANCIAL_SLICE
             </label>
-            <select
-              value={slice}
-              onChange={e => setSlice(e.target.value as Slice)}
-              style={{ fontFamily: 'var(--font-mono)' }}
-              className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 font-bold uppercase text-xs"
-            >
-              {(() => {
-                const financialSlices = profile?.enabled_slices;
-                const sliceOptions = Array.isArray(financialSlices) 
-                  ? financialSlices 
-                  : typeof financialSlices === 'string'
-                    ? JSON.parse(financialSlices)
-                    : ['Basic', 'Family', 'Wealth', 'Subscription']; // Core architecture fallbacks
+            <div className="w-full block text-sm font-mono text-black dark:text-white break-words whitespace-normal">
+              <select
+                value={slice}
+                onChange={e => setSlice(e.target.value as Slice)}
+                style={{ fontFamily: 'var(--font-mono)' }}
+                className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 font-bold uppercase text-xs"
+              >
+                {(() => {
+                  const financialSlices = profile?.enabled_slices;
+                  const sliceOptions = Array.isArray(financialSlices) 
+                    ? financialSlices 
+                    : typeof financialSlices === 'string'
+                      ? JSON.parse(financialSlices)
+                      : ['Basic', 'Family', 'Wealth', 'Subscription']; // Core architecture fallbacks
 
-                const finalOptions = [...sliceOptions];
-                if (category && category.slice && !finalOptions.includes(category.slice)) {
-                  finalOptions.push(category.slice);
-                }
+                  const finalOptions = [...sliceOptions];
+                  if (category && category.slice && !finalOptions.includes(category.slice)) {
+                    finalOptions.push(category.slice);
+                  }
 
-                return finalOptions.map((sliceOption: string) => (
-                  <option key={sliceOption} value={sliceOption}>
-                    {sliceOption.toUpperCase()}
-                  </option>
-                ));
-              })()}
-            </select>
+                  return finalOptions.map((sliceOption: string) => (
+                    <option key={sliceOption} value={sliceOption}>
+                      {sliceOption.toUpperCase()}
+                    </option>
+                  ));
+                })()}
+              </select>
+            </div>
           </div>
 
           {/* Monthly Budget Limit */}
