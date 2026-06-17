@@ -107,19 +107,18 @@ export function IncomeMigrationModal() {
                 >
                   PAYDAY_ANCHOR_DAY (1-31)
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  required
+                <select
                   value={selectedDay}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    setSelectedDay(isNaN(val) ? 1 : Math.max(1, Math.min(31, val)));
-                  }}
+                  onChange={(e) => setSelectedDay(parseInt(e.target.value, 10))}
                   style={{ fontFamily: 'var(--font-mono)' }}
                   className="w-full px-3 py-2 bg-white border-2 border-black text-black outline-none focus:shadow-[2px_2px_0px_0px_#000000] font-bold text-sm"
-                />
+                >
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                    <option key={day} value={day}>
+                      {day === 1 ? '1st' : day === 2 ? '2nd' : day === 3 ? '3rd' : `${day}th`}
+                    </option>
+                  ))}
+                </select>
                 <p style={{ fontFamily: 'var(--font-mono)' }} className="text-[9px] text-gray-500 font-bold uppercase leading-relaxed">
                   Reset boundary will Shift Friday if anchor day falls on Saturday, or Monday if on Sunday.
                 </p>

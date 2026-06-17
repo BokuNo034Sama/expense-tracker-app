@@ -264,19 +264,18 @@ export function LoginForm() {
                     >
                       PAYDAY_ANCHOR_DAY (1-31)
                     </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="31"
-                      required
+                    <select
                       value={anchorDay}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value, 10);
-                        setAnchorDay(isNaN(val) ? 1 : Math.max(1, Math.min(31, val)));
-                      }}
+                      onChange={(e) => setAnchorDay(parseInt(e.target.value, 10))}
                       style={{ fontFamily: 'var(--font-mono)' }}
                       className="w-full px-4 py-3 bg-[var(--color-surface)] border-2 border-black text-[var(--color-ink)] outline-none focus:shadow-[2px_2px_0px_0px_#000000] transition-all duration-150 font-bold"
-                    />
+                    >
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                        <option key={day} value={day}>
+                          {day === 1 ? '1st' : day === 2 ? '2nd' : day === 3 ? '3rd' : `${day}th`}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 ) : (
                   <div>
