@@ -45,7 +45,7 @@ export function BudgetProgress() {
           No active budget limits set. Configure them in Budgets settings.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1">
+        <div className="grid grid-cols-2 gap-3 w-full md:max-h-[360px] md:overflow-y-auto md:pr-1">
           {budgetedCategories.map(cat => {
             const spent = categorySpends[cat.id] || 0;
             const limit = Number(cat.budget_limit);

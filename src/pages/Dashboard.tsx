@@ -266,219 +266,219 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile Viewports: Conditionally rendering active tab contents */}
-      <div className="flex-1 md:hidden overflow-hidden flex flex-col min-h-0">
-        {activeTab === 'summary' && (
-          <div className="flex-1 flex flex-col gap-2.5 min-h-0 overflow-y-auto pb-4">
-            {/* The Hero Component (Full Width) */}
-            <div className="border-2 border-black dark:border-white bg-[#CCFF00] text-black p-2.5 w-full shrink-0 rounded-none">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold uppercase tracking-wider font-mono text-black/75">
-                  NET_MONTHLY_FLOW
-                </span>
-                <button
-                  onClick={toggleDataMasked}
-                  className="p-0.5 border border-black bg-white hover:bg-gray-100 rounded-none text-black transition-colors focus:outline-none flex items-center justify-center cursor-pointer active:translate-y-[1px]"
-                  title={isDataMasked ? "Show balances" : "Hide balances"}
-                >
-                  {isDataMasked ? <EyeOff size={12} /> : <Eye size={12} />}
-                </button>
-              </div>
-              <div style={{ fontFamily: 'var(--font-mono)' }} className="text-2xl font-black mt-0.5 leading-none">
-                {formatNaira(netSavings)}
-              </div>
-            </div>
-
-            {/* The 2x2 Secondary Macro-Metric Grid */}
-            <div className="grid grid-cols-2 gap-2 w-full shrink-0">
-              {/* Top Left: TOTAL_INCOME */}
-              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
-                <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
-                  TOTAL_INCOME
-                </span>
-                <span style={{ fontFamily: 'var(--font-mono)' }} className="text-sm font-black mt-0.5 text-black dark:text-white leading-none">
-                  {formatNairaNoDecimals(totalIncome)}
-                </span>
+      {activeTab === 'buckets' ? (
+        <div className="w-full md:hidden h-auto block pb-6 animate-fade-in">
+          <BudgetProgress />
+        </div>
+      ) : (
+        <div className="flex-1 md:hidden overflow-hidden flex flex-col min-h-0">
+          {activeTab === 'summary' && (
+            <div className="flex-1 flex flex-col gap-2.5 min-h-0 overflow-y-auto pb-4">
+              {/* The Hero Component (Full Width) */}
+              <div className="border-2 border-black dark:border-white bg-[#CCFF00] text-black p-2.5 w-full shrink-0 rounded-none">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold uppercase tracking-wider font-mono text-black/75">
+                    NET_MONTHLY_FLOW
+                  </span>
+                  <button
+                    onClick={toggleDataMasked}
+                    className="p-0.5 border border-black bg-white hover:bg-gray-100 rounded-none text-black transition-colors focus:outline-none flex items-center justify-center cursor-pointer active:translate-y-[1px]"
+                    title={isDataMasked ? "Show balances" : "Hide balances"}
+                  >
+                    {isDataMasked ? <EyeOff size={12} /> : <Eye size={12} />}
+                  </button>
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)' }} className="text-2xl font-black mt-0.5 leading-none">
+                  {formatNaira(netSavings)}
+                </div>
               </div>
 
-              {/* Top Right: TOTAL_SPENT */}
-              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
-                <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
-                  TOTAL_SPENT
-                </span>
-                <span style={{ fontFamily: 'var(--font-mono)' }} className="text-sm font-black mt-0.5 text-black dark:text-white leading-none">
-                  {formatNairaNoDecimals(totalExpenses)}
-                </span>
-              </div>
-
-              {/* Bottom Left: SAVINGS_RATE */}
-              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
-                <div className="flex justify-between items-center w-full">
+              {/* The 2x2 Secondary Macro-Metric Grid */}
+              <div className="grid grid-cols-2 gap-2 w-full shrink-0">
+                {/* Top Left: TOTAL_INCOME */}
+                <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
                   <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
-                    SAVINGS_RATE
+                    TOTAL_INCOME
                   </span>
-                  <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] font-black text-black dark:text-white leading-none">
-                    {savingsRate.toFixed(0)}%
+                  <span style={{ fontFamily: 'var(--font-mono)' }} className="text-sm font-black mt-0.5 text-black dark:text-white leading-none">
+                    {formatNairaNoDecimals(totalIncome)}
                   </span>
                 </div>
-                {/* Micro inline horizontal bar indicator */}
-                <div className="w-full h-1.5 bg-gray-150 dark:bg-zinc-700 border border-black dark:border-white rounded-none mt-1 overflow-hidden">
-                  <div
-                    style={{ width: `${Math.max(0, Math.min(100, savingsRate))}%` }}
-                    className="h-full bg-[#CCFF00] rounded-none"
-                  />
-                </div>
-              </div>
 
-              {/* Bottom Right: TOP_EXPENSE */}
-              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
-                <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
-                  TOP_EXPENSE
-                </span>
-                <div className="mt-1 flex items-center justify-between w-full min-h-[16px]">
-                  <span className="text-[9px] font-black font-mono text-white bg-black dark:bg-white dark:text-black px-1 py-0.5 leading-none truncate max-w-[70%] uppercase">
-                    {topCategoryName}
+                {/* Top Right: TOTAL_SPENT */}
+                <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
+                  <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
+                    TOTAL_SPENT
                   </span>
-                  {topCategoryAmount > 0 && (
-                    <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[9px] font-bold text-gray-500 dark:text-zinc-400 shrink-0">
-                      {formatNairaShort(topCategoryAmount)}
+                  <span style={{ fontFamily: 'var(--font-mono)' }} className="text-sm font-black mt-0.5 text-black dark:text-white leading-none">
+                    {formatNairaNoDecimals(totalExpenses)}
+                  </span>
+                </div>
+
+                {/* Bottom Left: SAVINGS_RATE */}
+                <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
+                  <div className="flex justify-between items-center w-full">
+                    <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
+                      SAVINGS_RATE
                     </span>
-                  )}
+                    <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] font-black text-black dark:text-white leading-none">
+                      {savingsRate.toFixed(0)}%
+                    </span>
+                  </div>
+                  {/* Micro inline horizontal bar indicator */}
+                  <div className="w-full h-1.5 bg-gray-150 dark:bg-zinc-700 border border-black dark:border-white rounded-none mt-1 overflow-hidden">
+                    <div
+                      style={{ width: `${Math.max(0, Math.min(100, savingsRate))}%` }}
+                      className="h-full bg-[#CCFF00] rounded-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Bottom Right: TOP_EXPENSE */}
+                <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
+                  <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
+                    TOP_EXPENSE
+                  </span>
+                  <div className="mt-1 flex items-center justify-between w-full min-h-[16px]">
+                    <span className="text-[9px] font-black font-mono text-white bg-black dark:bg-white dark:text-black px-1 py-0.5 leading-none truncate max-w-[70%] uppercase">
+                      {topCategoryName}
+                    </span>
+                    {topCategoryAmount > 0 && (
+                      <span style={{ fontFamily: 'var(--font-mono)' }} className="text-[9px] font-bold text-gray-500 dark:text-zinc-400 shrink-0">
+                        {formatNairaShort(topCategoryAmount)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Financial Intelligence Chart Container */}
-            <div className="w-full shrink-0">
-              <SpendingChart />
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'analytics' && (
-          <div className="flex-1 flex flex-col gap-2.5 min-h-0 overflow-y-auto pb-4">
-            <MonthlyWrap />
-            {/* The Anchor Card (Full Width) */}
-            <div className="border-2 border-black dark:border-white p-2.5 bg-white dark:bg-zinc-800 shrink-0 rounded-none">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
-                  NET_FLOW_SURPLUS_MONITOR
-                </span>
-                <span style={{ fontFamily: 'var(--font-mono)' }} className="text-sm font-black text-green-600 dark:text-green-400 leading-none">
-                  {formatNairaNoDecimals(netMonthlySurplus)}
-                </span>
+              {/* Financial Intelligence Chart Container */}
+              <div className="w-full shrink-0">
+                <SpendingChart />
               </div>
-              {/* Primary Efficiency Horizontal Meter */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-[9px] font-mono font-bold text-gray-500 dark:text-zinc-400">
-                  <span className="uppercase">SURPLUS_EFFICIENCY_RATE:</span>
-                  <span>{surplusPercent.toFixed(1)}%</span>
+            </div>
+          )}
+
+          {activeTab === 'analytics' && (
+            <div className="flex-1 flex flex-col gap-2.5 min-h-0 overflow-y-auto pb-4">
+              <MonthlyWrap />
+              {/* The Anchor Card (Full Width) */}
+              <div className="border-2 border-black dark:border-white p-2.5 bg-white dark:bg-zinc-800 shrink-0 rounded-none">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">
+                    NET_FLOW_SURPLUS_MONITOR
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-mono)' }} className="text-sm font-black text-green-600 dark:text-green-400 leading-none">
+                    {formatNairaNoDecimals(netMonthlySurplus)}
+                  </span>
                 </div>
-                {/* Horizontal Progress Bar Container */}
-                <div className="w-full h-3 bg-gray-100 dark:bg-zinc-900 border border-black dark:border-white rounded-none overflow-hidden p-0">
-                  <div 
-                    style={{ width: `${surplusPercent}%` }}
-                    className="h-full bg-[#CCFF00] transition-all duration-300"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Flattened Milestone Stream List */}
-            <div className="flex-1 flex flex-col gap-1.5 overflow-y-auto pr-0.5 mb-2">
-              <div className="text-[10px] font-black uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400 mb-0.5">
-                INVESTMENT_MILESTONES
-              </div>
-              <div className="space-y-1.5">
-                {investmentTriggers.map((trigger) => {
-                  const isMet = trigger.status === 'THRESHOLD_MET';
-                  const pct = Math.max(0, Math.min(100, (trigger.currentProgress / trigger.targetThreshold) * 100));
-                  
-                  return (
+                {/* Primary Efficiency Horizontal Meter */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[9px] font-mono font-bold text-gray-500 dark:text-zinc-400">
+                    <span className="uppercase">SURPLUS_EFFICIENCY_RATE:</span>
+                    <span>{surplusPercent.toFixed(1)}%</span>
+                  </div>
+                  {/* Horizontal Progress Bar Container */}
+                  <div className="w-full h-3 bg-gray-100 dark:bg-zinc-900 border border-black dark:border-white rounded-none overflow-hidden p-0">
                     <div 
-                      key={trigger.id}
-                      className="border-2 p-2 flex flex-col gap-1 transition-all duration-205 rounded-none border-black dark:border-white bg-white dark:bg-zinc-800"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        {/* Left Alignment: target name and structural type badge side-by-side */}
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-xs font-black font-mono uppercase truncate text-black dark:text-white">
-                            {trigger.name}
-                          </span>
-                          <span className="text-[8px] font-bold font-mono bg-black text-white dark:bg-white dark:text-black px-1 py-0.5 rounded-none uppercase shrink-0">
-                            {trigger.assetClass}
-                          </span>
-                        </div>
+                      style={{ width: `${surplusPercent}%` }}
+                      className="h-full bg-[#CCFF00] transition-all duration-300"
+                    />
+                  </div>
+                </div>
+              </div>
 
-                        {/* Right Alignment: compact progress bar running inline with numeric fraction */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[9px] font-bold font-mono text-gray-500 dark:text-zinc-400">
-                            {formatNairaShort(trigger.currentProgress)} / {formatNairaShort(trigger.targetThreshold)}
-                          </span>
-                          {/* Compressed progress bar */}
-                          <div className="border border-black dark:border-white bg-white dark:bg-zinc-900 h-2 w-16 rounded-none overflow-hidden p-0 shrink-0">
-                            <div 
-                              style={{ width: `${pct}%` }}
-                              className="h-full bg-[#CCFF00] rounded-none"
-                            />
+              {/* Flattened Milestone Stream List */}
+              <div className="flex-1 flex flex-col gap-1.5 overflow-y-auto pr-0.5 mb-2">
+                <div className="text-[10px] font-black uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400 mb-0.5">
+                  INVESTMENT_MILESTONES
+                </div>
+                <div className="space-y-1.5">
+                  {investmentTriggers.map((trigger) => {
+                    const isMet = trigger.status === 'THRESHOLD_MET';
+                    const pct = Math.max(0, Math.min(100, (trigger.currentProgress / trigger.targetThreshold) * 100));
+                    
+                    return (
+                      <div 
+                        key={trigger.id}
+                        className="border-2 p-2 flex flex-col gap-1 transition-all duration-205 rounded-none border-black dark:border-white bg-white dark:bg-zinc-800"
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          {/* Left Alignment: target name and structural type badge side-by-side */}
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-xs font-black font-mono uppercase truncate text-black dark:text-white">
+                              {trigger.name}
+                            </span>
+                            <span className="text-[8px] font-bold font-mono bg-black text-white dark:bg-white dark:text-black px-1 py-0.5 rounded-none uppercase shrink-0">
+                              {trigger.assetClass}
+                            </span>
+                          </div>
+
+                          {/* Right Alignment: compact progress bar running inline with numeric fraction */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[9px] font-bold font-mono text-gray-500 dark:text-zinc-400">
+                              {formatNairaShort(trigger.currentProgress)} / {formatNairaShort(trigger.targetThreshold)}
+                            </span>
+                            {/* Compressed progress bar */}
+                            <div className="border border-black dark:border-white bg-white dark:bg-zinc-900 h-2 w-16 rounded-none overflow-hidden p-0 shrink-0">
+                              <div 
+                                style={{ width: `${pct}%` }}
+                                className="h-full bg-[#CCFF00] rounded-none"
+                              />
+                            </div>
                           </div>
                         </div>
+
+                        {/* Expand row container downward to expose routing anchor if Met */}
+                        {isMet && (
+                          <div className="flex justify-end pt-1 mt-0.5 border-t border-dashed border-black/10 dark:border-white/10">
+                            <button
+                              onClick={() => handleGoToPlatform(trigger.targetPlatform, trigger.name, trigger.targetThreshold)}
+                              className="text-[9px] font-black font-mono text-black dark:text-white hover:text-[#CCFF00] flex items-center gap-0.5 uppercase cursor-pointer"
+                            >
+                              [GO TO {trigger.targetPlatform.toUpperCase()}] ↗
+                            </button>
+                          </div>
+                        )}
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-                      {/* Expand row container downward to expose routing anchor if Met */}
-                      {isMet && (
-                        <div className="flex justify-end pt-1 mt-0.5 border-t border-dashed border-black/10 dark:border-white/10">
-                          <button
-                            onClick={() => handleGoToPlatform(trigger.targetPlatform, trigger.name, trigger.targetThreshold)}
-                            className="text-[9px] font-black font-mono text-black dark:text-white hover:text-[#CCFF00] flex items-center gap-0.5 uppercase cursor-pointer"
-                          >
-                            [GO TO {trigger.targetPlatform.toUpperCase()}] ↗
-                          </button>
-                        </div>
-                      )}
+              {/* Financial Intelligence Block */}
+              <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-4 space-y-3 rounded-none shrink-0">
+                <h4 className="font-display font-black text-xs uppercase text-black dark:text-white">
+                  FINANCIAL_INTELLIGENCE
+                </h4>
+                <div className="space-y-2">
+                  {/* BUDGET_OVERRUN_ALERT */}
+                  <div className="flex border border-black dark:border-white bg-[#FFFBEB] dark:bg-amber-950/20 rounded-none overflow-hidden">
+                    <div className="w-2 bg-amber-500 shrink-0" />
+                    <div className="p-2 font-mono text-[9px] font-bold text-black dark:text-white uppercase leading-normal">
+                      [BUDGET_OVERRUN_ALERT] WARNING: SEVERAL BUDGET CATEGORIES ARE APPROACHING OR HAVE SURPASSED CONFIGURED LIMITS. IMMEDIATE ADJUSTMENT RECOMMENDED.
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Financial Intelligence Block */}
-            <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-4 space-y-3 rounded-none shrink-0">
-              <h4 className="font-display font-black text-xs uppercase text-black dark:text-white">
-                FINANCIAL_INTELLIGENCE
-              </h4>
-              <div className="space-y-2">
-                {/* BUDGET_OVERRUN_ALERT */}
-                <div className="flex border border-black dark:border-white bg-[#FFFBEB] dark:bg-amber-950/20 rounded-none overflow-hidden">
-                  <div className="w-2 bg-amber-500 shrink-0" />
-                  <div className="p-2 font-mono text-[9px] font-bold text-black dark:text-white uppercase leading-normal">
-                    [BUDGET_OVERRUN_ALERT] WARNING: SEVERAL BUDGET CATEGORIES ARE APPROACHING OR HAVE SURPASSED CONFIGURED LIMITS. IMMEDIATE ADJUSTMENT RECOMMENDED.
                   </div>
-                </div>
 
-                {/* SAVINGS_TARGET_MET */}
-                <div className="flex border border-black dark:border-white bg-lime-50/20 dark:bg-zinc-800/40 rounded-none overflow-hidden">
-                  <div className="w-2 bg-[#C6EF4E] shrink-0" />
-                  <div className="p-2 font-mono text-[9px] font-bold text-black dark:text-white uppercase leading-normal">
-                    [SAVINGS_TARGET_MET] SYSTEM_ALERT: MONTHLY SAVINGS TARGET SUCCESSFULLY REACHED. SAVINGS EFFICIENCY EXCEEDS THE THRESHOLD.
+                  {/* SAVINGS_TARGET_MET */}
+                  <div className="flex border border-black dark:border-white bg-lime-50/20 dark:bg-zinc-800/40 rounded-none overflow-hidden">
+                    <div className="w-2 bg-[#C6EF4E] shrink-0" />
+                    <div className="p-2 font-mono text-[9px] font-bold text-black dark:text-white uppercase leading-normal">
+                      [SAVINGS_TARGET_MET] SYSTEM_ALERT: MONTHLY SAVINGS TARGET SUCCESSFULLY REACHED. SAVINGS EFFICIENCY EXCEEDS THE THRESHOLD.
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === 'buckets' && (
-          <div className="flex-1 overflow-y-auto pr-1 min-h-0 pb-4 animate-fade-in">
-            <BudgetProgress />
-          </div>
-        )}
-
-        {activeTab === 'receipts' && (
-          <div className="flex-1 overflow-y-auto pr-1 min-h-0 pb-4 animate-fade-in">
-            <RecentExpenses />
-          </div>
-        )}
-      </div>
+          {activeTab === 'receipts' && (
+            <div className="flex-1 overflow-y-auto pr-1 min-h-0 pb-4 animate-fade-in">
+              <RecentExpenses />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Desktop Viewport Bento Grid */}
       <motion.div
