@@ -165,7 +165,7 @@ export default function Dashboard() {
     : 0;
 
   return (
-    <div className="h-[calc(100vh-200px)] md:h-auto max-h-[calc(100vh-200px)] md:max-h-none overflow-hidden md:overflow-visible flex flex-col gap-3 md:space-y-6">
+    <div className="w-full min-h-screen h-auto overflow-y-auto pb-24 md:pb-0 md:overflow-visible flex flex-col gap-3 md:space-y-6">
       {/* Wealth Banner Alert */}
       {activeWealthBanner && (
         <div className="bg-[#C6EF4E] text-black border-2 border-black p-4 font-mono font-extrabold text-xs uppercase flex justify-between items-center rounded-[var(--border-radius)] mb-2 animate-[pulse_1s_infinite] shrink-0">

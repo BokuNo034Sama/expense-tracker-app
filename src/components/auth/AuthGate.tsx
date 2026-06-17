@@ -47,7 +47,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (!profile.has_completed_onboarding) {
       return <OnboardingOverlay />;
     }
-    if (!profile.income_type) {
+    const needsCycleMigration = !!(profile && !profile.income_type);
+    if (needsCycleMigration) {
       return <IncomeMigrationModal />;
     }
   }
