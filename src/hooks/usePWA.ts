@@ -33,7 +33,7 @@ export function usePWA() {
       }
 
       const registration = await navigator.serviceWorker.ready;
-      const vapidKey = "BEl62iII_CR8m9IDJTOVJ8...";
+      const vapidKey = "BHQmgmTx9pHYNVB5IQRgwxIzY6eBFBYTUExkRCLnrEC305sIUN7VEpxGCEEKD76TRmEdzTSHUg9S1jndYAIEibY";
 
       const urlBase64ToUint8Array = (base64String: string) => {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);

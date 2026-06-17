@@ -10,57 +10,43 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Duolingo-style background push event listener
+// Listen for incoming system push notifications
 self.addEventListener('push', (event) => {
-  let title = "STREAK_IN_DANGER! 🚨";
-  let body = "Your financial discipline streak is freezing! Open Kiny to report today's logs and protect your pocket balance.";
-  let icon = "/icons/icon-192x192.png";
+  let data = { 
+    title: 'KINY_OS', 
+    body: 'Maintain your momentum. Log your receipts, spending, or added income for the day.' 
+  };
 
   if (event.data) {
     try {
-      const payload = event.data.json();
-      title = payload.title || title;
-      body = payload.body || body;
-      icon = payload.icon || icon;
+      data = event.data.json();
     } catch (e) {
-      const textData = event.data.text();
-      if (textData) {
-        body = textData;
-      }
+      data = { title: 'KINY_OS', body: event.data.text() };
     }
   }
 
   const options = {
-    body: body,
-    icon: icon,
-    badge: icon,
-    vibrate: [200, 100, 200],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    }
+    body: data.body,
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
+    vibrate: [100, 50, 100],
+    data: { dateOfArrival: Date.now() }
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    self.registration.showNotification(data.title, options)
   );
 });
 
-// Listen for notification click to redirect or focus Vercel live url window
+// Focus or launch app view upon clicking the notification banner
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = 'https://expense-tracker-app-mu-five.vercel.app';
-
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    clients.matchAll({ type: 'window' }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url === targetUrl && 'focus' in client) {
-          return client.focus();
-        }
+        if (client.url === '/' && 'focus' in client) return client.focus();
       }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl);
-      }
+      if (clients.openWindow) return clients.openWindow('/');
     })
   );
 });

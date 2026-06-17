@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
+import { usePWA } from '../hooks/usePWA';
 import { BentoCard } from '../components/shared/BentoCard';
 import { IncomeList } from '../components/income/IncomeList';
 import { LogOut } from 'lucide-react';
@@ -11,6 +12,47 @@ export default function ProfilePage() {
   const signOut = useAppStore(s => s.signOut);
   const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
   const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
+
+  const { registerPushNotifications } = usePWA();
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setPermissionStatus(Notification.permission);
+    }
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    setIsSubscribing(true);
+    try {
+      await registerPushNotifications();
+      if ('Notification' in window) {
+        setPermissionStatus(Notification.permission);
+      }
+    } catch (err) {
+      console.error('[KINY] Failed to register push notifications:', err);
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        reg.showNotification('KINY_OS', {
+          body: 'Maintain your momentum. Log your receipts, spending, or added income for the day.',
+          icon: '/icons/icon-192x192.png',
+          badge: '/icons/icon-192x192.png',
+          vibrate: [100, 50, 100],
+          data: { dateOfArrival: Date.now() }
+        } as any);
+      } catch (err) {
+        console.error('[KINY] Failed to show test notification:', err);
+      }
+    }
+  };
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -289,6 +331,73 @@ export default function ProfilePage() {
 
       {/* Income Streams List */}
       <IncomeList />
+
+      {/* Neubrutalist Notification Configuration Card */}
+      <BentoCard hoverEffect={false} className="space-y-6 dark:bg-[#1A1A1A] border-2 border-black dark:border-white">
+        <div className="border-b border-[var(--color-ink)] border-dashed pb-3">
+          <h3 
+            style={{ fontFamily: 'var(--font-display)' }}
+            className="text-base font-extrabold uppercase text-[var(--color-ink)] dark:text-white"
+          >
+            🔔 NOTIFICATION_SETTINGS
+          </h3>
+          <p 
+            style={{ fontFamily: 'var(--font-mono)' }}
+            className="text-[10px] text-[var(--color-ink-muted)] dark:text-zinc-400 uppercase mt-1"
+          >
+            Configure background system push reminders and streaks monitor.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-2 border-black dark:border-white bg-[var(--color-surface)] dark:bg-zinc-800 p-4 font-mono text-xs">
+            <div>
+              <div className="font-bold uppercase text-black dark:text-white">System Web Push Reminders</div>
+              <div className="text-[10px] text-gray-500 dark:text-zinc-400 mt-1 uppercase">
+                {permissionStatus === 'granted' 
+                  ? 'Status: Active and subscribed' 
+                  : permissionStatus === 'denied' 
+                    ? 'Status: Blocked by browser settings' 
+                    : 'Status: Action required'}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {permissionStatus !== 'granted' ? (
+                <button
+                  type="button"
+                  onClick={handleEnableNotifications}
+                  disabled={permissionStatus === 'denied' || isSubscribing}
+                  style={{ fontFamily: 'var(--font-display)' }}
+                  className={`
+                    px-4 py-2 bg-[var(--color-brand-primary)] text-black border-2 border-black 
+                    rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] 
+                    active:translate-y-[2px] active:shadow-none font-bold text-[10px] 
+                    uppercase transition-all cursor-pointer
+                    ${permissionStatus === 'denied' ? 'opacity-50 cursor-not-allowed shadow-none active:translate-y-0' : ''}
+                    ${isSubscribing ? 'animate-pulse' : ''}
+                  `}
+                >
+                  {isSubscribing ? 'SUBSCRIBING...' : '[ ENABLE_PUSH ]'}
+                </button>
+              ) : (
+                <>
+                  <div className="bg-[#CCFF00] text-black border-2 border-black font-mono font-bold text-[10px] px-3 py-2 uppercase select-none flex items-center">
+                    ACTIVE
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendTestNotification}
+                    style={{ fontFamily: 'var(--font-display)' }}
+                    className="px-4 py-2 bg-white dark:bg-zinc-700 text-black dark:text-white border-2 border-black dark:border-white rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-bold text-[10px] uppercase transition-all cursor-pointer"
+                  >
+                    [ TEST_PUSH ]
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </BentoCard>
 
       {/* Neubrutalist Slice Configuration Card */}
       <BentoCard hoverEffect={false} className="space-y-6 dark:bg-[#1A1A1A] border-2 border-black dark:border-white">
