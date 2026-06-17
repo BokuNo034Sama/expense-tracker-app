@@ -4,6 +4,16 @@ import { useAppStore } from '../../store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import type { Expense } from '../../store/types';
 
+const CACHE_KEY_FORM = 'KINY_TEMP_EXPENSE_FORM';
+
+const isLocalStorageAvailable = () => {
+  try {
+    return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined' && window.localStorage !== null;
+  } catch {
+    return false;
+  }
+};
+
 interface ExpenseFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -239,6 +249,48 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
     }
   };
 
+  // Rehydrate form values upon unexpected reload crashes
+  useEffect(() => {
+    if (!isLocalStorageAvailable()) return;
+    const cachedData = localStorage.getItem(CACHE_KEY_FORM);
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        setAmount(parsed.amount || '');
+        setCategoryId(parsed.categoryId || '');
+        setTransactionDate(parsed.transactionDate || new Date().toISOString().split('T')[0]);
+        setVendorName(parsed.vendorName || '');
+        setMemo(parsed.memo || '');
+        // Automatically re-open the form view component container
+        onOpenChange(true);
+      } catch (e) {
+        console.error("Failed to restore cached form metrics:", e);
+      }
+    }
+  }, [onOpenChange]);
+
+  // Reactively backup the form configuration parameters
+  useEffect(() => {
+    if (!isLocalStorageAvailable()) return;
+    if (open && !expense) {
+      localStorage.setItem(CACHE_KEY_FORM, JSON.stringify({
+        amount,
+        categoryId,
+        transactionDate,
+        vendorName,
+        memo
+      }));
+    }
+  }, [amount, categoryId, transactionDate, vendorName, memo, open, expense]);
+
+  // Clear cache when modal is closed
+  useEffect(() => {
+    if (!isLocalStorageAvailable()) return;
+    if (!open) {
+      localStorage.removeItem(CACHE_KEY_FORM);
+    }
+  }, [open]);
+
   useEffect(() => {
     if (isParsing) return;
 
@@ -250,11 +302,15 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         setAmount(expense.amount.toString());
         setMemo(expense.note || '');
       } else {
-        setTransactionDate(new Date().toISOString().split('T')[0]);
-        setVendorName('');
-        setCategoryId(categories[0]?.id || '');
-        setAmount('');
-        setMemo('');
+        // Only reset to defaults if we don't have a cached form
+        const cachedData = isLocalStorageAvailable() ? localStorage.getItem(CACHE_KEY_FORM) : null;
+        if (!cachedData) {
+          setTransactionDate(new Date().toISOString().split('T')[0]);
+          setVendorName('');
+          setCategoryId(categories[0]?.id || '');
+          setAmount('');
+          setMemo('');
+        }
       }
       setErrorMsg(null);
     }
