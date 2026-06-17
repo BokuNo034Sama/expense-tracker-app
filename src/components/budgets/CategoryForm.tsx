@@ -149,13 +149,21 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
               >
                 {(() => {
                   const financialSlices = profile?.enabled_slices;
-                  const sliceOptions = Array.isArray(financialSlices) 
-                    ? financialSlices 
-                    : typeof financialSlices === 'string'
-                      ? JSON.parse(financialSlices)
-                      : ['Basic', 'Family', 'Wealth', 'Subscription']; // Core architecture fallbacks
+                  let sliceOptions: unknown;
+                  try {
+                    sliceOptions = Array.isArray(financialSlices) 
+                      ? financialSlices 
+                      : typeof financialSlices === 'string'
+                        ? JSON.parse(financialSlices)
+                        : ['Basic', 'Family', 'Wealth', 'Subscription'];
+                  } catch {
+                    sliceOptions = ['Basic', 'Family', 'Wealth', 'Subscription'];
+                  }
 
-                  const finalOptions = [...sliceOptions];
+                  const targetOptions = (Array.isArray(sliceOptions) ? sliceOptions : [])
+                    .filter((s): s is string => typeof s === 'string');
+
+                  const finalOptions = [...targetOptions];
                   if (category && category.slice && !finalOptions.includes(category.slice)) {
                     finalOptions.push(category.slice);
                   }
