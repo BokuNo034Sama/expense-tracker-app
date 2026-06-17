@@ -10,6 +10,7 @@ import { RecentExpenses } from "@/components/dashboard/RecentExpenses";
 import { SpendingRadar } from "@/components/dashboard/SpendingRadar";
 import { InvestmentNudge } from "@/components/dashboard/InvestmentNudge";
 import { WealthAnalytics } from "@/components/analytics/WealthAnalytics";
+import { MonthlyWrap } from "@/components/dashboard/MonthlyWrap";
 import { Eye, EyeOff } from "lucide-react";
 import { SyncIndicator } from "@/components/shared/SyncIndicator";
 
@@ -345,7 +346,8 @@ export default function Dashboard() {
         )}
 
         {activeTab === 'analytics' && (
-          <div className="flex-1 flex flex-col gap-2.5 min-h-0">
+          <div className="flex-1 flex flex-col gap-2.5 min-h-0 overflow-y-auto pb-4">
+            <MonthlyWrap />
             {/* The Anchor Card (Full Width) */}
             <div className="border-2 border-black dark:border-white p-2.5 bg-white dark:bg-zinc-800 shrink-0 rounded-none">
               <div className="flex justify-between items-center mb-1">
@@ -488,9 +490,14 @@ export default function Dashboard() {
         </motion.div>
 
         {isWealthEnabled && (
-          <motion.div variants={itemVariants} className="col-span-full">
-            <WealthAnalytics />
-          </motion.div>
+          <>
+            <motion.div variants={itemVariants} className="col-span-full">
+              <MonthlyWrap />
+            </motion.div>
+            <motion.div variants={itemVariants} className="col-span-full">
+              <WealthAnalytics />
+            </motion.div>
+          </>
         )}
 
         {/* Row 2: Transactions & Chart */}

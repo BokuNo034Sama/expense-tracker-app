@@ -273,4 +273,6 @@ export interface AppStore {
   investmentTriggers: InvestmentTrigger[];
   activeWealthBanner: string | null;
   dismissWealthBanner: () => void;
+  monthlySnapshots: MonthlySnapshot[];
+  fetchMonthlySnapshots: () => Promise<void>;
 }

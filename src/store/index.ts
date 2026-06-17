@@ -5,7 +5,7 @@ import { supabase, getUID } from '../lib/supabaseClient';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
-  InvestmentTrigger,
+  InvestmentTrigger, MonthlySnapshot,
 } from './types';
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
@@ -227,6 +227,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         ],
         expenses: [],
         incomes: [],
+        monthlySnapshots: [],
       });
       return;
     }
@@ -267,6 +268,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           get().fetchCategories(),
           get().fetchExpenses(),
           get().fetchIncomes(),
+          get().fetchMonthlySnapshots(),
         ]);
         await checkAndRunRollover(get);
         recalculateWealthMetrics(set, get, true);
@@ -292,6 +294,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           get().fetchCategories(),
           get().fetchExpenses(),
           get().fetchIncomes(),
+          get().fetchMonthlySnapshots(),
         ]);
         await checkAndRunRollover(get);
         recalculateWealthMetrics(set, get, true);
@@ -317,6 +320,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             get().fetchCategories(),
             get().fetchExpenses(),
             get().fetchIncomes(),
+            get().fetchMonthlySnapshots(),
           ]);
           await checkAndRunRollover(get);
           recalculateWealthMetrics(set, get, true);
@@ -327,7 +331,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         // Clear all data on sign out
         set({
           profile: null, categories: [], expenses: [],
-          incomes: [], investmentInterests: [],
+          incomes: [], investmentInterests: [], monthlySnapshots: [],
         });
       }
     });
@@ -432,6 +436,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     await Promise.all([
       get().fetchExpenses(),
       get().fetchIncomes(),
+      get().fetchMonthlySnapshots(),
     ]);
     recalculateWealthMetrics(set, get, true);
   },
@@ -471,7 +476,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set({
       auth: { user: null, session: null, status: 'unauthenticated' },
       profile: null, categories: [], expenses: [], incomes: [],
-      investmentInterests: [],
+      investmentInterests: [], monthlySnapshots: [],
     });
   },
 
@@ -1037,6 +1042,21 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     { id: 'trigger-fund', assetClass: 'Mutual Fund', name: 'Naira Inflation-Shield Fund Goal', targetThreshold: 100000, currentProgress: 0, targetPlatform: 'Cowrywise', status: 'PENDING' },
     { id: 'trigger-etf', assetClass: 'ETF', name: 'Global Tech Index ETF Goal', targetThreshold: 50000, currentProgress: 0, targetPlatform: 'Trove', status: 'PENDING' }
   ],
+  monthlySnapshots: [],
+  fetchMonthlySnapshots: async () => {
+    try {
+      const uid = await getUID();
+      const { data, error } = await supabase
+        .from('monthly_snapshots')
+        .select('*')
+        .eq('user_id', uid)
+        .order('month_year', { ascending: false });
+      if (error) throw error;
+      set({ monthlySnapshots: (data as MonthlySnapshot[]) ?? [] });
+    } catch (err) {
+      console.error('[KINY] fetchMonthlySnapshots failed:', err);
+    }
+  },
 
   // ── Month Filtering ────────────────────────────────────────────────────────
   filterMonth: new Date().toISOString().substring(0, 7),
