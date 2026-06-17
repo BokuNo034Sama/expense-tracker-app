@@ -1,8 +1,8 @@
 import { useAppStore, getCycleBoundaries } from '../../store';
 
 export function BudgetProgress() {
-  const categories = useAppStore(s => s.categories);
-  const expenses = useAppStore(s => s.expenses);
+  const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories : []);
+  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses : []);
   const isDataMasked = useAppStore(s => s.isDataMasked);
 
   const formatNaira = (amount: number) => {
@@ -13,6 +13,7 @@ export function BudgetProgress() {
   const profile = useAppStore(s => s.profile);
   const currentCycle = getCycleBoundaries(profile);
   const monthlyExpenses = expenses.filter(e => {
+    if (!e || !e.date || typeof e.date !== 'string') return false;
     const d = new Date(e.date);
     return d >= currentCycle.startDate && d <= currentCycle.endDate;
   });
@@ -20,13 +21,13 @@ export function BudgetProgress() {
   // Compute spend per category
   const categorySpends: { [id: string]: number } = {};
   monthlyExpenses.forEach(e => {
-    if (e.category_id) {
-      categorySpends[e.category_id] = (categorySpends[e.category_id] || 0) + Number(e.amount);
+    if (e && e.category_id) {
+      categorySpends[e.category_id] = (categorySpends[e.category_id] || 0) + Number(e.amount || 0);
     }
   });
 
   // Only categories that have a budget limit configured (> 0)
-  const budgetedCategories = categories.filter(c => Number(c.budget_limit) > 0);
+  const budgetedCategories = categories.filter(c => c && Number(c.budget_limit || 0) > 0);
 
   return (
     <div className="w-full space-y-4">

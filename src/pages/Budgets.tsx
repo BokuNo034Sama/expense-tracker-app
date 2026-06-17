@@ -70,11 +70,19 @@ export default function Budgets() {
   };
 
   // Safe fallback array cast if the profile configuration column hasn't updated or synced locally yet
-  const slices = (profile?.enabled_slices && Array.isArray(profile.enabled_slices)
-    ? profile.enabled_slices 
-    : ['Basic', 'Family', 'Wealth', 'Subscription']) as Slice[];
+  let cleanSlices: unknown;
+  try {
+    cleanSlices = typeof profile?.enabled_slices === 'string'
+      ? JSON.parse(profile.enabled_slices)
+      : Array.isArray(profile?.enabled_slices)
+        ? profile.enabled_slices
+        : ['Basic', 'Family', 'Wealth', 'Subscription'];
+  } catch {
+    cleanSlices = ['Basic', 'Family', 'Wealth', 'Subscription'];
+  }
 
-  const targetSlices = Array.isArray(slices) ? slices : [];
+  const targetSlices = (Array.isArray(cleanSlices) ? cleanSlices : [])
+    .filter((s): s is string => typeof s === 'string') as Slice[];
 
   // Filtered expenses based on selected categories/slices
   const filteredExpenses = monthlyExpenses.filter(e => {
