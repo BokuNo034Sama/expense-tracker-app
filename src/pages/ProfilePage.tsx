@@ -47,7 +47,7 @@ export default function ProfilePage() {
           badge: '/icons/icon-192x192.png',
           vibrate: [100, 50, 100],
           data: { dateOfArrival: Date.now() }
-        } as any);
+        } as NotificationOptions);
       } catch (err) {
         console.error('[KINY] Failed to show test notification:', err);
       }
