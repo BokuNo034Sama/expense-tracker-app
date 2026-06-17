@@ -53,6 +53,10 @@ export interface ProfileRow {
   last_logged_date?:         string;
   enabled_slices:            string[];
   estimated_monthly_salary?: number;
+  income_type?:              'salary' | 'business' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null;
+  anchor_day?:               number | null;
+  fluid_window_days?:        number | null;
+  last_reset_date?:          string | null;
 }
 
 export interface CategoryRow {
@@ -189,12 +193,13 @@ export interface ErrorState {
 export interface AppStore {
   // ── Auth ─────────────────────────────────────────────────────────────────
   auth:           AuthState;
-  signUp:         (email: string, password: string) => Promise<void>;
+  signUp:         (email: string, password: string, incomeType: 'salary' | 'business', anchorDay: number | null, fluidWindowDays: number | null) => Promise<void>;
   signIn:         (email: string, password: string) => Promise<void>;
   signInMagicLink:(email: string) => Promise<void>;
   signOut:        () => Promise<void>;
   initAuth:       () => Promise<void>; // Called once on app mount
   archiveCurrentMonth: () => Promise<void>;
+  manualArchiveCycle:  () => Promise<void>;
 
   // ── Profile ───────────────────────────────────────────────────────────────
   profile:            UserProfile | null;

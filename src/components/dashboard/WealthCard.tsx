@@ -1,4 +1,4 @@
-import { useAppStore } from '../../store';
+import { useAppStore, getCycleBoundaries } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -14,18 +14,23 @@ export function WealthCard() {
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // Filter current month data (date prefix: "YYYY-MM")
-  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+  const currentCycle = getCycleBoundaries(profile);
 
   const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || 0));
   const loggedIncomesSum = incomes
-    .filter(i => i.date.startsWith(currentMonthPrefix))
+    .filter(i => {
+      const d = new Date(i.date);
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
+    })
     .reduce((sum, i) => sum + Number(i.amount), 0);
 
   const totalIncome = baseSalary + loggedIncomesSum;
 
   const totalExpenses = expenses
-    .filter(e => e.date.startsWith(currentMonthPrefix))
+    .filter(e => {
+      const d = new Date(e.date);
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
+    })
     .reduce((sum, e) => sum + Number(e.amount), 0);
 
   const netSavings = totalIncome - totalExpenses;

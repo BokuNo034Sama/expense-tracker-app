@@ -1,4 +1,4 @@
-import { useAppStore } from '../../store';
+import { useAppStore, getCycleBoundaries } from '../../store';
 
 export function BudgetProgress() {
   const categories = useAppStore(s => s.categories);
@@ -10,9 +10,12 @@ export function BudgetProgress() {
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
-  // Filter current month expenses
-  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
-  const monthlyExpenses = expenses.filter(e => e.date.startsWith(currentMonthPrefix));
+  const profile = useAppStore(s => s.profile);
+  const currentCycle = getCycleBoundaries(profile);
+  const monthlyExpenses = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d >= currentCycle.startDate && d <= currentCycle.endDate;
+  });
 
   // Compute spend per category
   const categorySpends: { [id: string]: number } = {};

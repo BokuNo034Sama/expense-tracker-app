@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useAppStore } from './index';
+import { useAppStore, getCycleBoundariesForDate } from './index';
+import type { ProfileRow } from './types';
 
 let mockProfileData = {
   id: 'test-user-id',
@@ -331,6 +332,54 @@ describe('useAppStore', () => {
       // The streak should be 2.
       expect(useAppStore.getState().profile?.current_streak).toBe(2);
       expect(useAppStore.getState().profile?.financial_streak).toBe(2);
+    });
+  });
+
+  describe('Dynamic Financial Cycles', () => {
+    it('should calculate calendar month boundaries as fallback when no profile is present', () => {
+      const date = new Date(Date.UTC(2026, 5, 15)); // June 15
+      const boundaries = getCycleBoundariesForDate(null, date);
+      expect(boundaries.startDate.toISOString().split('T')[0]).toBe('2026-06-01');
+      expect(boundaries.endDate.toISOString().split('T')[0]).toBe('2026-06-30');
+    });
+
+    it('should clamp anchor_day to month length and shift weekend payday (Sunday to Monday)', () => {
+      // June 28, 2026 is a Sunday. Shift should move it to Monday, June 29.
+      const mockProfile = {
+        income_type: 'salary',
+        anchor_day: 28
+      } as unknown as ProfileRow;
+      // For June 15, payday is June 29 (shifted Sunday). Date < payday, so cycle starts at prev payday (May 28)
+      // May 28, 2026 is a Thursday (no shift).
+      const date = new Date(Date.UTC(2026, 5, 15)); // June 15
+      const boundaries = getCycleBoundariesForDate(mockProfile, date);
+      expect(boundaries.startDate.toISOString().split('T')[0]).toBe('2026-05-28');
+      expect(boundaries.endDate.toISOString().split('T')[0]).toBe('2026-06-28'); // day before next payday (June 29)
+    });
+
+    it('should shift weekend payday (Saturday to Friday)', () => {
+      // July 25, 2026 is a Saturday. Shift should move it to Friday, July 24.
+      const mockProfile = {
+        income_type: 'salary',
+        anchor_day: 25
+      } as unknown as ProfileRow;
+      // For July 15, payday is July 24 (shifted Saturday). Date < payday, so cycle starts at prev payday (June 25)
+      // June 25, 2026 is a Thursday (no shift).
+      const date = new Date(Date.UTC(2026, 6, 15)); // July 15
+      const boundaries = getCycleBoundariesForDate(mockProfile, date);
+      expect(boundaries.startDate.toISOString().split('T')[0]).toBe('2026-06-25');
+      expect(boundaries.endDate.toISOString().split('T')[0]).toBe('2026-07-23'); // day before next payday (July 24)
+    });
+
+    it('should compute trailing rolling window for business owners', () => {
+      const mockProfile = {
+        income_type: 'business',
+        fluid_window_days: 15
+      } as unknown as ProfileRow;
+      const date = new Date(Date.UTC(2026, 5, 15)); // June 15
+      const boundaries = getCycleBoundariesForDate(mockProfile, date);
+      expect(boundaries.endDate.toISOString().split('T')[0]).toBe('2026-06-15');
+      expect(boundaries.startDate.toISOString().split('T')[0]).toBe('2026-06-01'); // 15 days ending June 15
     });
   });
 });

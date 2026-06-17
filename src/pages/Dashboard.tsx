@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, type Variants } from "framer-motion";
-import { useAppStore, getLocalDateString, useCurrentStreak } from "@/store/useAppStore";
+import { useAppStore, useCurrentStreak, getCycleBoundaries } from "@/store/useAppStore";
 import { WealthCard } from "@/components/dashboard/WealthCard";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { SpendingChart } from "@/components/SpendingChart";
@@ -114,18 +114,24 @@ export default function Dashboard() {
     window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // Liquid metrics calculations aligned with getLocalDateString()
-  const currentMonthPrefix = getLocalDateString().substring(0, 7);
+  // Liquid metrics calculations aligned with getCycleBoundaries()
+  const currentCycle = getCycleBoundaries(profile);
 
   const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || 0));
   const loggedIncomesSum = incomes
-    .filter(i => i.date.startsWith(currentMonthPrefix))
+    .filter(i => {
+      const d = new Date(i.date);
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
+    })
     .reduce((sum, i) => sum + Number(i.amount), 0);
 
   const totalIncome = baseSalary + loggedIncomesSum;
 
   const totalExpenses = expenses
-    .filter(e => e.date.startsWith(currentMonthPrefix))
+    .filter(e => {
+      const d = new Date(e.date);
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
+    })
     .reduce((sum, e) => sum + Number(e.amount), 0);
 
   const netSavings = totalIncome - totalExpenses;
@@ -134,7 +140,10 @@ export default function Dashboard() {
   // Compute top category
   const categorySpends: { [id: string]: number } = {};
   expenses
-    .filter(e => e.date.startsWith(currentMonthPrefix))
+    .filter(e => {
+      const d = new Date(e.date);
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
+    })
     .forEach(e => {
       if (e.category_id) {
         categorySpends[e.category_id] = (categorySpends[e.category_id] || 0) + Number(e.amount);

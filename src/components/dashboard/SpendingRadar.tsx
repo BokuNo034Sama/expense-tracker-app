@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAppStore } from '../../store';
+import { useAppStore, getCycleBoundaries } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from 'recharts';
 
@@ -7,9 +7,12 @@ export function SpendingRadar() {
   const expenses = useAppStore(s => s.expenses);
   const categories = useAppStore(s => s.categories);
 
-  // Filter current month data (date prefix: "YYYY-MM")
-  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
-  const monthlyExpenses = expenses.filter(e => e.date.startsWith(currentMonthPrefix));
+  const profile = useAppStore(s => s.profile);
+  const currentCycle = getCycleBoundaries(profile);
+  const monthlyExpenses = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d >= currentCycle.startDate && d <= currentCycle.endDate;
+  });
 
   const radarData = useMemo(() => {
     // Total spent this month

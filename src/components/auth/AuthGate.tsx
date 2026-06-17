@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { LoginForm } from './LoginForm';
 import { OnboardingOverlay } from '../onboarding/OnboardingOverlay';
+import { IncomeMigrationModal } from '../modals/IncomeMigrationModal';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const status  = useAppStore(s => s.auth.status);
@@ -45,6 +46,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (status === 'authenticated' && profile) {
     if (!profile.has_completed_onboarding) {
       return <OnboardingOverlay />;
+    }
+    if (!profile.income_type) {
+      return <IncomeMigrationModal />;
     }
   }
 

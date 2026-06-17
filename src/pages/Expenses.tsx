@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore, getCycleBoundaries } from "@/store/useAppStore";
 import type { Expense, Category } from "@/store/types";
 
 const customStyles = `
@@ -16,6 +16,7 @@ const customStyles = `
 
 export default function Expenses() {
   const expenses = useAppStore(s => s.expenses);
+  const profile = useAppStore(s => s.profile);
   const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories : []) as Category[];
   const filterMonth = useAppStore(s => s.filterMonth);
   const setFilterMonth = useAppStore(s => s.setFilterMonth);
@@ -46,11 +47,15 @@ export default function Expenses() {
 
   const targetExpenses = Array.isArray(expenses) ? expenses : [];
   
+  const cycle = filterMonth !== 'all' ? getCycleBoundaries(profile, new Date(filterMonth + "-15")) : null;
+
   // Filter expenses by month first
   const monthlyExpenses = targetExpenses.filter(e => {
     if (!e) return false;
     if (filterMonth === 'all') return true;
-    return e.date && typeof e.date === "string" && e.date.startsWith(filterMonth);
+    if (!e.date || typeof e.date !== "string") return false;
+    const txnDate = new Date(e.date);
+    return cycle ? (txnDate >= cycle.startDate && txnDate <= cycle.endDate) : false;
   });
 
   // Filter expenses by category next

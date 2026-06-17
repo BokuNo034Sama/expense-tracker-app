@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore, getCycleBoundaries } from "@/store/useAppStore";
 import { CategoryCard } from "@/components/budgets/CategoryCard";
 import { CategoryForm } from "@/components/budgets/CategoryForm";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
@@ -41,12 +41,15 @@ export default function Budgets() {
   const [activeSliceFilter, setActiveSliceFilter] = useState<string>('all');
   const [showTrends, setShowTrends] = useState<boolean>(false);
 
-  // Filter current month expenses (date prefix: "YYYY-MM")
-  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+  const currentCycle = getCycleBoundaries(profile);
   
-  // Safe filtering with a string-type check on the expense date property
+  // Safe filtering with a dynamic boundary check
   const targetExpenses = Array.isArray(expenses) ? expenses : [];
-  const monthlyExpenses = targetExpenses.filter(e => e?.date && typeof e.date === "string" && e.date.startsWith(currentMonthPrefix));
+  const monthlyExpenses = targetExpenses.filter(e => {
+    if (!e || !e.date || typeof e.date !== "string") return false;
+    const txnDate = new Date(e.date);
+    return txnDate >= currentCycle.startDate && txnDate <= currentCycle.endDate;
+  });
 
   // Compute spend per category
   const categorySpends: { [id: string]: number } = {};

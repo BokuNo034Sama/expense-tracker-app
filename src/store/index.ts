@@ -31,6 +31,75 @@ export const getLocalDateString = (date: Date = new Date()): string => {
   return date.toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
 };
 
+export function getCycleBoundariesForDate(profile: ProfileRow | null, date: Date): { startDate: Date; endDate: Date } {
+  if (!profile) {
+    // Fallback: start and end of calendar month of 'date'
+    const y = date.getUTCFullYear();
+    const m = date.getUTCMonth();
+    const startDate = new Date(Date.UTC(y, m, 1));
+    const endDate = new Date(Date.UTC(y, m + 1, 0));
+    return { startDate, endDate };
+  }
+
+  if (profile.income_type === 'business') {
+    const fluidWindowDays = profile.fluid_window_days || 30;
+    const endDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const startDate = new Date(endDate);
+    startDate.setUTCDate(startDate.getUTCDate() - (fluidWindowDays - 1));
+    return { startDate, endDate };
+  }
+
+  // Salary earner
+  const anchorDay = profile.anchor_day || 30;
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+
+  const getPaydayForMonth = (y: number, m: number, anchor: number): Date => {
+    const daysInMonth = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    const d = Math.min(anchor, daysInMonth);
+    const pDate = new Date(Date.UTC(y, m, d));
+    const dow = pDate.getUTCDay(); // 0 = Sunday, 6 = Saturday
+    if (dow === 6) {
+      pDate.setUTCDate(pDate.getUTCDate() - 1); // Saturday -> Friday
+    } else if (dow === 0) {
+      pDate.setUTCDate(pDate.getUTCDate() + 1); // Sunday -> Monday
+    }
+    return pDate;
+  };
+
+  const pThis = getPaydayForMonth(year, month, anchorDay);
+
+  if (date >= pThis) {
+    // Current cycle starts at pThis, ends day before next payday
+    let nextYear = year;
+    let nextMonth = month + 1;
+    if (nextMonth > 11) {
+      nextMonth = 0;
+      nextYear += 1;
+    }
+    const pNext = getPaydayForMonth(nextYear, nextMonth, anchorDay);
+    const endDate = new Date(pNext);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+    return { startDate: pThis, endDate };
+  } else {
+    // Current cycle starts at pPrev, ends day before pThis
+    let prevYear = year;
+    let prevMonth = month - 1;
+    if (prevMonth < 0) {
+      prevMonth = 11;
+      prevYear -= 1;
+    }
+    const pPrev = getPaydayForMonth(prevYear, prevMonth, anchorDay);
+    const endDate = new Date(pThis);
+    endDate.setUTCDate(endDate.getUTCDate() - 1);
+    return { startDate: pPrev, endDate };
+  }
+}
+
+export function getCycleBoundaries(profile: ProfileRow | null, date: Date = new Date(getLocalDateString())): { startDate: Date; endDate: Date } {
+  return getCycleBoundariesForDate(profile, date);
+}
+
 const updateLoggingStreak = async (get: () => AppStore) => {
   const profile = get().profile;
   if (!profile) return;
@@ -89,10 +158,16 @@ const updateLoggingStreak = async (get: () => AppStore) => {
 const checkAndRunRollover = async (get: () => AppStore) => {
   const profile = get().profile;
   if (!profile) return;
-  const today = new Date();
-  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+  if (profile.income_type === 'business') {
+    // Business users have trailing/rolling window, no automatic rollover checks
+    return;
+  }
+
+  const todayStr = getLocalDateString();
+  const todayDate = new Date(todayStr);
+
   if (!profile.last_logged_date) {
-    const todayStr = getLocalDateString();
     try {
       await get().updateProfile({ last_logged_date: todayStr });
     } catch (err) {
@@ -100,8 +175,11 @@ const checkAndRunRollover = async (get: () => AppStore) => {
     }
     return;
   }
-  const lastLoggedMonth = profile.last_logged_date.substring(0, 7);
-  if (lastLoggedMonth < currentMonth) {
+
+  const lastLoggedDate = new Date(profile.last_logged_date);
+  const loggedCycle = getCycleBoundariesForDate(profile, lastLoggedDate);
+
+  if (todayDate > loggedCycle.endDate) {
     try {
       await get().archiveCurrentMonth();
     } catch (err) {
@@ -124,13 +202,17 @@ const recalculateWealthMetrics = (
   const incomes = get().incomes || [];
   const expenses = get().expenses || [];
 
-  const today = new Date();
-  const localMonthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-
+  const currentCycle = getCycleBoundaries(profile);
   const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || profile?.monthly_salary || 0));
 
-  const currentMonthIncomes = incomes.filter((i: Income) => i.date.startsWith(localMonthPrefix));
-  const currentMonthExpenses = expenses.filter((e: Expense) => e.date.startsWith(localMonthPrefix));
+  const currentMonthIncomes = incomes.filter((i: Income) => {
+    const txnDate = new Date(i.date);
+    return txnDate >= currentCycle.startDate && txnDate <= currentCycle.endDate;
+  });
+  const currentMonthExpenses = expenses.filter((e: Expense) => {
+    const txnDate = new Date(e.date);
+    return txnDate >= currentCycle.startDate && txnDate <= currentCycle.endDate;
+  });
 
   const totalMonthlyIncome = baseSalary + currentMonthIncomes.reduce((sum: number, i: Income) => sum + Number(i.amount), 0);
   const totalMonthlyExpenses = currentMonthExpenses.reduce((sum: number, e: Expense) => sum + Number(e.amount), 0);
@@ -346,12 +428,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       return;
     }
 
-    const concludedMonth = profile.last_logged_date.substring(0, 7);
+    const concludedCycle = getCycleBoundariesForDate(profile, new Date(profile.last_logged_date));
+    let concludedMonth = getLocalDateString(concludedCycle.startDate).substring(0, 7);
+    if (profile.income_type === 'business') {
+      concludedMonth = `ROLL_${getLocalDateString(concludedCycle.endDate)}`;
+    }
 
     // Compute base salary and totals
     const baseSalary = Number(profile?.estimated_monthly_salary || 0) || Number(profile?.monthly_salary || 0);
-    const concludedIncomes = get().incomes.filter(i => i.date.startsWith(concludedMonth));
-    const concludedExpenses = get().expenses.filter(e => e.date.startsWith(concludedMonth));
+    const concludedIncomes = get().incomes.filter(i => {
+      const d = new Date(i.date);
+      return d >= concludedCycle.startDate && d <= concludedCycle.endDate;
+    });
+    const concludedExpenses = get().expenses.filter(e => {
+      const d = new Date(e.date);
+      return d >= concludedCycle.startDate && d <= concludedCycle.endDate;
+    });
 
     const totalIncome = baseSalary + concludedIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
     const totalExpense = concludedExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -392,26 +484,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       throw new Error(`[KINY] Failed to archive month: ${snapshotError.message}`);
     }
 
-    const [yearStr, monthStr] = concludedMonth.split('-');
-    const year = parseInt(yearStr);
-    const month = parseInt(monthStr);
-    let nextYear = year;
-    let nextMonthVal = month + 1;
-    if (nextMonthVal > 12) {
-      nextMonthVal = 1;
-      nextYear += 1;
-    }
-    const nextMonthStr = `${nextYear}-${String(nextMonthVal).padStart(2, '0')}`;
-    const startOfConcludedMonth = `${concludedMonth}-01`;
-    const startOfNextMonth = `${nextMonthStr}-01`;
+    const startStr = getLocalDateString(concludedCycle.startDate);
+    const endStr = getLocalDateString(concludedCycle.endDate);
 
-    // Delete expenses and incomes of the concluded month in Supabase
+    // Delete expenses and incomes of the concluded cycle in Supabase
     const { error: expDeleteError } = await supabase
       .from('expenses')
       .delete()
       .eq('user_id', uid)
-      .gte('date', startOfConcludedMonth)
-      .lt('date', startOfNextMonth);
+      .gte('date', startStr)
+      .lte('date', endStr);
 
     if (expDeleteError) {
       console.error('[KINY] Failed to delete expenses for archive:', expDeleteError.message);
@@ -421,8 +503,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .from('incomes')
       .delete()
       .eq('user_id', uid)
-      .gte('date', startOfConcludedMonth)
-      .lt('date', startOfNextMonth);
+      .gte('date', startStr)
+      .lte('date', endStr);
 
     if (incDeleteError) {
       console.error('[KINY] Failed to delete incomes for archive:', incDeleteError.message);
@@ -441,12 +523,42 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     recalculateWealthMetrics(set, get, true);
   },
 
-  signUp: async (email, password) => {
+  manualArchiveCycle: async () => {
+    const todayStr = getLocalDateString();
+    await get().updateProfile({ last_logged_date: todayStr });
+    await get().archiveCurrentMonth();
+  },
+
+  signUp: async (email, password, incomeType, anchorDay, fluidWindowDays) => {
     set(s => ({ errors: { ...s.errors, auth: null } }));
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data: authData, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          income_type: incomeType,
+          anchor_day: anchorDay,
+          fluid_window_days: fluidWindowDays
+        }
+      }
+    });
     if (error) {
       set(s => ({ errors: { ...s.errors, auth: error.message } }));
       throw error;
+    }
+    if (authData?.user) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({
+            income_type: incomeType,
+            anchor_day: anchorDay,
+            fluid_window_days: fluidWindowDays
+          })
+          .eq('id', authData.user.id);
+      } catch (err) {
+        console.warn('[KINY] profiles update warning:', err);
+      }
     }
   },
 

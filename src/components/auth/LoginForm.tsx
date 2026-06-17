@@ -11,6 +11,9 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [useMagicLink, setUseMagicLink] = useState(false);
+  const [incomeType, setIncomeType] = useState<'salary' | 'business'>('salary');
+  const [anchorDay, setAnchorDay] = useState<number>(30);
+  const [fluidWindowDays, setFluidWindowDays] = useState<number>(30);
   
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -71,7 +74,13 @@ export function LoginForm() {
         setSuccessMsg('CHECK_YOUR_EMAIL — magic link sent.');
       } else {
         if (isSignUp) {
-          await signUp(email.trim(), password);
+          await signUp(
+            email.trim(), 
+            password, 
+            incomeType, 
+            incomeType === 'salary' ? anchorDay : null, 
+            incomeType === 'business' ? fluidWindowDays : null
+          );
           setSuccessMsg('Check your email to verify your signup.');
         } else {
           await signIn(email.trim(), password);
@@ -208,6 +217,90 @@ export function LoginForm() {
                   </div>
                 )}
               </>
+            )}
+
+            {isSignUp && (
+              <div className="space-y-4 pt-2 border-t border-[var(--border-default)] border-dashed border-opacity-20">
+                <div>
+                  <label 
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                    className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-2"
+                  >
+                    USER_CLASSIFICATION
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIncomeType('salary')}
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className={`py-2 px-3 text-xs font-bold border-2 border-black transition-all duration-100 uppercase ${
+                        incomeType === 'salary' 
+                          ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
+                          : 'bg-white text-black'
+                      }`}
+                    >
+                      [ SALARY_EARNER ]
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIncomeType('business')}
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className={`py-2 px-3 text-xs font-bold border-2 border-black transition-all duration-100 uppercase ${
+                        incomeType === 'business' 
+                          ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
+                          : 'bg-white text-black'
+                      }`}
+                    >
+                      [ BUSINESS_OWNER ]
+                    </button>
+                  </div>
+                </div>
+
+                {incomeType === 'salary' ? (
+                  <div>
+                    <label 
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
+                    >
+                      PAYDAY_ANCHOR_DAY (1-31)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      required
+                      value={anchorDay}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setAnchorDay(isNaN(val) ? 1 : Math.max(1, Math.min(31, val)));
+                      }}
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className="w-full px-4 py-3 bg-[var(--color-surface)] border-2 border-black text-[var(--color-ink)] outline-none focus:shadow-[2px_2px_0px_0px_#000000] transition-all duration-150 font-bold"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label 
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
+                    >
+                      FLUID_WINDOW_DAYS (ROLLING WINDOW)
+                    </label>
+                    <select
+                      value={fluidWindowDays}
+                      onChange={(e) => setFluidWindowDays(parseInt(e.target.value, 10))}
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className="w-full px-4 py-3 bg-[var(--color-surface)] border-2 border-black text-[var(--color-ink)] outline-none focus:shadow-[2px_2px_0px_0px_#000000] transition-all duration-150 font-bold uppercase text-xs"
+                    >
+                      <option value="7">7 DAYS WINDOW</option>
+                      <option value="15">15 DAYS WINDOW</option>
+                      <option value="30">30 DAYS WINDOW</option>
+                      <option value="45">45 DAYS WINDOW</option>
+                      <option value="60">60 DAYS WINDOW</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* CTA Button */}

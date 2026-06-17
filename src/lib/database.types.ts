@@ -29,6 +29,10 @@ export interface Database {
           last_logged_date: string | null
           enabled_slices: string[] | null
           estimated_monthly_salary: number | null
+          income_type: 'salary' | 'business' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
+          anchor_day: number | null
+          fluid_window_days: number | null
+          last_reset_date: string | null
         }
         Insert: {
           id: string
@@ -49,6 +53,10 @@ export interface Database {
           last_logged_date?: string | null
           enabled_slices?: string[] | null
           estimated_monthly_salary?: number | null
+          income_type?: 'salary' | 'business' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
+          anchor_day?: number | null
+          fluid_window_days?: number | null
+          last_reset_date?: string | null
         }
         Update: {
           id?: string
@@ -69,6 +77,10 @@ export interface Database {
           last_logged_date?: string | null
           enabled_slices?: string[] | null
           estimated_monthly_salary?: number | null
+          income_type?: 'salary' | 'business' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
+          anchor_day?: number | null
+          fluid_window_days?: number | null
+          last_reset_date?: string | null
         }
         Relationships: []
       }

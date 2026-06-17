@@ -1,4 +1,4 @@
-import { useAppStore } from '../store';
+import { useAppStore, getCycleBoundaries } from '../store';
 import { generateAdvice, getNextMonthProjection } from '../lib/advice';
 import { mapCategory, mapExpense, mapIncome } from '../lib/format';
 
@@ -16,9 +16,12 @@ export function useAdviceEngine() {
   const incs = incomes.map(mapIncome);
 
   const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || 0));
-  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+  const currentCycle = getCycleBoundaries(profile);
   const loggedIncomesSum = incomes
-    .filter(i => i.date.startsWith(currentMonthPrefix))
+    .filter(i => {
+      const d = new Date(i.date);
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
+    })
     .reduce((sum, i) => sum + Number(i.amount), 0);
   const totalIncome = baseSalary + loggedIncomesSum;
 

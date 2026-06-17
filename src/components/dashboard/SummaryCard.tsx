@@ -1,4 +1,4 @@
-import { useAppStore } from '../../store';
+import { useAppStore, getCycleBoundaries } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
 
 interface SummaryCardProps {
@@ -15,9 +15,12 @@ export function SummaryCard({ type }: SummaryCardProps) {
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
-  // Filter current month data (date prefix: "YYYY-MM")
-  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
-  const monthlyExpenses = expenses.filter(e => e.date.startsWith(currentMonthPrefix));
+  const profile = useAppStore(s => s.profile);
+  const currentCycle = getCycleBoundaries(profile);
+  const monthlyExpenses = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d >= currentCycle.startDate && d <= currentCycle.endDate;
+  });
 
   const totalSpent = monthlyExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const transactionsCount = monthlyExpenses.length;
