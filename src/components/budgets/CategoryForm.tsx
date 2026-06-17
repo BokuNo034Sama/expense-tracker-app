@@ -143,25 +143,32 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
             >
               FINANCIAL_SLICE
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <select
+              value={slice}
+              onChange={e => setSlice(e.target.value as Slice)}
+              style={{ fontFamily: 'var(--font-mono)' }}
+              className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 font-bold uppercase text-xs"
+            >
               {(() => {
-                const enabledSlices = [...(profile?.enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription'])];
-                if (category && category.slice && !enabledSlices.includes(category.slice)) {
-                  enabledSlices.push(category.slice);
+                const financialSlices = profile?.enabled_slices;
+                const sliceOptions = Array.isArray(financialSlices) 
+                  ? financialSlices 
+                  : typeof financialSlices === 'string'
+                    ? JSON.parse(financialSlices)
+                    : ['Basic', 'Family', 'Wealth', 'Subscription']; // Core architecture fallbacks
+
+                const finalOptions = [...sliceOptions];
+                if (category && category.slice && !finalOptions.includes(category.slice)) {
+                  finalOptions.push(category.slice);
                 }
-                return (enabledSlices as Slice[]).map(slc => (
-                  <button
-                    key={slc}
-                    type="button"
-                    onClick={() => setSlice(slc)}
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                    className={`py-2 px-3 text-xs font-bold border-[var(--border-default)] rounded-[var(--border-radius)] transition-all duration-100 uppercase ${slice === slc ? 'bg-[var(--color-brand-primary)] text-[#000000] shadow-[var(--shadow-btn-active)] translate-x-[0.5px] translate-y-[0.5px]' : 'bg-[var(--color-surface)]'}`}
-                  >
-                    {slc.replace('_', ' ')}
-                  </button>
+
+                return finalOptions.map((sliceOption: string) => (
+                  <option key={sliceOption} value={sliceOption}>
+                    {sliceOption.toUpperCase()}
+                  </option>
                 ));
               })()}
-            </div>
+            </select>
           </div>
 
           {/* Monthly Budget Limit */}
