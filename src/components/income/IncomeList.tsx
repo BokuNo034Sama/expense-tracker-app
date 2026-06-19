@@ -30,17 +30,17 @@ export function IncomeList() {
 
   return (
     <BentoCard hoverEffect={false} className="w-full dark:bg-[#1A1A1A] border-2 border-black dark:border-white">
-      <div className="flex justify-between items-center pb-4 border-b border-[var(--color-ink)] border-dashed mb-4">
+      <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 border-b-2 border-dashed border-[var(--color-ink)] pb-2 mb-4">
         <h3 
           style={{ fontFamily: 'var(--font-display)' }}
-          className="text-lg font-extrabold uppercase tracking-wide text-[var(--color-ink)]"
+          className="text-xl font-black tracking-wider uppercase break-words text-[var(--color-ink)]"
         >
           INCOME_STREAMS
         </h3>
         <button
           onClick={handleAdd}
           style={{ fontFamily: 'var(--font-display)' }}
-          className="px-3 py-1.5 bg-[var(--color-brand-primary)] text-[#000000] border-2 border-black rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-bold text-xs uppercase transition-all duration-100 flex items-center gap-1.5"
+          className="whitespace-nowrap px-3 py-1.5 text-xs font-bold bg-[var(--color-brand-primary)] text-[#000000] border-2 border-black rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-100 flex items-center gap-1.5 self-start xs:self-auto"
         >
           <Plus className="h-3 w-3" />
           ADD_INCOME

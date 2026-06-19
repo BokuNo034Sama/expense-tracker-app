@@ -166,10 +166,10 @@ export default function ProfilePage() {
     <div className="space-y-6 w-full py-6 text-black dark:text-white">
       {/* Profile Details Card */}
       <BentoCard hoverEffect={false} className="space-y-6 dark:bg-[#1A1A1A] border-2 border-black dark:border-white">
-        <div className="border-b border-[var(--color-ink)] border-dashed pb-3 flex justify-between items-center">
+        <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 border-b-2 border-dashed border-[var(--color-ink)] pb-2 mb-4">
           <h3 
             style={{ fontFamily: 'var(--font-display)' }}
-            className="text-base font-extrabold uppercase text-[var(--color-ink)] dark:text-white"
+            className="text-base font-black tracking-wider uppercase break-words text-[var(--color-ink)] dark:text-white"
           >
             PROFILE_DETAILS
           </h3>
@@ -177,7 +177,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="px-3 py-1.5 bg-[var(--color-brand-primary)] text-black border-2 border-black rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-bold text-[10px] uppercase transition-all cursor-pointer"
+              className="whitespace-nowrap px-3 py-1.5 bg-[var(--color-brand-primary)] text-black border-2 border-black rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-bold text-[10px] uppercase transition-all cursor-pointer self-start xs:self-auto"
             >
               Edit Profile
             </button>
