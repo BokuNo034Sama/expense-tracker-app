@@ -7,8 +7,8 @@
   ],
   "crons": [
     {
-      "path": "/api/send-push",
-      "schedule": "0 20 * * *"
+      "path": "/api/cron/expense-reminder",
+      "schedule": "0 11,19 * * *"
     }
   ]
 }
