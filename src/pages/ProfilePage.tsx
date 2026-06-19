@@ -43,8 +43,8 @@ export default function ProfilePage() {
         const reg = await navigator.serviceWorker.ready;
         reg.showNotification('KINY_OS', {
           body: 'Maintain your momentum. Log your receipts, spending, or added income for the day.',
-          icon: '/icons/icon-192x192.png',
-          badge: '/icons/icon-192x192.png',
+          icon: '/logo.svg',
+          badge: '/logo.svg',
           vibrate: [100, 50, 100],
           data: { dateOfArrival: Date.now() }
         } as NotificationOptions);

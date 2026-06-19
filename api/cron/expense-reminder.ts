@@ -53,8 +53,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const payload = JSON.stringify({
         title: title || selectedAlert.title,
         body: body || selectedAlert.body,
-        icon: '/kiny-logo.png',
-        badge: '/badge-72x72.png',
+        icon: '/logo.svg',
+        badge: '/logo.svg',
         tag: 'daily-reminder',
         vibrate: [100, 50, 100]
       });
@@ -124,8 +124,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const payload = JSON.stringify({
           title: selectedAlert.title,
           body: selectedAlert.body,
-          icon: '/kiny-logo.png',
-          badge: '/badge-72x72.png',
+          icon: '/logo.svg',
+          badge: '/logo.svg',
           tag: 'daily-reminder',
           vibrate: [100, 50, 100]
         });

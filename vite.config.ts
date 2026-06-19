@@ -111,31 +111,22 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.js',
-      registerType: 'prompt', // Never auto-update service worker
-      includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
+      registerType: 'autoUpdate', // Enforce dynamic auto-registration cycle
+      includeAssets: ['favicon.svg', 'robots.txt', 'logo.svg'],
       manifest: {
-        name: 'Kiny — Personal Finance OS',
+        name: 'Kiny OS',
         short_name: 'Kiny',
         description: 'Supabase-backed Neubrutalist Personal Finance OS',
-        theme_color: '#000000',
-        background_color: '#EAECDF',
+        start_url: '/',
         display: 'standalone',
+        background_color: '#000000',
+        theme_color: '#C6EF4E',
         orientation: 'portrait',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
+            src: '/logo.svg',
+            sizes: '192x192 512x512',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]
