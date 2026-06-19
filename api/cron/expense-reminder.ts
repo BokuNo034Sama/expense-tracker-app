@@ -4,11 +4,15 @@ import webpush from 'web-push';
 
 const VAPID_PUBLIC_KEY = 'BHQmgmTx9pHYNVB5IQRgwxIzY6eBFBYTUExkRCLnrEC305sIUN7VEpxGCEEKD76TRmEdzTSHUg9S1jndYAIEibY';
 
-const ENCOURAGEMENT_PROMPTS = [
-  "Maintain your awareness. Log your transactions for today.",
-  "Unlogged expenses leak capital. Update your Kiny OS ledger.",
-  "Did you acquire assets today? Record your added income now.",
-  "Don't lose track of today's cash flow. Log your spending or receipts."
+const slangAlerts = [
+  {
+    title: '⚠️ KINY_OS: Abeg, how money take waka today?',
+    body: 'You never log any expense today o. Chook eye inside your budget make your money no evaporate.'
+  },
+  {
+    title: '🚨 KINY_OS: Your money dey bleed!',
+    body: 'No let urgent 2k enter you unawares. Log your expenses now to trace where your cash go.'
+  }
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -45,10 +49,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Missing subscription payload' });
       }
 
-      const randomPrompt = ENCOURAGEMENT_PROMPTS[Math.floor(Math.random() * ENCOURAGEMENT_PROMPTS.length)];
+      const selectedAlert = slangAlerts[Math.floor(Math.random() * slangAlerts.length)];
       const payload = JSON.stringify({
-        title: title || 'KINY_OS',
-        body: body || randomPrompt
+        title: title || selectedAlert.title,
+        body: body || selectedAlert.body,
+        icon: '/kiny-logo.png',
+        badge: '/badge-72x72.png',
+        tag: 'daily-reminder',
+        vibrate: [100, 50, 100]
       });
 
       if (webpushPrivateKey) {
@@ -112,10 +120,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         attempted++;
-        const randomPrompt = ENCOURAGEMENT_PROMPTS[Math.floor(Math.random() * ENCOURAGEMENT_PROMPTS.length)];
+        const selectedAlert = slangAlerts[Math.floor(Math.random() * slangAlerts.length)];
         const payload = JSON.stringify({
-          title: 'KINY_OS',
-          body: randomPrompt
+          title: selectedAlert.title,
+          body: selectedAlert.body,
+          icon: '/kiny-logo.png',
+          badge: '/badge-72x72.png',
+          tag: 'daily-reminder',
+          vibrate: [100, 50, 100]
         });
 
         try {
