@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { OfflineBanner } from '../pwa/OfflineBanner';
 import { UpdatePrompt } from '../pwa/UpdatePrompt';
-import { InstallPrompt } from '../pwa/InstallPrompt';
+import { PWAInstallPrompt } from '../PWAInstallPrompt';
 import { CreatorAppreciationBanner } from '../dashboard/CreatorAppreciationBanner';
 import { SyncIndicator } from '../shared/SyncIndicator';
 import { useCurrentStreak } from '../../store';
@@ -49,7 +49,7 @@ export function Layout({ children }: LayoutProps) {
         <CreatorAppreciationBanner />
         {children}
         <UpdatePrompt />
-        <InstallPrompt />
+        <PWAInstallPrompt />
       </main>
     </div>
   );
