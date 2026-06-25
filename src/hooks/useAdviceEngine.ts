@@ -26,7 +26,7 @@ export function useAdviceEngine() {
   const totalIncome = baseSalary + loggedIncomesSum;
 
   return {
-    advice: generateAdvice(profile.purpose, cats, exps, incs, totalIncome),
+    advice: generateAdvice(profile, cats, exps, incs, totalIncome),
     projection: getNextMonthProjection(cats, exps, profile.purpose, profile.target_savings_rate ?? null),
   };
 }

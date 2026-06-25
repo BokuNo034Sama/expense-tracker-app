@@ -41,7 +41,7 @@ export function getCycleBoundariesForDate(profile: ProfileRow | null, date: Date
     return { startDate, endDate };
   }
 
-  if (profile.income_type === 'business') {
+  if (profile.income_type === 'business' || profile.income_type === 'FLUID_ROLLING') {
     const fluidWindowDays = profile.fluid_window_days || 30;
     const endDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
     const startDate = new Date(endDate);
@@ -49,7 +49,23 @@ export function getCycleBoundariesForDate(profile: ProfileRow | null, date: Date
     return { startDate, endDate };
   }
 
-  // Salary earner
+  if (profile.income_type === 'student') {
+    const anchorDay = profile.anchor_day;
+    if (anchorDay === 0 || anchorDay === null || anchorDay === undefined) {
+      // Weekly Reset (Every Monday)
+      const current = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+      const day = current.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const diff = current.getUTCDate() - (day === 0 ? 6 : day - 1);
+      const startDate = new Date(current);
+      startDate.setUTCDate(diff);
+
+      const endDate = new Date(startDate);
+      endDate.setUTCDate(startDate.getUTCDate() + 6);
+      return { startDate, endDate };
+    }
+  }
+
+  // Salary earner or Student with custom anchor day
   const anchorDay = profile.anchor_day || 30;
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth();
@@ -537,6 +553,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       options: {
         data: {
           income_type: incomeType,
+          account_type: incomeType === 'student' ? 'student' : incomeType,
           anchor_day: anchorDay,
           fluid_window_days: fluidWindowDays
         }
@@ -677,17 +694,28 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     }
   },
 
-  completeOnboarding: async (name, purpose, occupation, monthlySalary, savingsRate) => {
+  completeOnboarding: async (name, purpose, occupation, monthlySalary, savingsRate, incomeType, anchorDay, fluidWindowDays) => {
     const uid = await getUID();
 
     // Seed baseline categories
     const categoriesToSeed = [
       { name: 'Transport',      icon: 'Car',        slice: 'Basic' as const,        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid },
-      { name: 'Feeding',        icon: 'Utensils',   slice: 'Basic' as const,        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid },
-      { name: 'Parent Token',   icon: 'Gift',       slice: 'Family' as const,       budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
-      { name: 'Sibling Token',  icon: 'Heart',      slice: 'Family' as const,       budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
-      { name: 'Investments',    icon: 'TrendingUp', slice: 'Wealth' as const,       budget_limit: 0, is_basic: false, is_priority: purpose === 'saving',  is_subscription: false, user_id: uid }
+      { name: 'Feeding',        icon: 'Utensils',   slice: 'Basic' as const,        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid }
     ];
+
+    if (incomeType === 'student') {
+      categoriesToSeed.push(
+        { name: 'Hostel Rent',      icon: 'Home',     slice: 'Hostel_Rent' as const,      budget_limit: 0, is_basic: false, is_priority: true,  is_subscription: false, user_id: uid },
+        { name: 'Handouts & Books', icon: 'BookOpen', slice: 'Campus_Materials' as const, budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false, user_id: uid },
+        { name: 'Laptop & Gigs',    icon: 'Laptop',   slice: 'Hustle_Fund' as const,      budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false, user_id: uid }
+      );
+    } else {
+      categoriesToSeed.push(
+        { name: 'Parent Token',   icon: 'Gift',       slice: 'Family' as const,       budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
+        { name: 'Sibling Token',  icon: 'Heart',      slice: 'Family' as const,       budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
+        { name: 'Investments',    icon: 'TrendingUp', slice: 'Wealth' as const,       budget_limit: 0, is_basic: false, is_priority: purpose === 'saving',  is_subscription: false, user_id: uid }
+      );
+    }
 
     const { error: seedError } = await supabase.from('categories').insert(categoriesToSeed);
     if (seedError) {
@@ -702,7 +730,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .join('')
       .slice(0, 2);
 
-    const profilePatch = {
+    const defaultSlices = incomeType === 'student'
+      ? ['Basic', 'Hostel_Rent', 'Campus_Materials', 'Hustle_Fund', 'Subscription']
+      : ['Basic', 'Family', 'Wealth', 'Subscription'];
+
+    const profilePatch: any = {
       name,
       occupation,
       monthly_salary:           monthlySalary,
@@ -710,7 +742,18 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       purpose,
       target_savings_rate:      savingsRate ?? null,
       has_completed_onboarding: true,
+      enabled_slices:           defaultSlices,
     };
+
+    if (incomeType) {
+      profilePatch.income_type = incomeType;
+    }
+    if (anchorDay !== undefined) {
+      profilePatch.anchor_day = anchorDay;
+    }
+    if (fluidWindowDays !== undefined) {
+      profilePatch.fluid_window_days = fluidWindowDays;
+    }
 
     const { error } = await supabase
       .from('profiles')

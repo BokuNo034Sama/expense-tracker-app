@@ -4,20 +4,29 @@ import { useAppStore } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
 import type { Purpose, SavingsRate } from '../../store/types';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/tooltip';
+import { OnboardingStep2 } from './OnboardingStep2';
 
 export function OnboardingOverlay() {
+  const completeOnboarding = useAppStore(s => s.completeOnboarding);
+  const profile = useAppStore(s => s.profile);
+
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
-  const [occupation, setOccupation] = useState('');
+  const [incomeType, setIncomeType] = useState<'salary' | 'business' | 'student'>(() => {
+    return (profile?.income_type as 'salary' | 'business' | 'student') || 'salary';
+  });
+  const [occupation, setOccupation] = useState(() => {
+    if (profile?.occupation) return profile.occupation;
+    if (profile?.income_type === 'student') return 'Student / Hustler';
+    if (profile?.income_type === 'business') return 'Business Owner';
+    return 'Salary Earner';
+  });
   const [salaryStr, setSalaryStr] = useState('');
   const [purpose, setPurpose] = useState<Purpose>('clarity');
   const [savingsRate, setSavingsRate] = useState<SavingsRate>(20);
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const completeOnboarding = useAppStore(s => s.completeOnboarding);
-  const profile = useAppStore(s => s.profile);
 
   const handleNext = () => {
     setErrorMsg(null);
@@ -49,12 +58,17 @@ export function OnboardingOverlay() {
     setSaving(true);
     try {
       const monthlySalary = parseFloat(salaryStr);
+      const defaultAnchorDay = incomeType === 'salary' ? 30 : incomeType === 'student' ? 0 : null;
+      const defaultFluidWindowDays = incomeType === 'business' ? 30 : null;
       await completeOnboarding(
         name.trim(),
         purpose,
         occupation.trim(),
         monthlySalary,
-        purpose === 'saving' ? savingsRate : undefined
+        purpose === 'saving' ? savingsRate : undefined,
+        incomeType,
+        defaultAnchorDay,
+        defaultFluidWindowDays
       );
     } catch (err) {
       const error = err as Error;
@@ -147,27 +161,17 @@ export function OnboardingOverlay() {
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.2 }}
-                  className="space-y-4"
                 >
-                  <h2 style={{ fontFamily: 'var(--font-display)' }} className="text-2xl font-extrabold uppercase text-[var(--color-ink)]">
-                    YOUR_OCCUPATION?
-                  </h2>
-                  <p style={{ fontFamily: 'var(--font-mono)' }} className="text-xs text-[var(--color-ink-muted)] leading-relaxed">
-                    What is your professional title? We use this to tailor insights.
-                  </p>
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    placeholder="e.g. software engineer"
-                    value={occupation}
-                    onChange={(e) => setOccupation(e.target.value)}
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                    className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
+                  <OnboardingStep2
+                    selectedId={incomeType}
+                    onSelect={(id, label) => {
+                      setIncomeType(id as 'salary' | 'business' | 'student');
+                      setOccupation(label);
+                    }}
                   />
                 </motion.div>
               )}
-
+ 
               {step === 3 && (
                 <motion.div
                   key="step3"
@@ -180,10 +184,12 @@ export function OnboardingOverlay() {
                   className="space-y-4"
                 >
                   <h2 style={{ fontFamily: 'var(--font-display)' }} className="text-2xl font-extrabold uppercase text-[var(--color-ink)]">
-                    MONTHLY_SALARY?
+                    {incomeType === 'student' ? 'MONTHLY_ALLOWANCE?' : 'MONTHLY_SALARY?'}
                   </h2>
                   <p style={{ fontFamily: 'var(--font-mono)' }} className="text-xs text-[var(--color-ink-muted)] leading-relaxed">
-                    How much do you take home each month (after tax) in Naira (₦)?
+                    {incomeType === 'student'
+                      ? 'How much allowance, side gig cash, or average cash flow do you get in a month (₦)?'
+                      : 'How much do you take home each month (after tax) in Naira (₦)?'}
                   </p>
                   <div className="relative">
                     <div 
@@ -196,7 +202,7 @@ export function OnboardingOverlay() {
                       type="number"
                       required
                       autoFocus
-                      placeholder="500000"
+                      placeholder={incomeType === 'student' ? '20000' : '500000'}
                       value={salaryStr}
                       onChange={(e) => setSalaryStr(e.target.value)}
                       style={{ fontFamily: 'var(--font-mono)' }}

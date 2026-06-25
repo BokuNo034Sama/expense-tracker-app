@@ -5,6 +5,7 @@ import { usePWA } from '../hooks/usePWA';
 import { BentoCard } from '../components/shared/BentoCard';
 import { IncomeList } from '../components/income/IncomeList';
 import { LogOut } from 'lucide-react';
+import { PaydayAnchorSelect } from '../components/profile/PaydayAnchorSelect';
 
 export default function ProfilePage() {
   const profile = useAppStore(s => s.profile);
@@ -73,9 +74,19 @@ export default function ProfilePage() {
   const [selectedSlices, setSelectedSlices] = useState<string[]>([]);
   const [isSavingMatrix, setIsSavingMatrix] = useState(false);
 
-  const isDirty = name !== (profile?.name || '') ||
-                  occupation !== (profile?.occupation || '') ||
-                  salaryStr !== (profile?.monthly_salary || 0).toString();
+  const [paydayAnchor, setPaydayAnchor] = useState<number>(30);
+  const [studentCycleType, setStudentCycleType] = useState<'weekly' | 'custom'>('weekly');
+  const [studentAnchorDay, setStudentAnchorDay] = useState<number>(30);
+
+  const isProfileDirty = name !== (profile?.name || '') ||
+                         occupation !== (profile?.occupation || '') ||
+                         salaryStr !== (profile?.monthly_salary || 0).toString();
+
+  const isAnchorDirty = profile?.income_type === 'student'
+    ? (studentCycleType === 'weekly' ? (profile?.anchor_day !== 0) : (profile?.anchor_day !== studentAnchorDay))
+    : (profile?.income_type !== 'business' && profile?.income_type !== 'FLUID_ROLLING' ? (profile?.anchor_day !== paydayAnchor) : false);
+
+  const isDirty = isProfileDirty || isAnchorDirty;
 
   useEffect(() => {
     if (profile) {
@@ -83,6 +94,17 @@ export default function ProfilePage() {
       setOccupation(profile.occupation || '');
       setSalaryStr(profile.monthly_salary.toString());
       setSelectedSlices(profile.enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription']);
+      
+      const anchor = profile.anchor_day ?? 30;
+      setPaydayAnchor(anchor);
+      if (profile.income_type === 'student') {
+        if (anchor === 0) {
+          setStudentCycleType('weekly');
+        } else {
+          setStudentCycleType('custom');
+          setStudentAnchorDay(anchor);
+        }
+      }
     }
   }, [profile]);
 
@@ -109,22 +131,47 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      // Recompute initials
-      const avatarInitials = name
-        .split(' ')
-        .filter(Boolean)
-        .map(w => w[0].toUpperCase())
-        .join('')
-        .slice(0, 2);
+      if (isProfileDirty) {
+        // Recompute initials
+        const avatarInitials = name
+          .split(' ')
+          .filter(Boolean)
+          .map(w => w[0].toUpperCase())
+          .join('')
+          .slice(0, 2);
 
-      await updateProfile({
-        name: name.trim(),
-        occupation: occupation.trim(),
-        monthly_salary: salaryVal,
-        avatar_initials: avatarInitials
-      });
+        await updateProfile({
+          name: name.trim(),
+          occupation: occupation.trim(),
+          monthly_salary: salaryVal,
+          avatar_initials: avatarInitials
+        });
+      }
+
+      if (isAnchorDirty) {
+        const finalAnchor = profile?.income_type === 'student'
+          ? (studentCycleType === 'weekly' ? 0 : studentAnchorDay)
+          : paydayAnchor;
+
+        const token = useAppStore.getState().auth.session?.access_token;
+        const response = await fetch('/api/user/settings', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ payday_anchor_day: finalAnchor })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to update payday anchor settings');
+        }
+      }
+
       setSuccessMsg('PROFILE_UPDATED_SUCCESSFULLY');
       setIsEditing(false);
+      await useAppStore.getState().fetchProfile();
     } catch (err) {
       const error = err as Error;
       setErrorMsg(error.message || 'Failed to update profile.');
@@ -189,7 +236,19 @@ export default function ProfilePage() {
             <div className="bg-[var(--color-surface)] dark:bg-zinc-800 p-3 border-2 border-black dark:border-white">
               <div className="text-[14px] font-black uppercase text-black dark:text-white">{name}</div>
               <div className="text-gray-500 dark:text-zinc-400 mt-1 uppercase">{occupation || 'NO OCCUPATION SET'}</div>
-              <div className="mt-2 text-black dark:text-white">₦{parseFloat(salaryStr || '0').toLocaleString('en-NG')} / MONTH</div>
+              <div className="mt-2 text-black dark:text-white">
+                ₦{parseFloat(salaryStr || '0').toLocaleString('en-NG')} / {profile?.income_type === 'student' ? 'ALLOWANCE' : 'MONTH'}
+              </div>
+              {profile?.income_type === 'student' && (
+                <div className="mt-2 text-black dark:text-white">
+                  CYCLE RESET: {profile.anchor_day === 0 ? 'WEEKLY RESET (EVERY MONDAY)' : `FLEX ANCHOR (DAY ${profile.anchor_day})`}
+                </div>
+              )}
+              {profile?.income_type !== 'student' && profile?.income_type !== 'business' && profile?.income_type !== 'FLUID_ROLLING' && (
+                <div className="mt-2 text-black dark:text-white">
+                  PAYDAY ANCHOR: DAY {profile?.anchor_day || 30}
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -229,13 +288,13 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Monthly Salary */}
+            {/* Monthly Salary / Allowance */}
             <div>
               <label 
                 style={{ fontFamily: 'var(--font-mono)' }}
                 className="block text-xs font-bold tracking-wider text-[var(--color-ink)] dark:text-[#E4E4E7] uppercase mb-1.5"
               >
-                ESTIMATED_MONTHLY_SALARY (₦)
+                {profile?.income_type === 'student' ? 'ESTIMATED_MONTHLY_ALLOWANCE (₦)' : 'ESTIMATED_MONTHLY_SALARY (₦)'}
               </label>
               <input
                 type="number"
@@ -246,6 +305,93 @@ export default function ProfilePage() {
                 className="w-full px-4 py-3 bg-[var(--color-surface)] dark:bg-zinc-800 border-2 border-black dark:border-white rounded-[var(--border-radius)] text-[var(--color-ink)] dark:text-white outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
               />
             </div>
+
+            {/* Payday Anchor for Salary Earners */}
+            {profile?.income_type !== 'student' && profile?.income_type !== 'business' && profile?.income_type !== 'FLUID_ROLLING' && (
+              <div>
+                <label 
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] dark:text-[#E4E4E7] uppercase mb-1.5"
+                >
+                  PAYDAY_ANCHOR_DAY (SALARY_CYCLE)
+                </label>
+                <PaydayAnchorSelect
+                  value={paydayAnchor}
+                  onChange={setPaydayAnchor}
+                  disabled={saving}
+                />
+                <p style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-gray-500 dark:text-zinc-400 mt-1 uppercase font-bold">
+                  Defines your cycle start day. Constrained strictly to days 25-31.
+                </p>
+              </div>
+            )}
+
+            {/* Student Cycle configuration */}
+            {profile?.income_type === 'student' && (
+              <div className="space-y-4">
+                <div>
+                  <label 
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                    className="block text-xs font-bold tracking-wider text-[var(--color-ink)] dark:text-[#E4E4E7] uppercase mb-1.5"
+                  >
+                    STUDENT_CYCLE_MODEL
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setStudentCycleType('weekly')}
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className={`py-2 px-3 text-xs font-bold border-2 border-black transition-all duration-100 uppercase cursor-pointer ${
+                        studentCycleType === 'weekly' 
+                          ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
+                          : 'bg-white text-black'
+                      }`}
+                    >
+                      WEEKLY_RESET
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStudentCycleType('custom')}
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className={`py-2 px-3 text-xs font-bold border-2 border-black transition-all duration-100 uppercase cursor-pointer ${
+                        studentCycleType === 'custom' 
+                          ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
+                          : 'bg-white text-black'
+                      }`}
+                    >
+                      FLEX_ANCHOR
+                    </button>
+                  </div>
+                </div>
+
+                {studentCycleType === 'weekly' ? (
+                  <div className="p-3 bg-[var(--color-surface)] border-2 border-black font-mono text-[10px] text-gray-500 uppercase leading-relaxed font-bold">
+                    BUDGET_CYCLE resets every Monday. Speak directly to student pocket allowances.
+                  </div>
+                ) : (
+                  <div>
+                    <label 
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className="block text-xs font-bold tracking-wider text-[var(--color-ink)] dark:text-[#E4E4E7] uppercase mb-1.5"
+                    >
+                      FLEX_PAYDAY_ANCHOR (1-31)
+                    </label>
+                    <select
+                      value={studentAnchorDay}
+                      onChange={(e) => setStudentAnchorDay(parseInt(e.target.value, 10))}
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className="w-full px-4 py-3 bg-[var(--color-surface)] dark:bg-zinc-800 border-2 border-black dark:border-white text-[var(--color-ink)] dark:text-white outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 font-bold font-mono"
+                    >
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                        <option key={day} value={day} className="bg-white dark:bg-zinc-800 text-black dark:text-white">
+                          {day === 1 ? '1st' : day === 2 ? '2nd' : day === 3 ? '3rd' : `${day}th`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Cancel & Save Changes inside form row */}
             <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[var(--color-ink)] border-dashed">
@@ -417,7 +563,10 @@ export default function ProfilePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {['Basic', 'Family', 'Wealth', 'Subscription', 'Chop_Life', 'Black_Tax', 'Side_Hustle'].map(slice => {
+          {(profile?.income_type === 'student'
+            ? ['Basic', 'Hostel_Rent', 'Campus_Materials', 'Hustle_Fund', 'Subscription', 'Chop_Life']
+            : ['Basic', 'Family', 'Wealth', 'Subscription', 'Chop_Life', 'Black_Tax', 'Side_Hustle']
+          ).map(slice => {
             const isChecked = selectedSlices.includes(slice);
             return (
               <label

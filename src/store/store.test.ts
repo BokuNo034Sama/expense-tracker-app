@@ -381,6 +381,28 @@ describe('useAppStore', () => {
       expect(boundaries.endDate.toISOString().split('T')[0]).toBe('2026-06-15');
       expect(boundaries.startDate.toISOString().split('T')[0]).toBe('2026-06-01'); // 15 days ending June 15
     });
+
+    it('should calculate weekly Monday boundaries for students with anchor_day = 0', () => {
+      const mockProfile = {
+        income_type: 'student',
+        anchor_day: 0
+      } as unknown as ProfileRow;
+      const date = new Date(Date.UTC(2026, 5, 17)); // June 17, 2026 (Wednesday)
+      const boundaries = getCycleBoundariesForDate(mockProfile, date);
+      expect(boundaries.startDate.toISOString().split('T')[0]).toBe('2026-06-15'); // Monday
+      expect(boundaries.endDate.toISOString().split('T')[0]).toBe('2026-06-21'); // Sunday
+    });
+
+    it('should use custom anchor day for student if anchor_day > 0', () => {
+      const mockProfile = {
+        income_type: 'student',
+        anchor_day: 10
+      } as unknown as ProfileRow;
+      const date = new Date(Date.UTC(2026, 5, 15)); // June 15
+      const boundaries = getCycleBoundariesForDate(mockProfile, date);
+      expect(boundaries.startDate.toISOString().split('T')[0]).toBe('2026-06-10');
+      expect(boundaries.endDate.toISOString().split('T')[0]).toBe('2026-07-09');
+    });
   });
 });
 

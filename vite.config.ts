@@ -103,6 +103,103 @@ export default defineConfig({
             });
             return;
           }
+          if (req.url === '/api/user/settings' && req.method === 'PATCH') {
+            let body = '';
+            req.on('data', chunk => {
+              body += chunk;
+            });
+            req.on('end', async () => {
+              try {
+                const parsed = JSON.parse(body);
+                const payday_anchor_day = parsed.payday_anchor_day;
+
+                const authHeader = req.headers.authorization || req.headers.Authorization || '';
+                if (typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
+                  res.writeHead(401, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'Missing or invalid authorization header' }));
+                  return;
+                }
+                const token = authHeader.split(' ')[1];
+
+                const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+                const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+
+                if (!supabaseUrl || !supabaseKey) {
+                  res.writeHead(500, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'Supabase configuration is missing' }));
+                  return;
+                }
+
+                const { createClient } = await import('@supabase/supabase-js');
+                const supabase = createClient(supabaseUrl, supabaseKey);
+
+                const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+                if (authError || !user) {
+                  res.writeHead(401, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'Unauthorized: ' + (authError?.message || 'Invalid token') }));
+                  return;
+                }
+
+                const parsedDay = Number(payday_anchor_day);
+                if (!Number.isInteger(parsedDay)) {
+                  res.writeHead(400, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'payday_anchor_day must be an integer' }));
+                  return;
+                }
+
+                // Retrieve the user profile to inspect their income_type/role
+                const { data: profile, error: fetchError } = await supabase
+                  .from('profiles')
+                  .select('income_type')
+                  .eq('id', user.id)
+                  .single();
+
+                if (fetchError || !profile) {
+                  res.writeHead(500, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'Failed to fetch user profile' }));
+                  return;
+                }
+
+                const incomeType = profile.income_type;
+
+                // Perform validation depending on the user track/role
+                if (incomeType === 'student') {
+                  if (parsedDay < 0 || parsedDay > 31) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'For students, payday_anchor_day must be between 0 and 31' }));
+                    return;
+                  }
+                } else {
+                  if (parsedDay < 25 || parsedDay > 31) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'For salary earners, payday_anchor_day must be strictly between 25 and 31' }));
+                    return;
+                  }
+                }
+
+                const { data: updatedProfile, error: updateError } = await supabase
+                  .from('profiles')
+                  .update({ anchor_day: parsedDay })
+                  .eq('id', user.id)
+                  .select()
+                  .single();
+
+                if (updateError) {
+                  res.writeHead(500, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'Database update failed: ' + updateError.message }));
+                  return;
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, profile: updatedProfile }));
+              } catch (e) {
+                console.error('[VITE] Settings API middleware error:', e);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: (e as Error).message }));
+              }
+            });
+            return;
+          }
           next();
         });
       }

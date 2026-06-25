@@ -14,13 +14,15 @@ export interface ProjectionItem {
 }
 
 export function generateAdvice(
-  purpose: string,
+  profileOrPurpose: any,
   categories: MappedCategory[],
   expenses: MappedExpense[],
   _incomes: MappedIncome[],
   totalIncome: number
 ): AdviceItem[] {
   const items: AdviceItem[] = [];
+  const profile = typeof profileOrPurpose === 'object' ? profileOrPurpose : null;
+  const purpose = profile ? (profile.purpose || 'clarity') : (profileOrPurpose || 'clarity');
 
   // Calculate totals
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
@@ -107,6 +109,19 @@ export function generateAdvice(
         type: 'info',
         title: 'ESSENTIALS_BREAKDOWN',
         message: `Essential needs (Food, Utilities, Transport) make up ${basicRatio.toFixed(1)}% of your total spending.`
+      });
+    }
+  }
+  
+  // Student Specific Rule: SAPA Alert
+  if (profile?.income_type === 'student') {
+    const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+    if (totalIncome > 0 && totalExpenses > totalIncome * 0.8) {
+      items.push({
+        id: 'student_sapa_warning',
+        type: 'warning',
+        title: '⚠️ SAPA_ALERT',
+        message: 'Chook eye inside your wallet, chef. Clear road before you start drinking garri on Thursday.'
       });
     }
   }

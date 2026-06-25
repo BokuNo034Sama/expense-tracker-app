@@ -193,7 +193,7 @@ export interface ErrorState {
 export interface AppStore {
   // ── Auth ─────────────────────────────────────────────────────────────────
   auth:           AuthState;
-  signUp:         (email: string, password: string, incomeType: 'salary' | 'business', anchorDay: number | null, fluidWindowDays: number | null) => Promise<void>;
+  signUp:         (email: string, password: string, incomeType: 'salary' | 'business' | 'student', anchorDay: number | null, fluidWindowDays: number | null) => Promise<void>;
   signIn:         (email: string, password: string) => Promise<void>;
   signInMagicLink:(email: string) => Promise<void>;
   signOut:        () => Promise<void>;
@@ -206,7 +206,10 @@ export interface AppStore {
   fetchProfile:       () => Promise<void>;
   completeOnboarding: (
     name: string, purpose: Purpose, occupation: string,
-    monthlySalary: number, savingsRate?: SavingsRate
+    monthlySalary: number, savingsRate?: SavingsRate,
+    incomeType?: 'salary' | 'business' | 'student' | null,
+    anchorDay?: number | null,
+    fluidWindowDays?: number | null
   ) => Promise<void>;
   updateProfile:      (patch: Partial<Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
 

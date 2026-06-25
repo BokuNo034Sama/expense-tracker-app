@@ -11,9 +11,11 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [useMagicLink, setUseMagicLink] = useState(false);
-  const [incomeType, setIncomeType] = useState<'salary' | 'business'>('salary');
+  const [incomeType, setIncomeType] = useState<'salary' | 'business' | 'student'>('salary');
   const [anchorDay, setAnchorDay] = useState<number>(30);
   const [fluidWindowDays, setFluidWindowDays] = useState<number>(30);
+  const [studentCycleType, setStudentCycleType] = useState<'weekly' | 'custom'>('weekly');
+  const [studentAnchorDay, setStudentAnchorDay] = useState<number>(30);
   
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -74,12 +76,19 @@ export function LoginForm() {
         setSuccessMsg('CHECK_YOUR_EMAIL — magic link sent.');
       } else {
         if (isSignUp) {
+          const finalAnchorDay = incomeType === 'salary'
+            ? anchorDay
+            : incomeType === 'student'
+              ? (studentCycleType === 'weekly' ? 0 : studentAnchorDay)
+              : null;
+          const finalFluidWindowDays = incomeType === 'business' ? fluidWindowDays : null;
+
           await signUp(
             email.trim(), 
             password, 
             incomeType, 
-            incomeType === 'salary' ? anchorDay : null, 
-            incomeType === 'business' ? fluidWindowDays : null
+            finalAnchorDay, 
+            finalFluidWindowDays
           );
           setSuccessMsg('Check your email to verify your signup.');
         } else {
@@ -228,41 +237,53 @@ export function LoginForm() {
                   >
                     USER_CLASSIFICATION
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setIncomeType('salary')}
                       style={{ fontFamily: 'var(--font-mono)' }}
-                      className={`py-2 px-3 text-xs font-bold border-2 border-black transition-all duration-100 uppercase ${
+                      className={`py-2 px-1 text-[9px] font-black border-2 border-black transition-all duration-100 uppercase text-center cursor-pointer ${
                         incomeType === 'salary' 
                           ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
                           : 'bg-white text-black'
                       }`}
                     >
-                      [ SALARY_EARNER ]
+                      [ SALARY ]
                     </button>
                     <button
                       type="button"
                       onClick={() => setIncomeType('business')}
                       style={{ fontFamily: 'var(--font-mono)' }}
-                      className={`py-2 px-3 text-xs font-bold border-2 border-black transition-all duration-100 uppercase ${
+                      className={`py-2 px-1 text-[9px] font-black border-2 border-black transition-all duration-100 uppercase text-center cursor-pointer ${
                         incomeType === 'business' 
                           ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
                           : 'bg-white text-black'
                       }`}
                     >
-                      [ BUSINESS_OWNER ]
+                      [ BUSINESS ]
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIncomeType('student')}
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                      className={`py-2 px-1 text-[9px] font-black border-2 border-black transition-all duration-100 uppercase text-center cursor-pointer ${
+                        incomeType === 'student' 
+                          ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
+                          : 'bg-white text-black'
+                      }`}
+                    >
+                      [ STUDENT ]
                     </button>
                   </div>
                 </div>
 
-                {incomeType === 'salary' ? (
+                {incomeType === 'salary' && (
                   <div>
                     <label 
                       style={{ fontFamily: 'var(--font-mono)' }}
                       className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
                     >
-                      PAYDAY_ANCHOR_DAY (1-31)
+                      PAYDAY_ANCHOR_DAY (25-31)
                     </label>
                     <select
                       value={anchorDay}
@@ -270,14 +291,16 @@ export function LoginForm() {
                       style={{ fontFamily: 'var(--font-mono)' }}
                       className="w-full px-4 py-3 bg-[var(--color-surface)] border-2 border-black text-[var(--color-ink)] outline-none focus:shadow-[2px_2px_0px_0px_#000000] transition-all duration-150 font-bold"
                     >
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      {Array.from({ length: 7 }, (_, i) => i + 25).map((day) => (
                         <option key={day} value={day}>
-                          {day === 1 ? '1st' : day === 2 ? '2nd' : day === 3 ? '3rd' : `${day}th`}
+                          {day}th
                         </option>
                       ))}
                     </select>
                   </div>
-                ) : (
+                )}
+
+                {incomeType === 'business' && (
                   <div>
                     <label 
                       style={{ fontFamily: 'var(--font-mono)' }}
@@ -297,6 +320,72 @@ export function LoginForm() {
                       <option value="45">45 DAYS WINDOW</option>
                       <option value="60">60 DAYS WINDOW</option>
                     </select>
+                  </div>
+                )}
+
+                {incomeType === 'student' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label 
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                        className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-2"
+                      >
+                        STUDENT_CYCLE_MODEL
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setStudentCycleType('weekly')}
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                          className={`py-2 px-3 text-xs font-bold border-2 border-black transition-all duration-100 uppercase cursor-pointer ${
+                            studentCycleType === 'weekly' 
+                              ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
+                              : 'bg-white text-black'
+                          }`}
+                        >
+                          WEEKLY_RESET
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStudentCycleType('custom')}
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                          className={`py-2 px-3 text-xs font-bold border-2 border-black transition-all duration-100 uppercase cursor-pointer ${
+                            studentCycleType === 'custom' 
+                              ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
+                              : 'bg-white text-black'
+                          }`}
+                        >
+                          FLEX_ANCHOR
+                        </button>
+                      </div>
+                    </div>
+
+                    {studentCycleType === 'weekly' ? (
+                      <div className="p-3 bg-[var(--color-surface)] border-2 border-black font-mono text-[10px] text-gray-500 uppercase leading-relaxed font-bold">
+                        BUDGET_CYCLE resets every Monday. Speak directly to student pocket allowances.
+                      </div>
+                    ) : (
+                      <div>
+                        <label 
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                          className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
+                        >
+                          FLEX_PAYDAY_ANCHOR (1-31)
+                        </label>
+                        <select
+                          value={studentAnchorDay}
+                          onChange={(e) => setStudentAnchorDay(parseInt(e.target.value, 10))}
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                          className="w-full px-4 py-3 bg-[var(--color-surface)] border-2 border-black text-[var(--color-ink)] outline-none focus:shadow-[2px_2px_0px_0px_#000000] transition-all duration-150 font-bold font-mono"
+                        >
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                            <option key={day} value={day}>
+                              {day === 1 ? '1st' : day === 2 ? '2nd' : day === 3 ? '3rd' : `${day}th`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
