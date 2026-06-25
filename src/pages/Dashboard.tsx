@@ -11,6 +11,7 @@ import { SpendingRadar } from "@/components/dashboard/SpendingRadar";
 import { InvestmentNudge } from "@/components/dashboard/InvestmentNudge";
 import { WealthAnalytics } from "@/components/analytics/WealthAnalytics";
 import { MonthlyWrap } from "@/components/dashboard/MonthlyWrap";
+import { KinyWrapExport } from "@/components/dashboard/KinyWrapExport";
 import { Eye, EyeOff } from "lucide-react";
 import { SyncIndicator } from "@/components/shared/SyncIndicator";
 
@@ -533,6 +534,7 @@ export default function Dashboard() {
           <SpendingRadar />
         </motion.div>
       </motion.div>
+      <KinyWrapExport />
     </div>
   );
 }
