@@ -14,6 +14,7 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
   const addCategory = useAppStore(s => s.addCategory);
   const updateCategory = useAppStore(s => s.updateCategory);
   const profile = useAppStore(s => s.profile);
+  const budgetSlices = useAppStore(s => s.budgetSlices || []);
 
   const [name, setName] = useState('');
   const [slice, setSlice] = useState<Slice>('Family');
@@ -148,20 +149,9 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
                 className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 font-bold uppercase text-xs"
               >
                 {(() => {
-                  const financialSlices = profile?.enabled_slices;
-                  let sliceOptions: unknown;
-                  try {
-                    sliceOptions = Array.isArray(financialSlices) 
-                      ? financialSlices 
-                      : typeof financialSlices === 'string'
-                        ? JSON.parse(financialSlices)
-                        : ['Basic', 'Family', 'Wealth', 'Subscription'];
-                  } catch {
-                    sliceOptions = ['Basic', 'Family', 'Wealth', 'Subscription'];
-                  }
-
-                  const targetOptions = (Array.isArray(sliceOptions) ? sliceOptions : [])
-                    .filter((s): s is string => typeof s === 'string');
+                  const targetOptions = budgetSlices.length > 0
+                    ? budgetSlices.map(s => s.slice_name)
+                    : (profile?.enabled_slices || ['Basic Needs', 'Feeding', 'Flex Money', 'Savings']);
 
                   const finalOptions = [...targetOptions];
                   if (category && category.slice && !finalOptions.includes(category.slice)) {

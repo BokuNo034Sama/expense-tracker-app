@@ -5,7 +5,7 @@ import { supabase, getUID } from '../lib/supabaseClient';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
-  InvestmentTrigger, MonthlySnapshot,
+  InvestmentTrigger, MonthlySnapshot, BudgetSliceRow,
 } from './types';
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
@@ -163,11 +163,24 @@ const updateLoggingStreak = async (get: () => AppStore) => {
     currentCheckStr = getLocalDateString(checkDate);
   }
 
-  // 4. Pass the final computed sequence score to the profile patch update routine.
+  // 4. Compute max_streak_this_month
+  const todayMonth = todayStr.slice(0, 7); // "YYYY-MM"
+  const lastTrackedMonth = profile.last_tracked_date ? profile.last_tracked_date.slice(0, 7) : null;
+
+  let nextMaxStreak = profile.max_streak_this_month || 0;
+  if (lastTrackedMonth !== todayMonth) {
+    nextMaxStreak = computedStreak;
+  } else {
+    nextMaxStreak = Math.max(nextMaxStreak, computedStreak);
+  }
+
+  // 5. Pass the final computed sequence score to the profile patch update routine.
   await get().updateProfile({
     last_logged_date: todayStr,
+    last_tracked_date: todayStr,
     current_streak: computedStreak,
     financial_streak: computedStreak,
+    max_streak_this_month: nextMaxStreak,
   });
 };
 
@@ -306,10 +319,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         is_premium: true,
         has_supported_creator: true,
         current_streak: 1,
+        max_streak_this_month: 1,
+        last_tracked_date: new Date().toISOString().split('T')[0],
         last_active_date: new Date().toISOString(),
         financial_streak: 1,
         last_logged_date: new Date().toISOString().split('T')[0],
-        enabled_slices: ['Basic', 'Family', 'Wealth', 'Subscription'],
+        enabled_slices: ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
       };
       set({
         auth: {
@@ -320,12 +335,18 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         profile: mockProfile,
         theme: 'light',
         categories: [
-          { id: 'cat-1', user_id: 'test-user-id', name: 'Transport', icon: 'Car', slice: 'Basic', budget_limit: 50000, is_basic: true, is_priority: true, is_subscription: false, created_at: new Date().toISOString() },
-          { id: 'cat-2', user_id: 'test-user-id', name: 'Feeding', icon: 'Utensils', slice: 'Basic', budget_limit: 100000, is_basic: true, is_priority: true, is_subscription: false, created_at: new Date().toISOString() },
+          { id: 'cat-1', user_id: 'test-user-id', name: 'Transport', icon: 'Car', slice: 'Basic Needs', budget_limit: 50000, is_basic: true, is_priority: true, is_subscription: false, created_at: new Date().toISOString() },
+          { id: 'cat-2', user_id: 'test-user-id', name: 'Feeding', icon: 'Utensils', slice: 'Feeding', budget_limit: 100000, is_basic: true, is_priority: true, is_subscription: false, created_at: new Date().toISOString() },
         ],
         expenses: [],
         incomes: [],
         monthlySnapshots: [],
+        budgetSlices: [
+          { id: 'slice-1', user_id: 'test-user-id', slice_name: 'Basic Needs', slice_type: 'Basic', allocated_percentage: 50, created_at: new Date().toISOString() },
+          { id: 'slice-2', user_id: 'test-user-id', slice_name: 'Feeding', slice_type: 'Feeding', allocated_percentage: 20, created_at: new Date().toISOString() },
+          { id: 'slice-3', user_id: 'test-user-id', slice_name: 'Flex Money', slice_type: 'Flex_Money', allocated_percentage: 10, created_at: new Date().toISOString() },
+          { id: 'slice-4', user_id: 'test-user-id', slice_name: 'Savings', slice_type: 'Saving', allocated_percentage: 20, created_at: new Date().toISOString() },
+        ],
       });
       return;
     }
@@ -605,7 +626,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set({
       auth: { user: null, session: null, status: 'unauthenticated' },
       profile: null, categories: [], expenses: [], incomes: [],
-      investmentInterests: [], monthlySnapshots: [],
+      investmentInterests: [], monthlySnapshots: [], budgetSlices: [],
     });
   },
 
@@ -645,17 +666,21 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           last_active_date: '',
           financial_streak: 0,
           last_logged_date: '',
-          enabled_slices: ['Basic', 'Family', 'Wealth', 'Subscription'],
+          max_streak_this_month: 0,
+          last_tracked_date: null,
+          enabled_slices: ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
         };
         set({ profile: fallbackProfile, theme: 'light' });
+        await get().fetchBudgetSlices();
       } else {
         const row = data as unknown as ProfileRow;
         const profileWithSlices: ProfileRow = {
           ...row,
-          enabled_slices: row.enabled_slices || ['Basic', 'Family', 'Wealth', 'Subscription'],
+          enabled_slices: row.enabled_slices || ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
           estimated_monthly_salary: row.monthly_salary,
         };
         set({ profile: profileWithSlices, theme: (row.theme as Theme) || 'light' });
+        await get().fetchBudgetSlices();
       }
     } catch (e) {
       const err = e as Error;
@@ -682,9 +707,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           last_active_date: '',
           financial_streak: 0,
           last_logged_date: '',
-          enabled_slices: ['Basic', 'Family', 'Wealth', 'Subscription'],
+          max_streak_this_month: 0,
+          last_tracked_date: null,
+          enabled_slices: ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
         };
         set({ profile: fallbackProfile, theme: 'light' });
+        await get().fetchBudgetSlices();
       } catch {
         set({ profile: null });
       }
@@ -697,23 +725,23 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   completeOnboarding: async (name, purpose, occupation, monthlySalary, savingsRate, incomeType, anchorDay, fluidWindowDays) => {
     const uid = await getUID();
 
-    // Seed baseline categories
+    // Seed baseline categories matched to seeded dynamic budget slices
     const categoriesToSeed = [
-      { name: 'Transport',      icon: 'Car',        slice: 'Basic' as const,        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid },
-      { name: 'Feeding',        icon: 'Utensils',   slice: 'Basic' as const,        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid }
+      { name: 'Transport',      icon: 'Car',        slice: 'Basic Needs',        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid },
+      { name: 'Feeding',        icon: 'Utensils',   slice: 'Feeding',            budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid }
     ];
 
     if (incomeType === 'student') {
       categoriesToSeed.push(
-        { name: 'Hostel Rent',      icon: 'Home',     slice: 'Hostel_Rent' as const,      budget_limit: 0, is_basic: false, is_priority: true,  is_subscription: false, user_id: uid },
-        { name: 'Handouts & Books', icon: 'BookOpen', slice: 'Campus_Materials' as const, budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false, user_id: uid },
-        { name: 'Laptop & Gigs',    icon: 'Laptop',   slice: 'Hustle_Fund' as const,      budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false, user_id: uid }
+        { name: 'Hostel Rent',      icon: 'Home',     slice: 'Basic Needs',        budget_limit: 0, is_basic: false, is_priority: true,  is_subscription: false, user_id: uid },
+        { name: 'Handouts & Books', icon: 'BookOpen', slice: 'Handouts & Books',   budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false, user_id: uid },
+        { name: 'Laptop & Gigs',    icon: 'Laptop',   slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false, user_id: uid }
       );
     } else {
       categoriesToSeed.push(
-        { name: 'Parent Token',   icon: 'Gift',       slice: 'Family' as const,       budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
-        { name: 'Sibling Token',  icon: 'Heart',      slice: 'Family' as const,       budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
-        { name: 'Investments',    icon: 'TrendingUp', slice: 'Wealth' as const,       budget_limit: 0, is_basic: false, is_priority: purpose === 'saving',  is_subscription: false, user_id: uid }
+        { name: 'Parent Token',   icon: 'Gift',       slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
+        { name: 'Sibling Token',  icon: 'Heart',      slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
+        { name: 'Investments',    icon: 'TrendingUp', slice: 'Savings',            budget_limit: 0, is_basic: false, is_priority: purpose === 'saving',  is_subscription: false, user_id: uid }
       );
     }
 
@@ -723,6 +751,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     }
     await get().fetchCategories();
 
+    // Seed dynamic budget slices
+    await get().seedDefaultBudgetSlices(incomeType || 'salary');
+
     const avatarInitials = name
       .split(' ')
       .filter(Boolean)
@@ -730,9 +761,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       .join('')
       .slice(0, 2);
 
+    // Keep enabled_slices list for fallback backwards compatibility
     const defaultSlices = incomeType === 'student'
-      ? ['Basic', 'Hostel_Rent', 'Campus_Materials', 'Hustle_Fund', 'Subscription']
-      : ['Basic', 'Family', 'Wealth', 'Subscription'];
+      ? ['Basic Needs', 'Handouts & Books', 'Feeding', 'Flex Money', 'Savings']
+      : ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'];
 
     const profilePatch: any = {
       name,
@@ -1210,6 +1242,139 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       set({ monthlySnapshots: (data as MonthlySnapshot[]) ?? [] });
     } catch (err) {
       console.error('[KINY] fetchMonthlySnapshots failed:', err);
+    }
+  },
+
+  // ── Dynamic Budget Slices ──────────────────────────────────────────────────
+  budgetSlices: [],
+
+  fetchBudgetSlices: async () => {
+    try {
+      const uid = await getUID();
+      const { data, error } = await supabase
+        .from('budget_slices')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      set({ budgetSlices: (data as BudgetSliceRow[]) ?? [] });
+    } catch (err) {
+      console.error('[KINY] fetchBudgetSlices failed:', err);
+    }
+  },
+
+  createBudgetSlice: async (slice) => {
+    try {
+      const uid = await getUID();
+      const { data, error } = await supabase
+        .from('budget_slices')
+        .insert({ ...slice, user_id: uid } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      set(s => ({ budgetSlices: [...s.budgetSlices, data as BudgetSliceRow] }));
+    } catch (err) {
+      console.error('[KINY] createBudgetSlice failed:', err);
+      throw err;
+    }
+  },
+
+  updateBudgetSlice: async (id, patch) => {
+    try {
+      const { error } = await supabase
+        .from('budget_slices')
+        .update(patch as any)
+        .eq('id', id);
+      if (error) throw error;
+      set(s => ({
+        budgetSlices: s.budgetSlices.map(item => item.id === id ? { ...item, ...patch } : item)
+      }));
+    } catch (err) {
+      console.error('[KINY] updateBudgetSlice failed:', err);
+      throw err;
+    }
+  },
+
+  deleteBudgetSlice: async (id) => {
+    try {
+      const { error } = await supabase
+        .from('budget_slices')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      set(s => ({
+        budgetSlices: s.budgetSlices.filter(item => item.id !== id)
+      }));
+    } catch (err) {
+      console.error('[KINY] deleteBudgetSlice failed:', err);
+      throw err;
+    }
+  },
+
+  upsertBudgetSlices: async (slices) => {
+    try {
+      const uid = await getUID();
+      const payload = slices.map(s => {
+        const clean: any = {
+          slice_name: s.slice_name,
+          slice_type: s.slice_type,
+          allocated_percentage: s.allocated_percentage,
+          user_id: uid
+        };
+        // Omit temporary generated IDs so Supabase inserts them
+        if (s.id && !s.id.startsWith('temp-')) {
+          clean.id = s.id;
+        }
+        return clean;
+      });
+
+      const { error } = await supabase
+        .from('budget_slices')
+        .upsert(payload);
+      if (error) throw error;
+      await get().fetchBudgetSlices();
+    } catch (err) {
+      console.error('[KINY] upsertBudgetSlices failed:', err);
+      throw err;
+    }
+  },
+
+  seedDefaultBudgetSlices: async (occupation) => {
+    try {
+      const uid = await getUID();
+      let defaults: Array<Omit<BudgetSliceRow, 'id' | 'created_at'>> = [];
+
+      if (occupation === 'student') {
+        defaults = [
+          { user_id: uid, slice_name: 'Basic Needs', slice_type: 'Basic', allocated_percentage: 30 },
+          { user_id: uid, slice_name: 'Handouts & Books', slice_type: 'Handout', allocated_percentage: 20 },
+          { user_id: uid, slice_name: 'Feeding', slice_type: 'Feeding', allocated_percentage: 25 },
+          { user_id: uid, slice_name: 'Flex Money', slice_type: 'Flex_Money', allocated_percentage: 15 },
+          { user_id: uid, slice_name: 'Savings', slice_type: 'Saving', allocated_percentage: 10 }
+        ];
+      } else if (occupation === 'business') {
+        defaults = [
+          { user_id: uid, slice_name: 'Basic Needs', slice_type: 'Basic', allocated_percentage: 40 },
+          { user_id: uid, slice_name: 'Feeding', slice_type: 'Feeding', allocated_percentage: 20 },
+          { user_id: uid, slice_name: 'Flex Money', slice_type: 'Flex_Money', allocated_percentage: 15 },
+          { user_id: uid, slice_name: 'Savings', slice_type: 'Saving', allocated_percentage: 25 }
+        ];
+      } else { // 'salary' default
+        defaults = [
+          { user_id: uid, slice_name: 'Basic Needs', slice_type: 'Basic', allocated_percentage: 50 },
+          { user_id: uid, slice_name: 'Feeding', slice_type: 'Feeding', allocated_percentage: 20 },
+          { user_id: uid, slice_name: 'Flex Money', slice_type: 'Flex_Money', allocated_percentage: 10 },
+          { user_id: uid, slice_name: 'Savings', slice_type: 'Saving', allocated_percentage: 20 }
+        ];
+      }
+
+      // Delete existing slices first
+      await supabase.from('budget_slices').delete().eq('user_id', uid);
+      const { error } = await supabase.from('budget_slices').insert(defaults as any);
+      if (error) throw error;
+      await get().fetchBudgetSlices();
+    } catch (err) {
+      console.error('[KINY] seedDefaultBudgetSlices failed:', err);
     }
   },
 

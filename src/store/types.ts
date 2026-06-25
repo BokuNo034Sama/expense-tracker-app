@@ -51,9 +51,11 @@ export interface ProfileRow {
   push_subscription?:        unknown;
   financial_streak?:         number;
   last_logged_date?:         string;
+  max_streak_this_month?:    number;
+  last_tracked_date?:        string | null;
   enabled_slices:            string[];
   estimated_monthly_salary?: number;
-  income_type?:              'salary' | 'business' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null;
+  income_type?:              'salary' | 'business' | 'student' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null;
   anchor_day?:               number | null;
   fluid_window_days?:        number | null;
   last_reset_date?:          string | null;
@@ -109,6 +111,15 @@ export type Category        = CategoryRow;
 export type Expense         = ExpenseRow;
 export type Income          = IncomeRow;
 export type InvestmentInterest = InvestmentInterestRow;
+
+export interface BudgetSliceRow {
+  id: string;
+  user_id: string;
+  slice_name: string;
+  slice_type: string;
+  allocated_percentage: number;
+  created_at: string;
+}
 
 export interface MappedCategory {
   id: string;
@@ -283,4 +294,13 @@ export interface AppStore {
   dismissWealthBanner: () => void;
   monthlySnapshots: MonthlySnapshot[];
   fetchMonthlySnapshots: () => Promise<void>;
+
+  // ── Dynamic Budget Slices ──────────────────────────────────────────────────
+  budgetSlices: BudgetSliceRow[];
+  fetchBudgetSlices: () => Promise<void>;
+  createBudgetSlice: (slice: Omit<BudgetSliceRow, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateBudgetSlice: (id: string, patch: Partial<BudgetSliceRow>) => Promise<void>;
+  deleteBudgetSlice: (id: string) => Promise<void>;
+  upsertBudgetSlices: (slices: BudgetSliceRow[]) => Promise<void>;
+  seedDefaultBudgetSlices: (occupation: string) => Promise<void>;
 }

@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const OCCUPATION_OPTIONS = [
   { id: 'salary', label: 'Salary Earner', desc: 'Fixed monthly alerts' },

@@ -187,7 +187,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE public.profiles (
   id                      UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name                    TEXT NOT NULL DEFAULT '',
-  occupation              TEXT NOT NULL DEFAULT '',
+  occupation              VARCHAR(50) DEFAULT 'salary',
   monthly_salary          NUMERIC(12, 2) NOT NULL DEFAULT 0,
   avatar_initials         TEXT NOT NULL DEFAULT '',
   purpose                 TEXT NOT NULL DEFAULT 'clarity'
@@ -198,6 +198,9 @@ CREATE TABLE public.profiles (
   theme                   TEXT NOT NULL DEFAULT 'light'
                             CHECK (theme IN ('light', 'dark')),
   has_seen_investment_nudge BOOLEAN NOT NULL DEFAULT FALSE,
+  current_streak          INT DEFAULT 0,
+  max_streak_this_month   INT DEFAULT 0,
+  last_tracked_date       DATE,
   created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -230,6 +233,19 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
+### 1.2.5 — `budget_slices` Table
+
+```sql
+CREATE TABLE public.budget_slices (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  slice_name          VARCHAR(100) NOT NULL,
+  slice_type          VARCHAR(50) NOT NULL, -- 'Basic', 'Handout', 'Feeding', 'Flex_Money', 'Saving', 'Custom'
+  allocated_percentage INT NOT NULL,
+  created_at          TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
 ### 1.3 — `categories` Table
 
 ```sql
@@ -238,14 +254,14 @@ CREATE TABLE public.categories (
   user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name          TEXT NOT NULL,
   icon          TEXT NOT NULL DEFAULT 'MoreHorizontal',
-  slice         TEXT NOT NULL DEFAULT 'Family'
-                  CHECK (slice IN ('Basic', 'Family', 'Wealth', 'Subscription')),
+  slice         TEXT NOT NULL DEFAULT 'Basic', -- Linked dynamically to budget_slices.slice_name
   budget_limit  NUMERIC(12, 2) NOT NULL DEFAULT 0,
   is_basic      BOOLEAN NOT NULL DEFAULT FALSE,
   is_priority   BOOLEAN NOT NULL DEFAULT FALSE,
   is_subscription BOOLEAN NOT NULL DEFAULT FALSE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+```
 
 CREATE INDEX idx_categories_user_id ON public.categories(user_id);
 ```

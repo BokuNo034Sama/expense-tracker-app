@@ -18,6 +18,8 @@ let mockProfileData = {
   current_streak: 0,
   financial_streak: 0,
   last_logged_date: '',
+  max_streak_this_month: 0,
+  last_tracked_date: null,
   enabled_slices: ['Basic'],
 };
 
@@ -75,6 +77,40 @@ vi.mock('../lib/supabaseClient', () => {
                   };
                 })
               };
+            })
+          };
+        }
+        if (table === 'budget_slices') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({
+                  data: [
+                    { id: 'slice-1', user_id: 'test-user-id', slice_name: 'Basic Needs', slice_type: 'Basic', allocated_percentage: 50, created_at: '2026-06-13T12:00:00Z' }
+                  ],
+                  error: null
+                })
+              })
+            }),
+            insert: vi.fn().mockImplementation((payload) => {
+              const data = Array.isArray(payload) ? payload : [payload];
+              return {
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: 'new-slice-id', ...data[0] },
+                    error: null
+                  })
+                })
+              };
+            }),
+            update: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: null })
+            }),
+            delete: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: null })
+            }),
+            upsert: vi.fn().mockReturnValue({
+              error: null
             })
           };
         }
@@ -145,6 +181,8 @@ describe('useAppStore', () => {
         current_streak: 0,
         financial_streak: 0,
         last_logged_date: '',
+        max_streak_this_month: 0,
+        last_tracked_date: null,
         enabled_slices: ['Basic'],
       };
     });
@@ -402,6 +440,119 @@ describe('useAppStore', () => {
       const boundaries = getCycleBoundariesForDate(mockProfile, date);
       expect(boundaries.startDate.toISOString().split('T')[0]).toBe('2026-06-10');
       expect(boundaries.endDate.toISOString().split('T')[0]).toBe('2026-07-09');
+    });
+  });
+
+  describe('Rolling Daily Transaction Streaks (Max & Reset)', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      mockProfileUpdateError = null;
+      useAppStore.setState({ expenses: [], incomes: [] });
+      mockProfileData = {
+        id: 'test-user-id',
+        name: 'Test User',
+        occupation: '',
+        monthly_salary: 0,
+        avatar_initials: '',
+        purpose: 'clarity',
+        target_savings_rate: null,
+        has_completed_onboarding: true,
+        theme: 'light',
+        has_seen_investment_nudge: false,
+        created_at: '2026-06-13T12:00:00Z',
+        updated_at: '2026-06-13T12:00:00Z',
+        current_streak: 0,
+        financial_streak: 0,
+        last_logged_date: '',
+        max_streak_this_month: 0,
+        last_tracked_date: null,
+        enabled_slices: ['Basic'],
+      };
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should track max_streak_this_month and reset it in a new month', async () => {
+      vi.setSystemTime(new Date('2026-06-10T12:00:00'));
+      const store = useAppStore.getState();
+      await store.fetchProfile();
+
+      // Day 1: June 10
+      await store.addExpense({
+        date: '2026-06-10',
+        vendor: 'Test',
+        category_id: null,
+        amount: 10,
+        note: null
+      });
+
+      expect(useAppStore.getState().profile?.current_streak).toBe(1);
+      expect(useAppStore.getState().profile?.max_streak_this_month).toBe(1);
+      expect(useAppStore.getState().profile?.last_tracked_date).toBe('2026-06-10');
+
+      // Day 2: June 11
+      vi.setSystemTime(new Date('2026-06-11T12:00:00'));
+      await store.addExpense({
+        date: '2026-06-11',
+        vendor: 'Test',
+        category_id: null,
+        amount: 10,
+        note: null
+      });
+
+      expect(useAppStore.getState().profile?.current_streak).toBe(2);
+      expect(useAppStore.getState().profile?.max_streak_this_month).toBe(2);
+
+      // Now move to a new month: July 12
+      vi.setSystemTime(new Date('2026-07-12T12:00:00'));
+      await store.addExpense({
+        date: '2026-07-12',
+        vendor: 'Test',
+        category_id: null,
+        amount: 10,
+        note: null
+      });
+
+      expect(useAppStore.getState().profile?.current_streak).toBe(1);
+      expect(useAppStore.getState().profile?.max_streak_this_month).toBe(1);
+      expect(useAppStore.getState().profile?.last_tracked_date).toBe('2026-07-12');
+    });
+  });
+
+  describe('Dynamic Budget Slices CRUD', () => {
+    it('should fetch, create, update, and delete budget slices', async () => {
+      const store = useAppStore.getState();
+
+      // Fetch
+      await store.fetchBudgetSlices();
+      expect(useAppStore.getState().budgetSlices).toHaveLength(1);
+      expect(useAppStore.getState().budgetSlices[0].slice_name).toBe('Basic Needs');
+
+      // Create
+      await store.createBudgetSlice({
+        slice_name: 'Feeding',
+        slice_type: 'Feeding',
+        allocated_percentage: 20
+      });
+      expect(useAppStore.getState().budgetSlices).toHaveLength(2);
+      expect(useAppStore.getState().budgetSlices[1].slice_name).toBe('Feeding');
+
+      // Update
+      await store.updateBudgetSlice('slice-1', { allocated_percentage: 45 });
+      expect(useAppStore.getState().budgetSlices.find(s => s.id === 'slice-1')?.allocated_percentage).toBe(45);
+
+      // Delete
+      await store.deleteBudgetSlice('slice-1');
+      expect(useAppStore.getState().budgetSlices).toHaveLength(1);
+      expect(useAppStore.getState().budgetSlices[0].slice_name).toBe('Feeding');
+    });
+
+    it('should seed default budget slices depending on role', async () => {
+      const store = useAppStore.getState();
+      await store.seedDefaultBudgetSlices('student');
+      expect(store.seedDefaultBudgetSlices).toBeDefined();
     });
   });
 });

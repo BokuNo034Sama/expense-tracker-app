@@ -29,10 +29,13 @@ export interface Database {
           last_logged_date: string | null
           enabled_slices: string[] | null
           estimated_monthly_salary: number | null
-          income_type: 'salary' | 'business' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
+          income_type: 'salary' | 'business' | 'student' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
           anchor_day: number | null
           fluid_window_days: number | null
           last_reset_date: string | null
+          current_streak: number | null
+          max_streak_this_month: number | null
+          last_tracked_date: string | null
         }
         Insert: {
           id: string
@@ -53,10 +56,13 @@ export interface Database {
           last_logged_date?: string | null
           enabled_slices?: string[] | null
           estimated_monthly_salary?: number | null
-          income_type?: 'salary' | 'business' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
+          income_type?: 'salary' | 'business' | 'student' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
           anchor_day?: number | null
           fluid_window_days?: number | null
           last_reset_date?: string | null
+          current_streak?: number | null
+          max_streak_this_month?: number | null
+          last_tracked_date?: string | null
         }
         Update: {
           id?: string
@@ -77,10 +83,40 @@ export interface Database {
           last_logged_date?: string | null
           enabled_slices?: string[] | null
           estimated_monthly_salary?: number | null
-          income_type?: 'salary' | 'business' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
+          income_type?: 'salary' | 'business' | 'student' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null
           anchor_day?: number | null
           fluid_window_days?: number | null
           last_reset_date?: string | null
+          current_streak?: number | null
+          max_streak_this_month?: number | null
+          last_tracked_date?: string | null
+        }
+        Relationships: []
+      }
+      budget_slices: {
+        Row: {
+          id: string
+          user_id: string
+          slice_name: string
+          slice_type: string
+          allocated_percentage: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string
+          slice_name: string
+          slice_type: string
+          allocated_percentage: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          slice_name?: string
+          slice_type?: string
+          allocated_percentage?: number
+          created_at?: string
         }
         Relationships: []
       }
@@ -90,7 +126,7 @@ export interface Database {
           user_id: string
           name: string
           icon: string
-          slice: 'Basic' | 'Family' | 'Wealth' | 'Subscription'
+          slice: string
           budget_limit: number
           is_basic: boolean
           is_priority: boolean
@@ -102,7 +138,7 @@ export interface Database {
           user_id: string
           name: string
           icon?: string
-          slice?: 'Basic' | 'Family' | 'Wealth' | 'Subscription'
+          slice?: string
           budget_limit?: number
           is_basic?: boolean
           is_priority?: boolean
@@ -114,7 +150,7 @@ export interface Database {
           user_id?: string
           name?: string
           icon?: string
-          slice?: 'Basic' | 'Family' | 'Wealth' | 'Subscription'
+          slice?: string
           budget_limit?: number
           is_basic?: boolean
           is_priority?: boolean
