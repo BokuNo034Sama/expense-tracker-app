@@ -34,3 +34,12 @@ CREATE POLICY "Users can update their own budget slices"
 CREATE POLICY "Users can delete their own budget slices"
     ON budget_slices FOR DELETE
     USING (auth.uid() = user_id);
+
+-- 3. Drop the old restrictive check constraint safely and re-add supporting 'student', 'WEEKEND_SHIFT', 'FLUID_ROLLING'
+ALTER TABLE profiles 
+DROP CONSTRAINT IF EXISTS profiles_income_type_check;
+
+ALTER TABLE profiles 
+ADD CONSTRAINT profiles_income_type_check 
+CHECK (income_type IN ('salary', 'business', 'student', 'WEEKEND_SHIFT', 'FLUID_ROLLING'));
+
