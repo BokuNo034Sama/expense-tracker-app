@@ -1313,26 +1313,23 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   upsertBudgetSlices: async (slices) => {
     try {
-      const uid = await getUID();
-      const payload = slices.map(s => {
-        const clean: any = {
-          slice_name: s.slice_name,
-          slice_type: s.slice_type,
-          allocated_percentage: s.allocated_percentage,
-          user_id: uid
-        };
-        // Omit temporary generated IDs so Supabase inserts them
-        if (s.id && !s.id.startsWith('temp-')) {
-          clean.id = s.id;
-        }
-        return clean;
+      const token = get().auth.session?.access_token;
+      const response = await fetch('/api/user/slices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ slices })
       });
 
-      const { error } = await supabase
-        .from('budget_slices')
-        .upsert(payload);
-      if (error) throw error;
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to save financial architecture');
+      }
+
       await get().fetchBudgetSlices();
+      await get().fetchProfile();
     } catch (err) {
       console.error('[KINY] upsertBudgetSlices failed:', err);
       throw err;

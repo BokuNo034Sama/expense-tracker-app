@@ -1,11 +1,10 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { usePWA } from '../hooks/usePWA';
 import { BentoCard } from '../components/shared/BentoCard';
 import { IncomeList } from '../components/income/IncomeList';
 import { LogOut } from 'lucide-react';
-import { PaydayAnchorSelect } from '../components/profile/PaydayAnchorSelect';
+import { SliceManager } from '../components/profile/SliceManager';
 
 export default function ProfilePage() {
   const profile = useAppStore(s => s.profile);
@@ -13,10 +12,6 @@ export default function ProfilePage() {
   const signOut = useAppStore(s => s.signOut);
   const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
   const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
-
-  const budgetSlices = useAppStore(s => s.budgetSlices || []);
-  const upsertBudgetSlices = useAppStore(s => s.upsertBudgetSlices);
-  const deleteBudgetSlice = useAppStore(s => s.deleteBudgetSlice);
 
   const { registerPushNotifications } = usePWA();
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
@@ -75,14 +70,6 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isSavingMatrix, setIsSavingMatrix] = useState(false);
-
-  const [localSlices, setLocalSlices] = useState<any[]>([]);
-  const [newSliceName, setNewSliceName] = useState('');
-  const [newSliceType, setNewSliceType] = useState('Custom');
-  const [newSlicePercent, setNewSlicePercent] = useState('10');
-
-  const [paydayAnchor, setPaydayAnchor] = useState<number>(30);
   const [studentCycleType, setStudentCycleType] = useState<'weekly' | 'custom'>('weekly');
   const [studentAnchorDay, setStudentAnchorDay] = useState<number>(30);
 
@@ -92,7 +79,7 @@ export default function ProfilePage() {
 
   const isAnchorDirty = profile?.income_type === 'student'
     ? (studentCycleType === 'weekly' ? (profile?.anchor_day !== 0) : (profile?.anchor_day !== studentAnchorDay))
-    : (profile?.income_type !== 'business' && profile?.income_type !== 'FLUID_ROLLING' ? (profile?.anchor_day !== paydayAnchor) : false);
+    : false;
 
   const isDirty = isProfileDirty || isAnchorDirty;
 
@@ -102,9 +89,7 @@ export default function ProfilePage() {
       setOccupation(profile.occupation || '');
       setSalaryStr(profile.monthly_salary.toString());
       
-      
       const anchor = profile.anchor_day ?? 30;
-      setPaydayAnchor(anchor);
       if (profile.income_type === 'student') {
         if (anchor === 0) {
           setStudentCycleType('weekly');
@@ -115,73 +100,6 @@ export default function ProfilePage() {
       }
     }
   }, [profile]);
-
-  useEffect(() => {
-    if (budgetSlices.length > 0) {
-      setLocalSlices(budgetSlices);
-    } else if (profile) {
-      const fallback = profile.income_type === 'student' ? [
-        { id: 'temp-1', user_id: profile.id, slice_name: 'Basic Needs', slice_type: 'Basic', allocated_percentage: 30, created_at: '' },
-        { id: 'temp-2', user_id: profile.id, slice_name: 'Handouts & Books', slice_type: 'Handout', allocated_percentage: 20, created_at: '' },
-        { id: 'temp-3', user_id: profile.id, slice_name: 'Feeding', slice_type: 'Feeding', allocated_percentage: 25, created_at: '' },
-        { id: 'temp-4', user_id: profile.id, slice_name: 'Flex Money', slice_type: 'Flex_Money', allocated_percentage: 15, created_at: '' },
-        { id: 'temp-5', user_id: profile.id, slice_name: 'Savings', slice_type: 'Saving', allocated_percentage: 10, created_at: '' }
-      ] : [
-        { id: 'temp-1', user_id: profile.id, slice_name: 'Basic Needs', slice_type: 'Basic', allocated_percentage: 50, created_at: '' },
-        { id: 'temp-2', user_id: profile.id, slice_name: 'Feeding', slice_type: 'Feeding', allocated_percentage: 20, created_at: '' },
-        { id: 'temp-3', user_id: profile.id, slice_name: 'Flex Money', slice_type: 'Flex_Money', allocated_percentage: 10, created_at: '' },
-        { id: 'temp-4', user_id: profile.id, slice_name: 'Savings', slice_type: 'Saving', allocated_percentage: 20, created_at: '' }
-      ];
-      setLocalSlices(fallback);
-    }
-  }, [budgetSlices, profile]);
-
-  const handleUpdateLocalSlice = (id: string, patch: Partial<any>) => {
-    setLocalSlices(prev =>
-      prev.map(s => s.id === id ? { ...s, ...patch } : s)
-    );
-  };
-
-  const handleAddLocalSlice = () => {
-    if (!newSliceName.trim()) {
-      setErrorMsg('Slice name is required.');
-      return;
-    }
-    const pct = parseInt(newSlicePercent, 10) || 0;
-    if (pct <= 0 || pct > 100) {
-      setErrorMsg('Percentage must be between 1 and 100.');
-      return;
-    }
-
-    const newSlice = {
-      id: `temp-${Date.now()}`,
-      slice_name: newSliceName.trim(),
-      slice_type: newSliceType,
-      allocated_percentage: pct,
-      created_at: new Date().toISOString()
-    };
-
-    setLocalSlices(prev => [...prev, newSlice]);
-    setNewSliceName('');
-    setNewSlicePercent('10');
-    setErrorMsg(null);
-  };
-
-  const handleDeleteLocalSlice = async (id: string) => {
-    try {
-      if (id.startsWith('temp-')) {
-        setLocalSlices(prev => prev.filter(s => s.id !== id));
-      } else {
-        if (confirm('Are you sure you want to delete this budget slice? This will remove all associated category bounds.')) {
-          await deleteBudgetSlice(id);
-          setLocalSlices(prev => prev.filter(s => s.id !== id));
-          setSuccessMsg('Slice deleted.');
-        }
-      }
-    } catch (err) {
-      setErrorMsg('Failed to delete slice.');
-    }
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,9 +142,7 @@ export default function ProfilePage() {
       }
 
       if (isAnchorDirty) {
-        const finalAnchor = profile?.income_type === 'student'
-          ? (studentCycleType === 'weekly' ? 0 : studentAnchorDay)
-          : paydayAnchor;
+        const finalAnchor = studentCycleType === 'weekly' ? 0 : studentAnchorDay;
 
         const token = useAppStore.getState().auth.session?.access_token;
         const response = await fetch('/api/user/settings', {
@@ -255,38 +171,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveMatrix = async () => {
-    if (!navigator.onLine) {
-      setErrorMsg('OFFLINE_MODE — Connect to save changes.');
-      return;
-    }
-
-    const totalPercentage = localSlices.reduce((sum, s) => sum + s.allocated_percentage, 0);
-    if (totalPercentage !== 100) {
-      setErrorMsg(`Invalid allocation: Total percentage must sum to exactly 100% (currently ${totalPercentage}%).`);
-      return;
-    }
-
-    setIsSavingMatrix(true);
-    setSuccessMsg(null);
-    setErrorMsg(null);
-    try {
-      await upsertBudgetSlices(localSlices);
-      
-      // Also update enabled_slices in profile for backwards compatibility
-      const sliceNames = localSlices.map(s => s.slice_name);
-      await updateProfile({
-        enabled_slices: sliceNames
-      });
-
-      setSuccessMsg('FINANCIAL_ARCHITECTURE_SAVED');
-    } catch (err) {
-      const error = err as Error;
-      setErrorMsg(error.message || 'Failed to save matrix.');
-    } finally {
-      setIsSavingMatrix(false);
-    }
-  };
 
   return (
     <div className="space-y-6 w-full py-6 text-black dark:text-white">
@@ -385,25 +269,7 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Payday Anchor for Salary Earners */}
-            {profile?.income_type !== 'student' && profile?.income_type !== 'business' && profile?.income_type !== 'FLUID_ROLLING' && (
-              <div>
-                <label 
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] dark:text-[#E4E4E7] uppercase mb-1.5"
-                >
-                  PAYDAY_ANCHOR_DAY (SALARY_CYCLE)
-                </label>
-                <PaydayAnchorSelect
-                  value={paydayAnchor}
-                  onChange={setPaydayAnchor}
-                  disabled={saving}
-                />
-                <p style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-gray-500 dark:text-zinc-400 mt-1 uppercase font-bold">
-                  Defines your cycle start day. Constrained strictly to days 25-31.
-                </p>
-              </div>
-            )}
+
 
             {/* Student Cycle configuration */}
             {profile?.income_type === 'student' && (
@@ -624,172 +490,7 @@ export default function ProfilePage() {
         </div>
       </BentoCard>
 
-      {/* Neubrutalist Slice Configuration Card */}
-      <BentoCard hoverEffect={false} className="space-y-6 dark:bg-[#1A1A1A] border-2 border-black dark:border-white">
-        <div className="border-b border-[var(--color-ink)] border-dashed pb-3">
-          <h3 
-            style={{ fontFamily: 'var(--font-display)' }}
-            className="text-base font-extrabold uppercase text-[var(--color-ink)] dark:text-white"
-          >
-            🛠_MY_FINANCIAL_ARCHITECTURE
-          </h3>
-          <p 
-            style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-[10px] text-[var(--color-ink-muted)] dark:text-zinc-400 uppercase mt-1"
-          >
-            Configure budget slice allocations and manage custom slices.
-          </p>
-        </div>
-
-        {/* Dynamic Slices List Table */}
-        <div className="space-y-3">
-          <div className="border-2 border-black dark:border-white overflow-hidden bg-[var(--color-surface)] dark:bg-zinc-800">
-            <table className="w-full text-left font-mono text-xs border-collapse">
-              <thead>
-                <tr className="border-b-2 border-black dark:border-white bg-[#F4F4F0] dark:bg-zinc-900 font-bold uppercase text-[10px]">
-                  <th className="p-3 border-r-2 border-black dark:border-white text-black dark:text-white">Slice Name</th>
-                  <th className="p-3 border-r-2 border-black dark:border-white text-black dark:text-white">Type</th>
-                  <th className="p-3 border-r-2 border-black dark:border-white w-24 text-center text-black dark:text-white">Allocated %</th>
-                  <th className="p-3 w-12 text-center text-black dark:text-white">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {localSlices.map(slice => (
-                  <tr key={slice.id} className="border-b-2 border-black dark:border-white last:border-b-0">
-                    <td className="p-2 border-r-2 border-black dark:border-white">
-                      <input
-                        type="text"
-                        value={slice.slice_name}
-                        onChange={e => handleUpdateLocalSlice(slice.id, { slice_name: e.target.value })}
-                        className="w-full bg-transparent p-1 font-bold outline-none uppercase text-xs text-black dark:text-white"
-                      />
-                    </td>
-                    <td className="p-2 border-r-2 border-black dark:border-white font-bold uppercase text-[10px]">
-                      <span className="bg-black text-[#C6EF4E] dark:bg-zinc-700 dark:text-zinc-300 px-2 py-0.5 rounded border border-black uppercase">
-                        {slice.slice_type}
-                      </span>
-                    </td>
-                    <td className="p-2 border-r-2 border-black dark:border-white">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={slice.allocated_percentage}
-                        onChange={e => handleUpdateLocalSlice(slice.id, { allocated_percentage: parseInt(e.target.value, 10) || 0 })}
-                        className="w-full bg-transparent p-1 text-center font-bold outline-none text-black dark:text-white"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteLocalSlice(slice.id)}
-                        className="text-red-500 hover:text-red-700 font-black cursor-pointer uppercase text-[10px]"
-                      >
-                        [ Delete ]
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Validation Check */}
-        {(() => {
-          const totalPercentage = localSlices.reduce((sum, s) => sum + s.allocated_percentage, 0);
-          const isValid = totalPercentage === 100;
-          return (
-            <div 
-              className={`p-3 border-2 border-black font-mono text-[11px] font-bold uppercase text-center select-none ${
-                isValid 
-                  ? 'bg-[#C6EF4E] text-black' 
-                  : 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300'
-              }`}
-            >
-              Total Allocation Sum: {totalPercentage}% {isValid ? '✓ (Valid)' : '✗ (Must equal 100%)'}
-            </div>
-          );
-        })()}
-
-        {/* Inline Slice Creation Form */}
-        <div className="border-2 border-black dark:border-white p-4 bg-[#F4F4F0] dark:bg-zinc-900 space-y-3">
-          <h4 className="font-display font-black text-xs uppercase text-black dark:text-white">
-            Add Custom Slice
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block font-mono text-[9px] font-bold text-gray-500 uppercase mb-1">Slice Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Travel"
-                value={newSliceName}
-                onChange={e => setNewSliceName(e.target.value)}
-                className="w-full px-2 py-1.5 bg-white dark:bg-zinc-800 border-2 border-black dark:border-white font-mono text-xs outline-none text-black dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block font-mono text-[9px] font-bold text-gray-500 uppercase mb-1">Slice Type</label>
-              <select
-                value={newSliceType}
-                onChange={e => setNewSliceType(e.target.value)}
-                className="w-full px-2 py-1.5 bg-white dark:bg-zinc-800 border-2 border-black dark:border-white font-mono text-xs outline-none font-bold uppercase text-[10px] text-black dark:text-white"
-              >
-                <option value="Basic" className="bg-white dark:bg-zinc-800 text-black dark:text-white">BASIC (ESSENTIALS)</option>
-                <option value="Handout" className="bg-white dark:bg-zinc-800 text-black dark:text-white">HANDOUT (EDUCATION)</option>
-                <option value="Feeding" className="bg-white dark:bg-zinc-800 text-black dark:text-white">FEEDING (FOOD)</option>
-                <option value="Flex_Money" className="bg-white dark:bg-zinc-800 text-black dark:text-white">FLEX MONEY (LIFESTYLE)</option>
-                <option value="Saving" className="bg-white dark:bg-zinc-800 text-black dark:text-white">SAVING (INVEST/WEALTH)</option>
-                <option value="Custom" className="bg-white dark:bg-zinc-800 text-black dark:text-white">CUSTOM</option>
-              </select>
-            </div>
-            <div>
-              <label className="block font-mono text-[9px] font-bold text-gray-500 uppercase mb-1">Allocation %</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={newSlicePercent}
-                  onChange={e => setNewSlicePercent(e.target.value)}
-                  className="w-full px-2 py-1.5 bg-white dark:bg-zinc-800 border-2 border-black dark:border-white font-mono text-xs outline-none text-black dark:text-white"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddLocalSlice}
-                  className="bg-[#C6EF4E] text-black px-3 py-1.5 border-2 border-black font-mono font-bold text-[10px] uppercase shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
-                >
-                  [ Add ]
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-[var(--color-ink)] border-dashed flex justify-between items-center">
-          <span 
-            style={{ fontFamily: 'var(--font-mono)' }}
-            className="text-[10px] text-[var(--color-ink-muted)] dark:text-zinc-400 uppercase"
-          >
-            {localSlices.length} SLICE(S) DEFINED
-          </span>
-          <button
-            type="button"
-            onClick={handleSaveMatrix}
-            disabled={isSavingMatrix}
-            style={{ fontFamily: 'var(--font-display)' }}
-            className={`
-              px-5 py-2.5 bg-[var(--color-brand-primary)] text-[#000000] border-2 border-black 
-              rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] 
-              active:translate-y-[2px] active:shadow-none font-extrabold text-xs 
-              uppercase transition-all duration-100 flex items-center justify-center gap-1.5 cursor-pointer
-              ${isSavingMatrix ? 'animate-pulse cursor-wait' : ''}
-            `}
-          >
-            {isSavingMatrix ? 'SAVING...' : '[ SAVE_MATRIX ]'}
-          </button>
-        </div>
-      </BentoCard>
+      <SliceManager />
     </div>
   );
 }
