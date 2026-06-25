@@ -12,8 +12,6 @@ export function KinyWrapExport() {
   const [isOpen, setIsOpen] = useState(false);
   const [wrapMode, setWrapMode] = useState<'launch-week' | '3-month' | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [sharing, setSharing] = useState(false);
-  const [shareSuccess, setShareSuccess] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -135,43 +133,7 @@ export function KinyWrapExport() {
     }
   };
 
-  const shareKinyWrap = async () => {
-    const node = cardRef.current;
-    if (!node) return;
 
-    setSharing(true);
-    setShareSuccess(false);
-    try {
-      const text = `Check out my KINY Wrapped for ${monthLabel}! 🔥 Max Streak: ${maxStreak} days. 📊 Top Sector: ${displaySlice}. Managed on Kiny OS.`;
-
-      // Try to generate PNG and share file (Web Share API)
-      const dataUrl = await toPng(node, { quality: 0.95, backgroundColor: '#000000' });
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-      const file = new File([blob], `kiny-wrapped-${currentMonth}.png`, { type: 'image/png' });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `KINY Wrapped - ${monthLabel}`,
-          text: text,
-        });
-        setShareSuccess(true);
-      } else {
-        // Fallback to pre-filled WhatsApp link
-        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-        window.open(whatsappUrl, '_blank');
-      }
-    } catch (err) {
-      console.error('[KINY] Sharing wrap failed:', err);
-      // Try fallback to text share anyway
-      const text = `Check out my KINY Wrapped for ${monthLabel}! 🔥 Max Streak: ${maxStreak} days. 📊 Top Sector: ${displaySlice}. Managed on Kiny OS.`;
-      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-      window.open(whatsappUrl, '_blank');
-    } finally {
-      setSharing(false);
-    }
-  };
 
   const handleClose = () => {
     setIsOpen(false);
@@ -272,22 +234,15 @@ export function KinyWrapExport() {
             </button>
 
             <button
-              onClick={shareKinyWrap}
-              disabled={sharing}
-              className={`w-full py-3 bg-[#25D366] text-white border-2 border-black font-mono font-bold text-xs uppercase shadow-[3px_3px_0px_0px_#ffffff] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                sharing ? 'animate-pulse cursor-wait' : ''
-              }`}
+              onClick={() => {
+                window.open("https://api.whatsapp.com/send?text=Check%20where%20my%20money%20take%20waka%20this%20month%20on%20KINY%20OS!%20My%20tracking%20streak%20is%20active.%20Run%20your%20own%20numbers%20here%3A%20https%3A%2F%2Fkiny.os", "_blank");
+              }}
+              className="w-full py-3 bg-[#25D366] text-white border-2 border-black font-mono font-bold text-xs uppercase shadow-[3px_3px_0px_0px_#ffffff] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Share2 className="h-4 w-4 shrink-0" />
-              {sharing ? 'SHARING...' : 'WhatsApp Share'}
+              WhatsApp Share
             </button>
           </div>
-
-          {shareSuccess && (
-            <p className="text-[10px] font-mono text-center text-green-400 font-bold uppercase animate-bounce">
-              Share completed successfully!
-            </p>
-          )}
 
           <button
             onClick={handleClose}
