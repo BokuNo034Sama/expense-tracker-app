@@ -14,6 +14,7 @@ export function SliceSection({ slice, categories, categorySpends, onEditCategory
   if (sliceCategories.length === 0) return null;
 
   const getSliceTitle = () => {
+    if (!slice) return '';
     switch (slice) {
       case 'Basic':
         return 'BASIC_NEEDS (ESSENTIALS)';
@@ -24,7 +25,7 @@ export function SliceSection({ slice, categories, categorySpends, onEditCategory
       case 'Subscription':
         return 'SUBSCRIPTIONS_&_MEMBERSHIPS';
       default:
-        return slice.replace('_', ' ').toUpperCase();
+        return String(slice).replace('_', ' ').toUpperCase();
     }
   };
 

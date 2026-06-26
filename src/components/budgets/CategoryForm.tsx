@@ -149,18 +149,18 @@ export function CategoryForm({ open, onOpenChange, category }: CategoryFormProps
                 className="w-full px-4 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150 font-bold uppercase text-xs"
               >
                 {(() => {
-                  const targetOptions = budgetSlices.length > 0
-                    ? budgetSlices.map(s => s.slice_name)
-                    : (profile?.enabled_slices || ['Basic Needs', 'Feeding', 'Flex Money', 'Savings']);
+                  const targetOptions = Array.isArray(budgetSlices) && budgetSlices.length > 0
+                    ? budgetSlices.filter(s => s && s.slice_name).map(s => s.slice_name)
+                    : (Array.isArray(profile?.enabled_slices) ? profile.enabled_slices : ['Basic Needs', 'Feeding', 'Flex Money', 'Savings']);
 
-                  const finalOptions = [...targetOptions];
+                  const finalOptions = Array.isArray(targetOptions) ? [...targetOptions].filter(Boolean) : [];
                   if (category && category.slice && !finalOptions.includes(category.slice)) {
                     finalOptions.push(category.slice);
                   }
 
                   return finalOptions.map((sliceOption: string) => (
                     <option key={sliceOption} value={sliceOption}>
-                      {sliceOption.toUpperCase()}
+                      {(sliceOption || '').toUpperCase()}
                     </option>
                   ));
                 })()}

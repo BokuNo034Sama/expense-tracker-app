@@ -79,7 +79,7 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
       {/* Bottom Row: Condensed Progress Bar & Percentage */}
       <div className="mt-1.5 space-y-1">
         <div className="flex justify-between items-center text-[7px] font-mono">
-          <span className="font-bold text-gray-500">{category.slice.toUpperCase()}</span>
+          <span className="font-bold text-gray-500">{(category.slice || '').toUpperCase()}</span>
           <span className={`font-black ${isOver ? 'text-red-500' : 'text-black dark:text-white'}`}>
             {percentage.toFixed(0)}%
           </span>

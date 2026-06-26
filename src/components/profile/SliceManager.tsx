@@ -5,7 +5,7 @@ import { PaydayAnchorSelect } from './PaydayAnchorSelect';
 
 export function SliceManager() {
   const profile = useAppStore(s => s.profile);
-  const budgetSlices = useAppStore(s => s.budgetSlices || []);
+  const budgetSlices = useAppStore(s => Array.isArray(s.budgetSlices) ? s.budgetSlices : []);
   const upsertBudgetSlices = useAppStore(s => s.upsertBudgetSlices);
   const deleteBudgetSlice = useAppStore(s => s.deleteBudgetSlice);
 
@@ -34,8 +34,8 @@ export function SliceManager() {
 
   // Sync budget slices
   useEffect(() => {
-    if (budgetSlices.length > 0) {
-      setLocalSlices(budgetSlices);
+    if (Array.isArray(budgetSlices) && budgetSlices.length > 0) {
+      setLocalSlices(budgetSlices.filter(Boolean));
     } else if (profile) {
       // Fallbacks
       const fallback = profile.income_type === 'student' ? [

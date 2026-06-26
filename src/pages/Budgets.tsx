@@ -31,10 +31,10 @@ const customStyles = `
 
 export default function Budgets() {
   // 🟢 Defensive Guard: Guarantee state collections are always valid arrays before components try to read them
-  const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories : []) as Category[];
-  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses : []) as Expense[];
+  const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories.filter(c => c && typeof c === 'object') : []) as Category[];
+  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses.filter(e => e && typeof e === 'object') : []) as Expense[];
   const profile = useAppStore(s => s.profile);
-  const budgetSlices = useAppStore(s => s.budgetSlices || []);
+  const budgetSlices = useAppStore(s => Array.isArray(s.budgetSlices) ? s.budgetSlices.filter(b => b && typeof b === 'object') : []);
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -70,9 +70,23 @@ export default function Budgets() {
     setIsFormOpen(true);
   };
 
-  const targetSlices = budgetSlices.length > 0
-    ? budgetSlices.map(s => s.slice_name)
-    : (profile?.enabled_slices || ['Basic Needs', 'Feeding', 'Flex Money', 'Savings']) as Slice[];
+  const slices = budgetSlices.length > 0
+    ? budgetSlices.map(s => s.slice_name).filter(Boolean)
+    : (Array.isArray(profile?.enabled_slices) ? profile.enabled_slices : ['Basic Needs', 'Feeding', 'Flex Money', 'Savings']).filter(Boolean) as Slice[];
+
+  // Force an empty array fallback if slices is undefined, null, or not an array
+  const activeSlices = Array.isArray(slices) ? slices : [];
+
+  if (activeSlices.length === 0) {
+    return (
+      <div className="p-6 border-2 border-black bg-white text-black font-mono">
+        <h3 className="font-bold uppercase">[ NO_ACTIVE_SLICES ]</h3>
+        <p className="text-xs text-zinc-600 mt-2">
+          Abeg, head over to your Profile Settings to initialize or create your custom budget slices!
+        </p>
+      </div>
+    );
+  }
 
   // Filtered expenses based on selected categories/slices
   const filteredExpenses = monthlyExpenses.filter(e => {
@@ -137,8 +151,8 @@ export default function Budgets() {
                 className="appearance-none pr-7 pl-3 py-1.5 font-mono text-[10px] font-bold bg-white text-black border-2 border-black rounded-none focus:outline-none cursor-pointer uppercase"
               >
                 <option value="all">ALL CATEGORIES ▼</option>
-                {targetSlices.map(slice => (
-                  <option key={slice} value={slice}>{slice.toUpperCase()}</option>
+                {activeSlices.map(slice => (
+                  <option key={slice} value={slice}>{(slice || '').toUpperCase()}</option>
                 ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-black text-[9px]">
@@ -196,7 +210,7 @@ export default function Budgets() {
               
               <div className="border-t-2 border-black dark:border-white pt-4 space-y-3">
                 <h5 className="font-mono text-[9px] font-bold text-gray-500 uppercase">BREAKDOWN_BY_SLICE</h5>
-                {targetSlices.map(slice => {
+                {activeSlices.map(slice => {
                   const sliceCats = categories.filter(c => c.slice === slice);
                   if (sliceCats.length === 0) return null;
                   
@@ -213,7 +227,7 @@ export default function Budgets() {
                   return (
                     <div key={slice} className="space-y-1 font-mono text-[10px] text-black dark:text-white">
                       <div className="flex justify-between font-bold">
-                        <span>{slice.toUpperCase()}</span>
+                        <span>{(slice || '').toUpperCase()}</span>
                         <span>₦{sliceSpent.toLocaleString('en-NG')} / ₦{sliceLimit.toLocaleString('en-NG')}</span>
                       </div>
                       <div className="h-2 w-full bg-[#F4F4F0] dark:bg-zinc-900 border border-black dark:border-white rounded-none overflow-hidden">
