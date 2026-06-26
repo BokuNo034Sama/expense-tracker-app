@@ -58,7 +58,7 @@ export function OnboardingOverlay() {
     setSaving(true);
     try {
       const monthlySalary = parseFloat(salaryStr);
-      const defaultAnchorDay = incomeType === 'salary' ? 30 : incomeType === 'student' ? 0 : null;
+      const defaultAnchorDay = incomeType === 'salary' ? 30 : null;
       const defaultFluidWindowDays = incomeType === 'business' ? 30 : null;
       await completeOnboarding(
         name.trim(),

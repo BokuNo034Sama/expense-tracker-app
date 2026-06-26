@@ -778,10 +778,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     };
 
     if (incomeType) {
-      profilePatch.income_type = incomeType;
+      profilePatch.income_type = String(incomeType).toLowerCase();
     }
     if (anchorDay !== undefined) {
-      profilePatch.anchor_day = anchorDay;
+      profilePatch.anchor_day = String(incomeType).toLowerCase() === 'student' ? null : anchorDay;
     }
     if (fluidWindowDays !== undefined) {
       profilePatch.fluid_window_days = fluidWindowDays;
