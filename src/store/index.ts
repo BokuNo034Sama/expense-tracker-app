@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import type { User, Session } from '@supabase/supabase-js';
 import { supabase, getUID } from '../lib/supabaseClient';
+import { getFCMToken } from '../lib/firebase';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
   InvestmentTrigger, MonthlySnapshot, BudgetSliceRow,
 } from './types';
+import type { User, Session } from '@supabase/supabase-js';
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
 
@@ -292,6 +293,30 @@ const recalculateWealthMetrics = (
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
+const apiRequest = async (path: string, options: RequestInit = {}) => {
+  const state = useAppStore.getState();
+  const token = state.auth.session?.access_token;
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...options.headers,
+  } as Record<string, string>;
+  
+  const res = await fetch(`${apiUrl}${path}`, {
+    ...options,
+    headers,
+  });
+  
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `HTTP error ${res.status}`);
+  }
+  
+  return res.json();
+};
+
 export const useAppStore = create<AppStore>()((set, get) => ({
 
   // ── Auth ───────────────────────────────────────────────────────────────────
@@ -443,6 +468,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           ]);
           await checkAndRunRollover(get);
           recalculateWealthMetrics(set, get, true);
+
+          // Asynchronously request and sync FCM token in the background
+          getFCMToken().then(async (fcmToken) => {
+            if (fcmToken) {
+              console.log('USER_FCM_TOKEN:', fcmToken);
+              const currentSub = get().profile?.push_subscription;
+              const fcmSub = { type: 'fcm', token: fcmToken };
+              // Only update if token has changed to prevent infinite refresh loop
+              if (!currentSub || JSON.stringify(currentSub) !== JSON.stringify(fcmSub)) {
+                await get().updateProfile({ push_subscription: fcmSub });
+                console.log('[KINY] FCM Token successfully synced to user profile.');
+              }
+            }
+          }).catch((err) => {
+            console.warn('[KINY] Background FCM sync warning:', err);
+          });
         } catch (err) {
           console.error('[KINY] initAuth authStateChange data fetch failed:', err);
         }
@@ -457,7 +498,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   archiveCurrentMonth: async () => {
-    const uid = await getUID();
     const profile = get().profile;
     if (!profile || !profile.last_logged_date) {
       const todayStr = getLocalDateString();
@@ -504,46 +544,40 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }
     }
 
-    // Insert snapshot row to Supabase
-    const { error: snapshotError } = await supabase
-      .from('monthly_snapshots')
-      .insert({
-        user_id: uid,
-        month_year: concludedMonth,
-        total_income: totalIncome,
-        total_expense: totalExpense,
-        savings_rate: savingsRate,
-        top_category: topCategory,
+    // Insert snapshot row to Express backend
+    try {
+      await apiRequest('/api/snapshots', {
+        method: 'POST',
+        body: JSON.stringify({
+          month_year: concludedMonth,
+          total_income: totalIncome,
+          total_expense: totalExpense,
+          savings_rate: savingsRate,
+          top_category: topCategory,
+        }),
       });
-
-    if (snapshotError) {
-      console.error('[KINY] Failed to insert monthly snapshot:', snapshotError.message);
-      throw new Error(`[KINY] Failed to archive month: ${snapshotError.message}`);
+    } catch (err: any) {
+      console.error('[KINY] Failed to insert monthly snapshot:', err.message);
+      throw new Error(`[KINY] Failed to archive month: ${err.message}`);
     }
 
     const startStr = getLocalDateString(concludedCycle.startDate);
     const endStr = getLocalDateString(concludedCycle.endDate);
 
-    // Delete expenses and incomes of the concluded cycle in Supabase
-    const { error: expDeleteError } = await supabase
-      .from('expenses')
-      .delete()
-      .eq('user_id', uid)
-      .gte('date', startStr)
-      .lte('date', endStr);
-
-    if (expDeleteError) {
+    // Delete expenses and incomes of the concluded cycle via Express bulk delete APIs
+    try {
+      await apiRequest(`/api/expenses?start_date=${startStr}&end_date=${endStr}`, {
+        method: 'DELETE',
+      });
+    } catch (expDeleteError: any) {
       console.error('[KINY] Failed to delete expenses for archive:', expDeleteError.message);
     }
 
-    const { error: incDeleteError } = await supabase
-      .from('incomes')
-      .delete()
-      .eq('user_id', uid)
-      .gte('date', startStr)
-      .lte('date', endStr);
-
-    if (incDeleteError) {
+    try {
+      await apiRequest(`/api/incomes?start_date=${startStr}&end_date=${endStr}`, {
+        method: 'DELETE',
+      });
+    } catch (incDeleteError: any) {
       console.error('[KINY] Failed to delete incomes for archive:', incDeleteError.message);
     }
 
@@ -568,56 +602,54 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   signUp: async (email, password, incomeType, anchorDay, fluidWindowDays) => {
     set(s => ({ errors: { ...s.errors, auth: null } }));
-    const { data: authData, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
+    try {
+      const data = await apiRequest('/api/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify({
+          email,
+          password,
           income_type: incomeType,
-          account_type: incomeType === 'student' ? 'student' : incomeType,
           anchor_day: anchorDay,
-          fluid_window_days: fluidWindowDays
-        }
+          fluid_window_days: fluidWindowDays,
+        }),
+      });
+      if (data.session) {
+        const { error } = await supabase.auth.setSession(data.session);
+        if (error) throw error;
       }
-    });
-    if (error) {
-      set(s => ({ errors: { ...s.errors, auth: error.message } }));
-      throw error;
-    }
-    if (authData?.user) {
-      try {
-        await supabase
-          .from('profiles')
-          .update({
-            income_type: incomeType,
-            anchor_day: anchorDay,
-            fluid_window_days: fluidWindowDays
-          })
-          .eq('id', authData.user.id);
-      } catch (err) {
-        console.warn('[KINY] profiles update warning:', err);
-      }
+    } catch (err: any) {
+      set(s => ({ errors: { ...s.errors, auth: err.message || String(err) } }));
+      throw err;
     }
   },
 
   signIn: async (email, password) => {
     set(s => ({ errors: { ...s.errors, auth: null } }));
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      set(s => ({ errors: { ...s.errors, auth: error.message } }));
-      throw error;
+    try {
+      const data = await apiRequest('/api/auth/signin', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      if (data.session) {
+        const { error } = await supabase.auth.setSession(data.session);
+        if (error) throw error;
+      }
+    } catch (err: any) {
+      set(s => ({ errors: { ...s.errors, auth: err.message || String(err) } }));
+      throw err;
     }
   },
 
   signInMagicLink: async (email) => {
     set(s => ({ errors: { ...s.errors, auth: null } }));
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin },
-    });
-    if (error) {
-      set(s => ({ errors: { ...s.errors, auth: error.message } }));
-      throw error;
+    try {
+      await apiRequest('/api/auth/magiclink', {
+        method: 'POST',
+        body: JSON.stringify({ email, redirectTo: window.location.origin }),
+      });
+    } catch (err: any) {
+      set(s => ({ errors: { ...s.errors, auth: err.message || String(err) } }));
+      throw err;
     }
   },
 
@@ -637,54 +669,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   fetchProfile: async () => {
     set(s => ({ loading: { ...s.loading, profile: true }, errors: { ...s.errors, profile: null } }));
     try {
-      const uid = await getUID();
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', uid)
-        .single();
-      
-      if (error) {
-        console.warn('[KINY] fetchProfile query returned error, using fallback:', error.message);
-        const fallbackProfile: ProfileRow = {
-          id: uid,
-          name: '',
-          occupation: '',
-          monthly_salary: 0,
-          estimated_monthly_salary: 0,
-          avatar_initials: '',
-          purpose: 'clarity',
-          target_savings_rate: null,
-          has_completed_onboarding: false,
-          theme: 'light',
-          has_seen_investment_nudge: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_premium: false,
-          has_supported_creator: false,
-          current_streak: 0,
-          last_active_date: '',
-          financial_streak: 0,
-          last_logged_date: '',
-          max_streak_this_month: 0,
-          last_tracked_date: null,
-          enabled_slices: ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
-        };
-        set({ profile: fallbackProfile, theme: 'light' });
-        await get().fetchBudgetSlices();
-      } else {
-        const row = data as unknown as ProfileRow;
-        const profileWithSlices: ProfileRow = {
-          ...row,
-          enabled_slices: row.enabled_slices || ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
-          estimated_monthly_salary: row.monthly_salary,
-        };
-        set({ profile: profileWithSlices, theme: (row.theme as Theme) || 'light' });
-        await get().fetchBudgetSlices();
-      }
-    } catch (e) {
-      const err = e as Error;
-      set(s => ({ errors: { ...s.errors, profile: err.message } }));
+      const data = await apiRequest('/api/profile');
+      const row = data as unknown as ProfileRow;
+      const profileWithSlices: ProfileRow = {
+        ...row,
+        enabled_slices: row.enabled_slices || ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
+        estimated_monthly_salary: row.monthly_salary,
+      };
+      set({ profile: profileWithSlices, theme: (row.theme as Theme) || 'light' });
+      await get().fetchBudgetSlices();
+    } catch (e: any) {
+      set(s => ({ errors: { ...s.errors, profile: e.message } }));
       try {
         const uid = await getUID();
         const fallbackProfile: ProfileRow = {
@@ -723,31 +718,35 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   completeOnboarding: async (name, purpose, occupation, monthlySalary, savingsRate, incomeType, anchorDay, fluidWindowDays) => {
-    const uid = await getUID();
-
     // Seed baseline categories matched to seeded dynamic budget slices
     const categoriesToSeed = [
-      { name: 'Transport',      icon: 'Car',        slice: 'Basic Needs',        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid },
-      { name: 'Feeding',        icon: 'Utensils',   slice: 'Feeding',            budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false, user_id: uid }
-    ];
+      { name: 'Transport',      icon: 'Car',        slice: 'Basic Needs',        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false },
+      { name: 'Feeding',        icon: 'Utensils',   slice: 'Feeding',            budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false }
+    ] as any[];
 
     if (incomeType === 'student') {
       categoriesToSeed.push(
-        { name: 'Hostel Rent',      icon: 'Home',     slice: 'Basic Needs',        budget_limit: 0, is_basic: false, is_priority: true,  is_subscription: false, user_id: uid },
-        { name: 'Handouts & Books', icon: 'BookOpen', slice: 'Handouts & Books',   budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false, user_id: uid },
-        { name: 'Laptop & Gigs',    icon: 'Laptop',   slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false, user_id: uid }
+        { name: 'Hostel Rent',      icon: 'Home',     slice: 'Basic Needs',        budget_limit: 0, is_basic: false, is_priority: true,  is_subscription: false },
+        { name: 'Handouts & Books', icon: 'BookOpen', slice: 'Handouts & Books',   budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false },
+        { name: 'Laptop & Gigs',    icon: 'Laptop',   slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false }
       );
     } else {
       categoriesToSeed.push(
-        { name: 'Parent Token',   icon: 'Gift',       slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
-        { name: 'Sibling Token',  icon: 'Heart',      slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false, user_id: uid },
-        { name: 'Investments',    icon: 'TrendingUp', slice: 'Savings',            budget_limit: 0, is_basic: false, is_priority: purpose === 'saving',  is_subscription: false, user_id: uid }
+        { name: 'Parent Token',   icon: 'Gift',       slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false },
+        { name: 'Sibling Token',  icon: 'Heart',      slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false },
+        { name: 'Investments',    icon: 'TrendingUp', slice: 'Savings',            budget_limit: 0, is_basic: false, is_priority: purpose === 'saving',  is_subscription: false }
       );
     }
 
-    const { error: seedError } = await supabase.from('categories').insert(categoriesToSeed);
-    if (seedError) {
-      console.warn('[KINY] Seeding baseline categories failed or duplicates ignored:', seedError.message);
+    for (const cat of categoriesToSeed) {
+      try {
+        await apiRequest('/api/categories', {
+          method: 'POST',
+          body: JSON.stringify(cat),
+        });
+      } catch (err: any) {
+        console.warn('[KINY] Seeding baseline category failed:', err.message);
+      }
     }
     await get().fetchCategories();
 
@@ -787,12 +786,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       profilePatch.fluid_window_days = fluidWindowDays;
     }
 
-    const { error } = await supabase
-      .from('profiles')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update(profilePatch as any)
-      .eq('id', uid);
-    if (error) throw new Error(`[KINY] Profile update failed: ${error.message}`);
+    try {
+      await apiRequest('/api/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(profilePatch),
+      });
+    } catch (err: any) {
+      throw new Error(`[KINY] Profile update failed: ${err.message}`);
+    }
 
     await get().fetchProfile();
     recalculateWealthMetrics(set, get, false);
@@ -806,10 +807,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       recalculateWealthMetrics(set, get, false);
       return;
     }
-    const uid = await getUID();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await supabase.from('profiles').update(patch as any).eq('id', uid);
-    if (error) throw new Error(`[KINY] Profile update failed: ${error.message}`);
+    try {
+      await apiRequest('/api/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      });
+    } catch (err: any) {
+      throw new Error(`[KINY] Profile update failed: ${err.message}`);
+    }
     await get().fetchProfile();
     recalculateWealthMetrics(set, get, false);
   },
@@ -821,17 +826,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   fetchCategories: async () => {
     set(s => ({ loading: { ...s.loading, categories: true } }));
     try {
-      const uid = await getUID();
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
+      const data = await apiRequest('/api/categories');
       set({ categories: (data as Category[]) ?? [] });
-    } catch (e) {
-      const err = e as Error;
-      set(s => ({ errors: { ...s.errors, categories: err.message } }));
+    } catch (e: any) {
+      set(s => ({ errors: { ...s.errors, categories: e.message } }));
     } finally {
       set(s => ({ loading: { ...s.loading, categories: false } }));
     }
@@ -854,11 +852,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       set(s => ({ categories: [...s.categories, mockCategory] }));
       return;
     }
-    const uid = await getUID();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await supabase.from('categories').insert({ ...c, user_id: uid } as any);
-    if (error) throw new Error(error.message);
-    await get().fetchCategories();
+    const data = await apiRequest('/api/categories', {
+      method: 'POST',
+      body: JSON.stringify(c),
+    });
+    set(s => ({ categories: [...s.categories, data as Category] }));
   },
 
   updateCategory: async (id, patch) => {
@@ -868,10 +866,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }));
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await supabase.from('categories').update(patch as any).eq('id', id);
-    if (error) throw new Error(error.message);
-    await get().fetchCategories();
+    const data = await apiRequest(`/api/categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+    set(s => ({ categories: s.categories.map(c => c.id === id ? (data as Category) : c) }));
   },
 
   deleteCategory: async (id) => {
@@ -879,8 +878,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       set(s => ({ categories: s.categories.filter(c => c.id !== id) }));
       return;
     }
-    const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (error) throw new Error(error.message);
+    await apiRequest(`/api/categories/${id}`, {
+      method: 'DELETE',
+    });
     set(s => ({ categories: s.categories.filter(c => c.id !== id) }));
   },
 
@@ -891,12 +891,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   fetchExpenses: async () => {
     set(s => ({ loading: { ...s.loading, expenses: true } }));
     try {
-      const uid = await getUID();
+      const allExpenses = await apiRequest('/api/expenses');
       const filter = get().filterMonth;
-      let query = supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', uid);
+      let filtered = allExpenses;
 
       if (filter !== 'all') {
         const currentMonthStr = new Date().toISOString().substring(0, 7);
@@ -920,15 +917,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           }
           startOfNextMonth = `${nextYear}-${String(nextMonthVal).padStart(2, '0')}-01`;
         }
-        query = query.gte('date', startOfMonth).lt('date', startOfNextMonth);
+        filtered = allExpenses.filter((e: Expense) => e.date >= startOfMonth && e.date < startOfNextMonth);
       }
 
-      const { data, error } = await query.order('date', { ascending: false });
-      if (error) throw error;
-      set({ expenses: (data as Expense[]) ?? [] });
-    } catch (e) {
-      const err = e as Error;
-      set(s => ({ errors: { ...s.errors, expenses: err.message } }));
+      set({ expenses: (filtered as Expense[]) ?? [] });
+    } catch (e: any) {
+      set(s => ({ errors: { ...s.errors, expenses: e.message } }));
     } finally {
       set(s => ({ loading: { ...s.loading, expenses: false } }));
       recalculateWealthMetrics(set, get, true);
@@ -957,13 +951,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       recalculateWealthMetrics(set, get, false);
       return;
     }
-    const uid = await getUID();
-    const { data, error } = await supabase
-      .from('expenses')
-      .insert({ ...e, user_id: uid } as unknown as Expense)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
+    const data = await apiRequest('/api/expenses', {
+      method: 'POST',
+      body: JSON.stringify(e),
+    });
     set(s => ({ expenses: [data as Expense, ...s.expenses] }));
     try {
       await updateLoggingStreak(get);
@@ -981,13 +972,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       recalculateWealthMetrics(set, get, false);
       return;
     }
-    const { data, error } = await supabase
-      .from('expenses')
-      .update(patch as unknown as Partial<Expense>)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
+    const data = await apiRequest(`/api/expenses/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
     set(s => ({ expenses: s.expenses.map(e => e.id === id ? (data as Expense) : e) }));
     recalculateWealthMetrics(set, get, false);
   },
@@ -998,8 +986,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       recalculateWealthMetrics(set, get, false);
       return;
     }
-    const { error } = await supabase.from('expenses').delete().eq('id', id);
-    if (error) throw new Error(error.message);
+    await apiRequest(`/api/expenses/${id}`, {
+      method: 'DELETE',
+    });
     set(s => ({ expenses: s.expenses.filter(e => e.id !== id) }));
     recalculateWealthMetrics(set, get, false);
   },
@@ -1011,12 +1000,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   fetchIncomes: async () => {
     set(s => ({ loading: { ...s.loading, incomes: true } }));
     try {
-      const uid = await getUID();
+      const allIncomes = await apiRequest('/api/incomes');
       const filter = get().filterMonth;
-      let query = supabase
-        .from('incomes')
-        .select('*')
-        .eq('user_id', uid);
+      let filtered = allIncomes;
 
       if (filter !== 'all') {
         const currentMonthStr = new Date().toISOString().substring(0, 7);
@@ -1040,15 +1026,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           }
           startOfNextMonth = `${nextYear}-${String(nextMonthVal).padStart(2, '0')}-01`;
         }
-        query = query.gte('date', startOfMonth).lt('date', startOfNextMonth);
+        filtered = allIncomes.filter((i: Income) => i.date >= startOfMonth && i.date < startOfNextMonth);
       }
 
-      const { data, error } = await query.order('date', { ascending: false });
-      if (error) throw error;
-      set({ incomes: (data as Income[]) ?? [] });
-    } catch (e) {
-      const err = e as Error;
-      set(s => ({ errors: { ...s.errors, incomes: err.message } }));
+      set({ incomes: (filtered as Income[]) ?? [] });
+    } catch (e: any) {
+      set(s => ({ errors: { ...s.errors, incomes: e.message } }));
     } finally {
       set(s => ({ loading: { ...s.loading, incomes: false } }));
       recalculateWealthMetrics(set, get, true);
@@ -1075,13 +1058,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       recalculateWealthMetrics(set, get, false);
       return;
     }
-    const uid = await getUID();
-    const { data, error } = await supabase
-      .from('incomes')
-      .insert({ ...i, user_id: uid } as unknown as Income)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
+    const data = await apiRequest('/api/incomes', {
+      method: 'POST',
+      body: JSON.stringify(i),
+    });
     set(s => ({ incomes: [data as Income, ...s.incomes] }));
     try {
       await updateLoggingStreak(get);
@@ -1099,13 +1079,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       recalculateWealthMetrics(set, get, false);
       return;
     }
-    const { data, error } = await supabase
-      .from('incomes')
-      .update(patch as unknown as Partial<Income>)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
+    const data = await apiRequest(`/api/incomes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
     set(s => ({ incomes: s.incomes.map(i => i.id === id ? (data as Income) : i) }));
     recalculateWealthMetrics(set, get, false);
   },
@@ -1116,8 +1093,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       recalculateWealthMetrics(set, get, false);
       return;
     }
-    const { error } = await supabase.from('incomes').delete().eq('id', id);
-    if (error) throw new Error(error.message);
+    await apiRequest(`/api/incomes/${id}`, {
+      method: 'DELETE',
+    });
     set(s => ({ incomes: s.incomes.filter(i => i.id !== id) }));
     recalculateWealthMetrics(set, get, false);
   },
@@ -1141,21 +1119,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }));
       return;
     }
-    const uid = await getUID();
-    const { data, error } = await supabase
-      .from('investment_interests')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .insert({ type, wealth_balance_at_click: wealthBalance, user_id: uid } as any)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
+    const data = await apiRequest('/api/investments', {
+      method: 'POST',
+      body: JSON.stringify({ type, wealth_balance_at_click: wealthBalance }),
+    });
     set(s => ({ investmentInterests: [...s.investmentInterests, data as InvestmentInterest] }));
 
-    await supabase
-      .from('profiles')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ has_seen_investment_nudge: true } as any)
-      .eq('id', uid);
+    await apiRequest('/api/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ has_seen_investment_nudge: true }),
+    });
+    await get().fetchProfile();
   },
 
   // ── Theme ──────────────────────────────────────────────────────────────────
@@ -1166,9 +1140,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set({ theme: t });
     document.documentElement.dataset.theme = t;
     try {
-      const uid = await getUID();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await supabase.from('profiles').update({ theme: t } as any).eq('id', uid);
+      await apiRequest('/api/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({ theme: t }),
+      });
     } catch {
       // Theme is non-critical — silently fail if not logged in
     }
@@ -1232,13 +1207,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   monthlySnapshots: [],
   fetchMonthlySnapshots: async () => {
     try {
-      const uid = await getUID();
-      const { data, error } = await supabase
-        .from('monthly_snapshots')
-        .select('*')
-        .eq('user_id', uid)
-        .order('month_year', { ascending: false });
-      if (error) throw error;
+      const data = await apiRequest('/api/snapshots');
       set({ monthlySnapshots: (data as MonthlySnapshot[]) ?? [] });
     } catch (err) {
       console.error('[KINY] fetchMonthlySnapshots failed:', err);
@@ -1250,13 +1219,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   fetchBudgetSlices: async () => {
     try {
-      const uid = await getUID();
-      const { data, error } = await supabase
-        .from('budget_slices')
-        .select('*')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
+      const data = await apiRequest('/api/slices');
       set({ budgetSlices: (data as BudgetSliceRow[]) ?? [] });
     } catch (err) {
       console.error('[KINY] fetchBudgetSlices failed:', err);
@@ -1265,13 +1228,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   createBudgetSlice: async (slice) => {
     try {
-      const uid = await getUID();
-      const { data, error } = await supabase
-        .from('budget_slices')
-        .insert({ ...slice, user_id: uid } as any)
-        .select()
-        .single();
-      if (error) throw error;
+      const data = await apiRequest('/api/slices', {
+        method: 'POST',
+        body: JSON.stringify(slice),
+      });
       set(s => ({ budgetSlices: [...s.budgetSlices, data as BudgetSliceRow] }));
     } catch (err) {
       console.error('[KINY] createBudgetSlice failed:', err);
@@ -1281,11 +1241,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   updateBudgetSlice: async (id, patch) => {
     try {
-      const { error } = await supabase
-        .from('budget_slices')
-        .update(patch as any)
-        .eq('id', id);
-      if (error) throw error;
+      await apiRequest(`/api/slices/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      });
       set(s => ({
         budgetSlices: s.budgetSlices.map(item => item.id === id ? { ...item, ...patch } : item)
       }));
@@ -1297,11 +1256,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   deleteBudgetSlice: async (id) => {
     try {
-      const { error } = await supabase
-        .from('budget_slices')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      await apiRequest(`/api/slices/${id}`, {
+        method: 'DELETE',
+      });
       set(s => ({
         budgetSlices: s.budgetSlices.filter(item => item.id !== id)
       }));
@@ -1313,21 +1270,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   upsertBudgetSlices: async (slices) => {
     try {
-      const token = get().auth.session?.access_token;
-      const response = await fetch('/api/user/slices', {
+      await apiRequest('/api/user/slices', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
         body: JSON.stringify({ slices })
       });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to save financial architecture');
-      }
-
       await get().fetchBudgetSlices();
       await get().fetchProfile();
     } catch (err) {
@@ -1365,10 +1311,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         ];
       }
 
-      // Delete existing slices first
-      await supabase.from('budget_slices').delete().eq('user_id', uid);
-      const { error } = await supabase.from('budget_slices').insert(defaults as any);
-      if (error) throw error;
+      await apiRequest('/api/user/slices', {
+        method: 'POST',
+        body: JSON.stringify({ slices: defaults })
+      });
       await get().fetchBudgetSlices();
     } catch (err) {
       console.error('[KINY] seedDefaultBudgetSlices failed:', err);

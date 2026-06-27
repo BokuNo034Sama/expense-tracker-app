@@ -74,7 +74,8 @@ export function KinyWrapExport() {
       }
 
       try {
-        const response = await fetch('/api/wrap/check');
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/wrap/check`);
         if (response.ok) {
           const data = await response.json();
           if (data.enabled) {

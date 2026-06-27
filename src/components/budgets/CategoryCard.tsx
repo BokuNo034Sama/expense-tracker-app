@@ -16,8 +16,12 @@ export function CategoryCard({ category, spent, onEdit }: CategoryCardProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const limit = Number(category?.budget_limit || 0);
-  const percentage = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
-  const isOver = limit > 0 && spent > limit;
+  const spentNum = Number(spent) || 0;
+  const limitNum = Number(limit) || 0;
+  const percentage = limitNum > 0 && !isNaN(spentNum) && !isNaN(limitNum)
+    ? Math.min((spentNum / limitNum) * 100, 100)
+    : 0;
+  const isOver = limitNum > 0 && spentNum > limitNum;
 
   const formatNairaCompact = (amount: number) => {
     if (amount >= 1000000) {

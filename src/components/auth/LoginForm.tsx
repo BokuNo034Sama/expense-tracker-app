@@ -242,43 +242,29 @@ export function LoginForm() {
                   >
                     USER_CLASSIFICATION
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setClassification('salary')}
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                      className={`p-2 border-2 border-black font-mono font-bold text-xs uppercase transition-all duration-100 text-center cursor-pointer ${
-                        classification === 'salary' 
-                          ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
-                          : 'bg-white text-black'
-                      }`}
-                    >
-                      [ SALARY_EARNER ]
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setClassification('business')}
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                      className={`p-2 border-2 border-black font-mono font-bold text-xs uppercase transition-all duration-100 text-center cursor-pointer ${
-                        classification === 'business' 
-                          ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
-                          : 'bg-white text-black'
-                      }`}
-                    >
-                      [ BUSINESS_OWNER ]
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setClassification('student')}
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                      className={`p-2 border-2 border-black font-mono font-bold text-xs uppercase transition-all duration-100 text-center cursor-pointer ${
-                        classification === 'student' 
-                          ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]' 
-                          : 'bg-white text-black'
-                      }`}
-                    >
-                      [ STUDENT ]
-                    </button>
+                  <div className="flex flex-row gap-2 w-full">
+                    {(['salary', 'business', 'student'] as const).map((type) => {
+                      const labels: Record<string, string> = {
+                        salary: 'SALARY',
+                        business: 'BUSINESS',
+                        student: 'STUDENT',
+                      };
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setClassification(type)}
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                          className={`flex-1 py-2.5 px-1 border-2 border-black font-mono font-bold text-[10px] uppercase whitespace-nowrap transition-all duration-100 text-center cursor-pointer ${
+                            classification === type
+                              ? 'bg-[#C6EF4E] text-[#000000] shadow-[2px_2px_0px_0px_#000000] translate-x-[0.5px] translate-y-[0.5px]'
+                              : 'bg-white text-black'
+                          }`}
+                        >
+                          [ {labels[type]} ]
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -401,14 +387,28 @@ export function LoginForm() {
               </div>
             )}
 
-            {(localError || serverError) && (
-              <div 
-                style={{ fontFamily: 'var(--font-mono)' }}
-                className="bg-[var(--color-surface)] border-l-4 border-l-[var(--color-danger)] border-[var(--border-default)] text-[var(--color-danger)] rounded-[var(--border-radius)] p-3 text-xs font-bold mt-4 break-words"
-              >
-                ERROR: {localError || serverError}
-              </div>
-            )}
+            {(localError || serverError) && (() => {
+              const raw = localError || serverError || '';
+              const friendly = raw.toLowerCase().includes('rate limit') || raw.toLowerCase().includes('email rate limit')
+                ? 'Too many attempts — please wait a few minutes before trying again.'
+                : raw.toLowerCase().includes('invalid login credentials') || raw.toLowerCase().includes('invalid credentials')
+                ? 'Incorrect email or password. Please try again.'
+                : raw.toLowerCase().includes('user already registered') || raw.toLowerCase().includes('already been registered')
+                ? 'An account with this email already exists. Try logging in instead.'
+                : raw.toLowerCase().includes('email not confirmed')
+                ? 'Please check your email and confirm your account first.'
+                : raw.toLowerCase().includes('network') || raw.toLowerCase().includes('fetch')
+                ? 'Network error — check your connection and try again.'
+                : raw;
+              return (
+                <div
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="bg-[var(--color-surface)] border-l-4 border-l-[var(--color-danger)] border-[var(--border-default)] text-[var(--color-danger)] rounded-[var(--border-radius)] p-3 text-xs font-bold mt-4 break-words"
+                >
+                  ⚠ {friendly}
+                </div>
+              );
+            })()}
           </form>
         </BentoCard>
       </div>

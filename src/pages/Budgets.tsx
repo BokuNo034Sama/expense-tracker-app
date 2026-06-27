@@ -102,13 +102,16 @@ export default function Budgets() {
     return c.slice === activeSliceFilter;
   });
 
-  // Calculate totals for Trends Breakdown
   const totalSpent = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalLimit = categories
     .filter(c => activeSliceFilter === 'all' ? true : c.slice === activeSliceFilter)
     .reduce((sum, c) => sum + Number(c.budget_limit || 0), 0);
 
-  const percentage = totalLimit > 0 ? Math.min((totalSpent / totalLimit) * 100, 100) : 0;
+  const totalSpentNum = Number(totalSpent) || 0;
+  const totalLimitNum = Number(totalLimit) || 0;
+  const percentage = totalLimitNum > 0 && !isNaN(totalSpentNum) && !isNaN(totalLimitNum)
+    ? Math.min((totalSpentNum / totalLimitNum) * 100, 100)
+    : 0;
 
   return (
     <motion.div
@@ -193,18 +196,17 @@ export default function Budgets() {
             <div className="border-2 border-black dark:border-white p-4 bg-white dark:bg-zinc-800 space-y-4 rounded-none">
               <h4 className="font-display font-black text-xs uppercase text-black dark:text-white">MONTHLY PROGRESS</h4>
               <div className="space-y-1.5">
-                <div className="flex justify-between text-[10px] font-mono font-bold text-black dark:text-white">
-                  <span>SPENT: ₦{totalSpent.toLocaleString('en-NG')}</span>
-                  <span>LIMIT: ₦{totalLimit.toLocaleString('en-NG')}</span>
+                <div className="font-mono text-xs font-bold uppercase tracking-wide text-black dark:text-white">
+                  <span>SPENT: ₦{totalSpentNum.toLocaleString('en-NG')}</span>
+                  <span className="float-right">LIMIT: ₦{totalLimitNum.toLocaleString('en-NG')}</span>
                 </div>
-                <div className="h-6 w-full bg-[#F4F4F0] dark:bg-zinc-900 border-2 border-black rounded-none overflow-hidden relative flex items-center">
+                <div className="w-full border-2 border-black h-6 bg-white overflow-hidden mt-2">
                   <div 
-                    className="h-full bg-[#C6EF4E] border-r-2 border-black" 
                     style={{ width: `${percentage}%` }}
-                  />
-                  <span className="absolute w-full text-center text-[10px] font-mono font-black text-black z-10">
+                    className="bg-[#C6EF4E] h-full flex items-center justify-center border-r-2 border-black font-mono text-[10px] font-bold text-black"
+                  >
                     {percentage.toFixed(1)}% CONSUMED
-                  </span>
+                  </div>
                 </div>
               </div>
               
@@ -221,8 +223,11 @@ export default function Budgets() {
                       return cat?.slice === slice;
                     })
                     .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-                    
-                  const slicePercent = sliceLimit > 0 ? Math.min((sliceSpent / sliceLimit) * 100, 100) : 0;
+                  const sliceSpentNum = Number(sliceSpent) || 0;
+                  const sliceLimitNum = Number(sliceLimit) || 0;
+                  const slicePercent = sliceLimitNum > 0 && !isNaN(sliceSpentNum) && !isNaN(sliceLimitNum)
+                    ? Math.min((sliceSpentNum / sliceLimitNum) * 100, 100)
+                    : 0;
                   
                   return (
                     <div key={slice} className="space-y-1 font-mono text-[10px] text-black dark:text-white">

@@ -145,7 +145,8 @@ export default function ProfilePage() {
         const finalAnchor = studentCycleType === 'weekly' ? 0 : studentAnchorDay;
 
         const token = useAppStore.getState().auth.session?.access_token;
-        const response = await fetch('/api/user/settings', {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/user/settings`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
