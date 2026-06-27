@@ -60,6 +60,25 @@ export default function Budgets() {
     }
   });
 
+  // Build slice summary using ONLY absolute Naira values from categories
+  const sliceSummary = categories.reduce((acc, cat) => {
+    const slice = cat.slice;
+    if (!acc[slice]) {
+      acc[slice] = { totalLimit: 0, totalSpent: 0 };
+    }
+    acc[slice].totalLimit += Number(cat.budget_limit || 0);
+    return acc;
+  }, {} as Record<string, { totalLimit: number; totalSpent: number }>);
+
+  // Sum actual spending per slice from expenses
+  monthlyExpenses.forEach(exp => {
+    if (!exp) return;
+    const cat = categories.find(c => c.id === exp.category_id);
+    if (cat && sliceSummary[cat.slice]) {
+      sliceSummary[cat.slice].totalSpent += Number(exp.amount || 0);
+    }
+  });
+
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setIsFormOpen(true);
@@ -213,19 +232,12 @@ export default function Budgets() {
               <div className="border-t-2 border-black dark:border-white pt-4 space-y-3">
                 <h5 className="font-mono text-[9px] font-bold text-gray-500 uppercase">BREAKDOWN_BY_SLICE</h5>
                 {activeSlices.map(slice => {
-                  const sliceCats = categories.filter(c => c.slice === slice);
-                  if (sliceCats.length === 0) return null;
+                  const summary = sliceSummary[slice];
+                  if (!summary || summary.totalLimit === 0) return null;
                   
-                  const sliceLimit = sliceCats.reduce((sum, c) => sum + Number(c.budget_limit || 0), 0);
-                  const sliceSpent = filteredExpenses
-                    .filter(e => {
-                      const cat = categories.find(c => c.id === e.category_id);
-                      return cat?.slice === slice;
-                    })
-                    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-                  const sliceSpentNum = Number(sliceSpent) || 0;
-                  const sliceLimitNum = Number(sliceLimit) || 0;
-                  const slicePercent = sliceLimitNum > 0 && !isNaN(sliceSpentNum) && !isNaN(sliceLimitNum)
+                  const sliceLimitNum = summary.totalLimit;
+                  const sliceSpentNum = summary.totalSpent;
+                  const slicePercent = sliceLimitNum > 0
                     ? Math.min((sliceSpentNum / sliceLimitNum) * 100, 100)
                     : 0;
                   

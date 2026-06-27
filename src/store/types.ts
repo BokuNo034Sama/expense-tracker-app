@@ -167,6 +167,12 @@ export interface MonthlySnapshot {
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
+export type AppState =
+  | 'LOADING'
+  | 'ONBOARDING_INCOMPLETE'
+  | 'READY'
+  | 'UNAUTHENTICATED';
+
 export interface AuthState {
   user:    User | null;
   session: Session | null;
@@ -204,6 +210,8 @@ export interface ErrorState {
 export interface AppStore {
   // ── Auth ─────────────────────────────────────────────────────────────────
   auth:           AuthState;
+  appState:       AppState;
+  setAppState:    (state: AppState) => void;
   signUp:         (email: string, password: string, incomeType: 'salary' | 'business' | 'student', anchorDay: number | null, fluidWindowDays: number | null) => Promise<void>;
   signIn:         (email: string, password: string) => Promise<void>;
   signInMagicLink:(email: string) => Promise<void>;
@@ -214,7 +222,7 @@ export interface AppStore {
 
   // ── Profile ───────────────────────────────────────────────────────────────
   profile:            UserProfile | null;
-  fetchProfile:       () => Promise<void>;
+  fetchProfile:       () => Promise<UserProfile | null>;
   completeOnboarding: (
     name: string, purpose: Purpose, occupation: string,
     monthlySalary: number, savingsRate?: SavingsRate,

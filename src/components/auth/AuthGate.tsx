@@ -2,11 +2,14 @@ import React, { useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { LoginForm } from './LoginForm';
 import { OnboardingOverlay } from '../onboarding/OnboardingOverlay';
-import { IncomeMigrationModal } from '../modals/IncomeMigrationModal';
 
-export function AuthGate({ children }: { children: React.ReactNode }) {
-  const status  = useAppStore(s => s.auth.status);
-  const profile = useAppStore(s => s.profile);
+interface AuthGateProps {
+  children: React.ReactNode;
+}
+
+export function AuthGate({ children }: AuthGateProps) {
+  const authStatus = useAppStore(s => s.auth.status);
+  const appState   = useAppStore(s => s.appState);
   const updateProfile = useAppStore(s => s.updateProfile);
 
   useEffect(() => {
@@ -27,30 +30,30 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [updateProfile]);
 
-  if (status === 'loading' || (status === 'authenticated' && !profile)) {
+  // State 1: LOADING — app is initializing, show nothing
+  if (authStatus === 'loading' || appState === 'LOADING') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] p-4">
-        <div 
-          style={{ fontFamily: 'var(--font-display)' }} 
-          className="bg-[var(--color-surface)] text-[var(--color-text-main)] px-8 py-6 border-2 border-[var(--color-border)] rounded-[var(--border-radius)] shadow-[var(--shadow-neubrutalist)] font-bold text-center uppercase tracking-widest animate-pulse"
+      <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)]">
+        <span
+          style={{ fontFamily: 'var(--font-mono)' }}
+          className="text-sm text-[var(--color-ink-muted)] animate-pulse uppercase tracking-widest"
         >
-          LOADING_KINY_OS...
-        </div>
+          INITIALISING_KINY...
+        </span>
       </div>
     );
   }
 
-  if (status === 'unauthenticated') return <LoginForm />;
-
-  if (status === 'authenticated' && profile) {
-    if (!profile.has_completed_onboarding) {
-      return <OnboardingOverlay />;
-    }
-    const needsCycleMigration = !!(profile && !profile.income_type);
-    if (needsCycleMigration) {
-      return <IncomeMigrationModal />;
-    }
+  // State 2: UNAUTHENTICATED — show login form
+  if (authStatus === 'unauthenticated' || appState === 'UNAUTHENTICATED') {
+    return <LoginForm />;
   }
 
+  // State 3: ONBOARDING_INCOMPLETE — user exists but setup not done
+  if (appState === 'ONBOARDING_INCOMPLETE') {
+    return <OnboardingOverlay />;
+  }
+
+  // State 4: READY — everything loaded, render the app
   return <>{children}</>;
 }

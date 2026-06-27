@@ -5,7 +5,7 @@ import { getFCMToken } from '../lib/firebase';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
-  InvestmentTrigger, MonthlySnapshot, BudgetSliceRow,
+  InvestmentTrigger, MonthlySnapshot, BudgetSliceRow, AppState,
 } from './types';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -322,9 +322,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   // ── Auth ───────────────────────────────────────────────────────────────────
 
   auth: initialAuth,
+  appState: 'LOADING' as AppState,
+  setAppState: (state) => set({ appState: state }),
 
   initAuth: async () => {
-    // Called once in App.tsx on mount — establishes session and subscribes to changes
+    set({ appState: 'LOADING' });
+
+    // Server-side bypass for development testing
     if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
       const mockUser = { id: 'test-user-id', email: 'test.user@gmail.com' };
       const mockProfile: ProfileRow = {
@@ -372,6 +376,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           { id: 'slice-3', user_id: 'test-user-id', slice_name: 'Flex Money', slice_type: 'Flex_Money', allocated_percentage: 10, created_at: new Date().toISOString() },
           { id: 'slice-4', user_id: 'test-user-id', slice_name: 'Savings', slice_type: 'Saving', allocated_percentage: 20, created_at: new Date().toISOString() },
         ],
+        appState: 'READY',
       });
       return;
     }
@@ -402,22 +407,32 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         auth: {
           user: cachedUser,
           session: cachedSession,
-          status: 'authenticated',
+          status: cachedSession ? 'authenticated' : 'unauthenticated',
         },
       });
 
-      try {
-        await Promise.all([
-          get().fetchProfile(),
-          get().fetchCategories(),
-          get().fetchExpenses(),
-          get().fetchIncomes(),
-          get().fetchMonthlySnapshots(),
-        ]);
-        await checkAndRunRollover(get);
-        recalculateWealthMetrics(set, get, true);
-      } catch (err) {
-        console.error('[KINY] Offline initAuth initial data fetch failed:', err);
+      if (cachedSession) {
+        try {
+          const profile = await get().fetchProfile();
+          if (profile && profile.has_completed_onboarding) {
+            await Promise.all([
+              get().fetchCategories(),
+              get().fetchExpenses(),
+              get().fetchIncomes(),
+              get().fetchMonthlySnapshots(),
+            ]);
+            await checkAndRunRollover(get);
+            recalculateWealthMetrics(set, get, true);
+            set({ appState: 'READY' });
+          } else {
+            set({ appState: 'ONBOARDING_INCOMPLETE' });
+          }
+        } catch (err) {
+          console.error('[KINY] Offline initAuth initial data fetch failed:', err);
+          set({ appState: 'READY' }); // Fallback to let user view cached state
+        }
+      } else {
+        set({ appState: 'UNAUTHENTICATED' });
       }
       return;
     }
@@ -433,18 +448,26 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
     if (session) {
       try {
-        await Promise.all([
-          get().fetchProfile(),
-          get().fetchCategories(),
-          get().fetchExpenses(),
-          get().fetchIncomes(),
-          get().fetchMonthlySnapshots(),
-        ]);
-        await checkAndRunRollover(get);
-        recalculateWealthMetrics(set, get, true);
+        const profile = await get().fetchProfile();
+        if (profile && profile.has_completed_onboarding) {
+          await Promise.all([
+            get().fetchCategories(),
+            get().fetchExpenses(),
+            get().fetchIncomes(),
+            get().fetchMonthlySnapshots(),
+          ]);
+          await checkAndRunRollover(get);
+          recalculateWealthMetrics(set, get, true);
+          set({ appState: 'READY' });
+        } else {
+          set({ appState: 'ONBOARDING_INCOMPLETE' });
+        }
       } catch (err) {
         console.error('[KINY] initAuth initial data fetch failed:', err);
+        set({ appState: 'UNAUTHENTICATED' });
       }
+    } else {
+      set({ appState: 'UNAUTHENTICATED' });
     }
 
     // Subscribe to auth state changes (login, logout, token refresh)
@@ -459,39 +482,48 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
       if (session) {
         try {
-          await Promise.all([
-            get().fetchProfile(),
-            get().fetchCategories(),
-            get().fetchExpenses(),
-            get().fetchIncomes(),
-            get().fetchMonthlySnapshots(),
-          ]);
-          await checkAndRunRollover(get);
-          recalculateWealthMetrics(set, get, true);
+          const profile = await get().fetchProfile();
+          if (profile && profile.has_completed_onboarding) {
+            await Promise.all([
+              get().fetchCategories(),
+              get().fetchExpenses(),
+              get().fetchIncomes(),
+              get().fetchMonthlySnapshots(),
+            ]);
+            await checkAndRunRollover(get);
+            recalculateWealthMetrics(set, get, true);
+            set({ appState: 'READY' });
 
-          // Asynchronously request and sync FCM token in the background
-          getFCMToken().then(async (fcmToken) => {
-            if (fcmToken) {
-              console.log('USER_FCM_TOKEN:', fcmToken);
-              const currentSub = get().profile?.push_subscription;
-              const fcmSub = { type: 'fcm', token: fcmToken };
-              // Only update if token has changed to prevent infinite refresh loop
-              if (!currentSub || JSON.stringify(currentSub) !== JSON.stringify(fcmSub)) {
-                await get().updateProfile({ push_subscription: fcmSub });
-                console.log('[KINY] FCM Token successfully synced to user profile.');
+            // Asynchronously request and sync FCM token in the background
+            getFCMToken().then(async (fcmToken) => {
+              if (fcmToken) {
+                console.log('USER_FCM_TOKEN:', fcmToken);
+                const currentSub = get().profile?.push_subscription;
+                const fcmSub = { type: 'fcm', token: fcmToken };
+                if (!currentSub || JSON.stringify(currentSub) !== JSON.stringify(fcmSub)) {
+                  await get().updateProfile({ push_subscription: fcmSub });
+                  console.log('[KINY] FCM Token successfully synced to user profile.');
+                }
               }
-            }
-          }).catch((err) => {
-            console.warn('[KINY] Background FCM sync warning:', err);
-          });
+            }).catch((err) => {
+              console.warn('[KINY] Background FCM sync warning:', err);
+            });
+          } else {
+            set({ appState: 'ONBOARDING_INCOMPLETE' });
+          }
         } catch (err) {
           console.error('[KINY] initAuth authStateChange data fetch failed:', err);
         }
       } else {
         // Clear all data on sign out
         set({
-          profile: null, categories: [], expenses: [],
-          incomes: [], investmentInterests: [], monthlySnapshots: [],
+          profile: null,
+          categories: [],
+          expenses: [],
+          incomes: [],
+          investmentInterests: [],
+          monthlySnapshots: [],
+          appState: 'UNAUTHENTICATED',
         });
       }
     });
@@ -678,6 +710,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       };
       set({ profile: profileWithSlices, theme: (row.theme as Theme) || 'light' });
       await get().fetchBudgetSlices();
+      return profileWithSlices;
     } catch (e: any) {
       set(s => ({ errors: { ...s.errors, profile: e.message } }));
       try {
@@ -708,8 +741,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         };
         set({ profile: fallbackProfile, theme: 'light' });
         await get().fetchBudgetSlices();
+        return fallbackProfile;
       } catch {
         set({ profile: null });
+        return null;
       }
     } finally {
       set(s => ({ loading: { ...s.loading, profile: false } }));
