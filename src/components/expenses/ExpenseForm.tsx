@@ -267,7 +267,8 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
         console.error("Failed to restore cached form metrics:", e);
       }
     }
-  }, [onOpenChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Reactively backup the form configuration parameters
   useEffect(() => {

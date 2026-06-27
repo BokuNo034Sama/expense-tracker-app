@@ -43,3 +43,6 @@ ALTER TABLE profiles
 ADD CONSTRAINT profiles_income_type_check 
 CHECK (income_type IN ('salary', 'business', 'student', 'WEEKEND_SHIFT', 'FLUID_ROLLING'));
 
+-- 4. Add push_subscription column to profiles for FCM push alerts
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS push_subscription JSONB;
+
