@@ -10,8 +10,10 @@ CREATE TABLE IF NOT EXISTS public.budget_slices (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     slice_name VARCHAR(255) NOT NULL,
     slice_type VARCHAR(50) DEFAULT 'CUSTOM' NOT NULL,
+    allocated_percentage INT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
 
 -- Turn on Row-Level Security (RLS) so users can only read/write their own categories
 ALTER TABLE public.budget_slices ENABLE ROW LEVEL SECURITY;

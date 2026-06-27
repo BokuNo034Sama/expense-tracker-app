@@ -122,6 +122,173 @@ vi.mock('../lib/supabaseClient', () => {
 });
 
 describe('useAppStore', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async (url: string, options: any) => {
+      const path = url.replace(/^https?:\/\/[^\/]+/, '');
+      const method = options?.method || 'GET';
+      const body = options?.body ? JSON.parse(options.body) : {};
+      console.log(`[TEST MOCK FETCH] ${method} ${path}`, body);
+
+      if (path.startsWith('/api/profile')) {
+        if (method === 'PATCH') {
+          mockProfileData = { ...mockProfileData, ...body };
+          console.log('[TEST MOCK FETCH] profile patch returned:', mockProfileData);
+          return {
+            ok: true,
+            json: async () => mockProfileData,
+          };
+        }
+        console.log('[TEST MOCK FETCH] profile get returned:', mockProfileData);
+        return {
+          ok: true,
+          json: async () => mockProfileData,
+        };
+      }
+
+      if (path.startsWith('/api/categories')) {
+        const cats = [
+          { id: 'cat-1', user_id: 'test-user-id', name: 'Transport', icon: 'Car', slice: 'Basic Needs', budget_limit: 50000, is_basic: true, is_priority: true, is_subscription: false, created_at: new Date().toISOString() }
+        ];
+        console.log('[TEST MOCK FETCH] categories returned:', cats);
+        return {
+          ok: true,
+          json: async () => cats,
+        };
+      }
+
+      if (path.startsWith('/api/expenses')) {
+        if (method === 'POST') {
+          const newExpense = {
+            id: `exp-${Date.now()}`,
+            user_id: 'test-user-id',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            ...body
+          };
+          console.log('[TEST MOCK FETCH] expense post returned:', newExpense);
+          return {
+            ok: true,
+            json: async () => newExpense,
+          };
+        }
+        if (method === 'DELETE') {
+          console.log('[TEST MOCK FETCH] expense delete returned success');
+          return {
+            ok: true,
+            json: async () => ({ success: true }),
+          };
+        }
+        const exps = useAppStore.getState().expenses || [];
+        console.log('[TEST MOCK FETCH] expenses get returned:', exps);
+        return {
+          ok: true,
+          json: async () => exps,
+        };
+      }
+
+      if (path.startsWith('/api/incomes')) {
+        if (method === 'POST') {
+          const newIncome = {
+            id: `inc-${Date.now()}`,
+            user_id: 'test-user-id',
+            created_at: new Date().toISOString(),
+            ...body
+          };
+          console.log('[TEST MOCK FETCH] income post returned:', newIncome);
+          return {
+            ok: true,
+            json: async () => newIncome,
+          };
+        }
+        if (method === 'DELETE') {
+          console.log('[TEST MOCK FETCH] income delete returned success');
+          return {
+            ok: true,
+            json: async () => ({ success: true }),
+          };
+        }
+        const incs = useAppStore.getState().incomes || [];
+        console.log('[TEST MOCK FETCH] incomes get returned:', incs);
+        return {
+          ok: true,
+          json: async () => incs,
+        };
+      }
+
+      if (path.startsWith('/api/snapshots')) {
+        if (method === 'POST') {
+          const newSnapshot = {
+            id: `snap-${Date.now()}`,
+            user_id: 'test-user-id',
+            created_at: new Date().toISOString(),
+            ...body
+          };
+          console.log('[TEST MOCK FETCH] snapshot post returned:', newSnapshot);
+          return {
+            ok: true,
+            json: async () => newSnapshot,
+          };
+        }
+        const snaps = useAppStore.getState().monthlySnapshots || [];
+        console.log('[TEST MOCK FETCH] snapshots get returned:', snaps);
+        return {
+          ok: true,
+          json: async () => snaps,
+        };
+      }
+
+      if (path.startsWith('/api/slices')) {
+        if (method === 'POST') {
+          const newSlice = {
+            id: `slice-${Date.now()}`,
+            user_id: 'test-user-id',
+            created_at: new Date().toISOString(),
+            ...body
+          };
+          console.log('[TEST MOCK FETCH] slice post returned:', newSlice);
+          return {
+            ok: true,
+            json: async () => newSlice,
+          };
+        }
+        if (method === 'PATCH') {
+          const id = path.split('/').pop();
+          const updatedSlice = { id, ...body };
+          console.log('[TEST MOCK FETCH] slice patch returned:', updatedSlice);
+          return {
+            ok: true,
+            json: async () => updatedSlice,
+          };
+        }
+        if (method === 'DELETE') {
+          console.log('[TEST MOCK FETCH] slice delete returned success');
+          return {
+            ok: true,
+            json: async () => ({ success: true }),
+          };
+        }
+        const slices = [
+          { id: 'slice-1', user_id: 'test-user-id', slice_name: 'Basic Needs', slice_type: 'Basic', allocated_percentage: 50, created_at: new Date().toISOString() }
+        ];
+        console.log('[TEST MOCK FETCH] slices get returned:', slices);
+        return {
+          ok: true,
+          json: async () => slices,
+        };
+      }
+
+      console.log('[TEST MOCK FETCH] default fallback returned empty object');
+      return {
+        ok: true,
+        json: async () => ({}),
+      };
+    }));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('should have initial state values', () => {
     const state = useAppStore.getState();
     expect(state.theme).toBe('light');
