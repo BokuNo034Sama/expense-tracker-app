@@ -40,3 +40,36 @@ CHECK (income_type IN ('salary', 'business', 'student', 'WEEKEND_SHIFT', 'FLUID_
 -- 4. Add push_subscription column to profiles for FCM push alerts
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS push_subscription JSONB;
 
+-- 5. Create the monthly snapshots table
+CREATE TABLE IF NOT EXISTS public.monthly_snapshots (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    month_year VARCHAR(50) NOT NULL,
+    total_income NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    total_expense NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    savings_rate NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    top_category VARCHAR(255) NOT NULL DEFAULT 'None',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Turn on Row-Level Security (RLS) so users can only read/write their own snapshots
+ALTER TABLE public.monthly_snapshots ENABLE ROW LEVEL SECURITY;
+
+-- Create access policies for monthly snapshots
+CREATE POLICY "Users can create their own monthly snapshots" 
+ON public.monthly_snapshots FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own monthly snapshots" 
+ON public.monthly_snapshots FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own monthly snapshots" 
+ON public.monthly_snapshots FOR UPDATE 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can remove their own monthly snapshots" 
+ON public.monthly_snapshots FOR DELETE 
+USING (auth.uid() = user_id);
+
+
