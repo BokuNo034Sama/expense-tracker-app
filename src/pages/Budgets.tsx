@@ -233,7 +233,7 @@ export default function Budgets() {
                     <div key={slice} className="space-y-1 font-mono text-[10px] text-black dark:text-white">
                       <div className="flex justify-between font-bold">
                         <span>{(slice || '').toUpperCase()}</span>
-                        <span>₦{sliceSpent.toLocaleString('en-NG')} / ₦{sliceLimit.toLocaleString('en-NG')}</span>
+                        <span>₦{sliceSpentNum.toLocaleString('en-NG')} / ₦{sliceLimitNum.toLocaleString('en-NG')}</span>
                       </div>
                       <div className="h-2 w-full bg-[#F4F4F0] dark:bg-zinc-900 border border-black dark:border-white rounded-none overflow-hidden">
                         <div 

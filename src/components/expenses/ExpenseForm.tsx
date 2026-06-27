@@ -475,7 +475,7 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
               <option value="">UNCATEGORIZED</option>
               {categories.map(c => (
                 <option key={c.id} value={c.id}>
-                  {c.name.toUpperCase()} ({c.slice.toUpperCase()})
+                  {(c.name || '').toUpperCase()} ({(c.slice || 'UNCATEGORIZED').toUpperCase()})
                 </option>
               ))}
             </select>
