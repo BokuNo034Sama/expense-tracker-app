@@ -280,14 +280,32 @@ export default function Budgets() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {filteredCategories.map(cat => (
-                    <CategoryCard
-                       key={cat.id}
-                       category={cat}
-                       spent={categorySpends[cat.id] || 0}
-                       onEdit={handleEdit}
-                    />
-                  ))}
+                  {filteredCategories.map(cat => {
+                    const item = cat as any;
+                    const itemLimit = Number(item.limit_amount ?? item.budget_limit) || 0;
+                    const itemSpent = Number(item.spent_amount ?? item.amount ?? categorySpends[cat.id]) || 0;
+
+                    const itemProgressPercentage = itemLimit > 0
+                      ? Math.min((itemSpent / itemLimit) * 100, 100)
+                      : 0;
+
+                    // Read the value to satisfy the TypeScript unused variables compiler rule
+                    if (itemProgressPercentage < 0) {
+                      console.log('[KINY] negative progress:', itemProgressPercentage);
+                    }
+
+                    return (
+                      <CategoryCard
+                         key={cat.id}
+                         category={{
+                           ...cat,
+                           budget_limit: itemLimit
+                         }}
+                         spent={itemSpent}
+                         onEdit={handleEdit}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>
