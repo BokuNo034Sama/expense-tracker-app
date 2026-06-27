@@ -5,35 +5,29 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS max_streak_this_month INT DEFAULT 
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_tracked_date DATE;
 
 -- 2. Create the dynamic budget slices table
-CREATE TABLE IF NOT EXISTS budget_slices (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    slice_name VARCHAR(100) NOT NULL,
-    slice_type VARCHAR(50) NOT NULL, -- 'Basic', 'Handout', 'Feeding', 'Flex_Money', 'Saving', 'Custom'
-    allocated_percentage INT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+CREATE TABLE IF NOT EXISTS public.budget_slices (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    slice_name VARCHAR(255) NOT NULL,
+    slice_type VARCHAR(50) DEFAULT 'CUSTOM' NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Enable RLS for budget_slices
-ALTER TABLE budget_slices ENABLE ROW LEVEL SECURITY;
+-- Turn on Row-Level Security (RLS) so users can only read/write their own categories
+ALTER TABLE public.budget_slices ENABLE ROW LEVEL SECURITY;
 
--- Create policies for budget_slices
-CREATE POLICY "Users can view their own budget slices"
-    ON budget_slices FOR SELECT
-    USING (auth.uid() = user_id);
+-- Create access policies for individual profiles
+CREATE POLICY "Users can create their own custom slices" 
+ON public.budget_slices FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own budget slices"
-    ON budget_slices FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view their own custom slices" 
+ON public.budget_slices FOR SELECT 
+USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own budget slices"
-    ON budget_slices FOR UPDATE
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own budget slices"
-    ON budget_slices FOR DELETE
-    USING (auth.uid() = user_id);
+CREATE POLICY "Users can remove their own custom slices" 
+ON public.budget_slices FOR DELETE 
+USING (auth.uid() = user_id);
 
 -- 3. Drop the old restrictive check constraint safely and re-add supporting 'student', 'WEEKEND_SHIFT', 'FLUID_ROLLING'
 ALTER TABLE profiles 
