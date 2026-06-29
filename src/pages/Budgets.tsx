@@ -30,21 +30,20 @@ const customStyles = `
 `;
 
 export default function Budgets() {
-  // 🟢 Defensive Guard: Guarantee state collections are always valid arrays before components try to read them
-  const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories.filter(c => c && typeof c === 'object') : []) as Category[];
-  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses.filter(e => e && typeof e === 'object') : []) as Expense[];
-  const profile = useAppStore(s => s.profile);
-  const budgetSlices = useAppStore(s => Array.isArray(s.budgetSlices) ? s.budgetSlices.filter(b => b && typeof b === 'object') : []);
-
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
   const [activeSliceFilter, setActiveSliceFilter] = useState<string>('all');
   const [showTrends, setShowTrends] = useState<boolean>(false);
 
-  const appState = useAppStore(s => s.appState);
-  const loading  = useAppStore(s => s.loading);
+  const categoriesStore = useAppStore(s => s.categories);
+  const expensesStore   = useAppStore(s => s.expenses);
+  const profile    = useAppStore(s => s.profile);
+  const budgetSlicesStore = useAppStore(s => s.budgetSlices);
+  const appState   = useAppStore(s => s.appState);
+  const loading    = useAppStore(s => s.loading);
 
+  // Loading gate — must come before any calculations
   if (appState === 'LOADING' || loading.categories) {
     return (
       <div className="p-6 font-mono text-xs uppercase text-black">
@@ -52,6 +51,11 @@ export default function Budgets() {
       </div>
     );
   }
+
+  // Pure local filtered constants to avoid selectors returning new array references
+  const categories = Array.isArray(categoriesStore) ? categoriesStore.filter(c => c && typeof c === 'object') : [] as Category[];
+  const expenses = Array.isArray(expensesStore) ? expensesStore.filter(e => e && typeof e === 'object') : [] as Expense[];
+  const budgetSlices = Array.isArray(budgetSlicesStore) ? budgetSlicesStore.filter(b => b && typeof b === 'object') : [];
 
   const currentCycle = getCycleBoundaries(profile);
   
@@ -71,29 +75,24 @@ export default function Budgets() {
     }
   });
 
-  // Build slice summary using ONLY absolute Naira values from categories
+  // Pure computed constants — no useState, no setters, no side effects
   const sliceSummary = categories.reduce((acc, cat) => {
     const slice = cat.slice;
-    if (!acc[slice]) {
-      acc[slice] = { totalLimit: 0, totalSpent: 0 };
-    }
-    acc[slice].totalLimit += Number(cat.budget_limit || 0);
+    if (!acc[slice]) acc[slice] = { totalLimit: 0, totalSpent: 0 };
+    acc[slice].totalLimit += (Number(cat.budget_limit) || 0);
     return acc;
   }, {} as Record<string, { totalLimit: number; totalSpent: number }>);
 
-  // Sum actual spending per slice from expenses
   expenses.forEach(exp => {
     if (!exp || !exp.category_id) return;
-
     const cat = categories.find(c => c.id === exp.category_id);
-
-    if (cat?.slice) {
-      if (!sliceSummary[cat.slice]) {
-        sliceSummary[cat.slice] = { totalLimit: 0, totalSpent: 0 };
-      }
+    if (cat?.slice && sliceSummary[cat.slice]) {
       sliceSummary[cat.slice].totalSpent += (Number(exp.amount) || 0);
     }
   });
+
+  const totalLimit = Object.values(sliceSummary).reduce((s, v) => s + v.totalLimit, 0);
+  const totalSpent = Object.values(sliceSummary).reduce((s, v) => s + v.totalSpent, 0);
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
@@ -123,24 +122,13 @@ export default function Budgets() {
     );
   }
 
-  // Filtered expenses based on selected categories/slices
-  const filteredExpenses = monthlyExpenses.filter(e => {
-    if (!e) return false;
-    if (activeSliceFilter === 'all') return true;
-    const cat = categories.find(c => c.id === e.category_id);
-    return cat?.slice === activeSliceFilter;
-  });
-
   const filteredCategories = categories.filter(c => {
     if (!c) return false;
     if (activeSliceFilter === 'all') return true;
     return c.slice === activeSliceFilter;
   });
 
-  const totalSpent = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const totalLimit = categories
-    .filter(c => activeSliceFilter === 'all' ? true : c.slice === activeSliceFilter)
-    .reduce((sum, c) => sum + Number(c.budget_limit || 0), 0);
+
 
   const totalSpentNum = Number(totalSpent) || 0;
   const totalLimitNum = Number(totalLimit) || 0;
