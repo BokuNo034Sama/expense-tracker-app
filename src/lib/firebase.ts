@@ -14,7 +14,7 @@ const firebaseConfig = {
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-let messaging: Messaging | null = null;
+export let messaging: Messaging | null = null;
 
 // Initialize Messaging client only if supported by browser (prevents test failures in jsdom)
 isSupported().then((supported) => {

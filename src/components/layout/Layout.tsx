@@ -7,6 +7,7 @@ import { PWAInstallPrompt } from '../PWAInstallPrompt';
 import { CreatorAppreciationBanner } from '../dashboard/CreatorAppreciationBanner';
 import { SyncIndicator } from '../shared/SyncIndicator';
 import { useAppStore, useCurrentStreak } from '../../store';
+import { usePushSubscriptionGuard } from '../../hooks/usePushSubscriptionGuard';
  
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ interface LayoutProps {
 }
  
 export function Layout({ children }: LayoutProps) {
+  usePushSubscriptionGuard();
   const location = useLocation();
   const isDashboard = location.pathname === '/';
   const streak = useCurrentStreak();
