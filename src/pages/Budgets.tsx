@@ -42,6 +42,17 @@ export default function Budgets() {
   const [activeSliceFilter, setActiveSliceFilter] = useState<string>('all');
   const [showTrends, setShowTrends] = useState<boolean>(false);
 
+  const appState = useAppStore(s => s.appState);
+  const loading  = useAppStore(s => s.loading);
+
+  if (appState === 'LOADING' || loading.categories) {
+    return (
+      <div className="p-6 font-mono text-xs uppercase text-black">
+        RETRIEVING_NAIRA_ARCHITECTURES...
+      </div>
+    );
+  }
+
   const currentCycle = getCycleBoundaries(profile);
   
   // Safe filtering with a dynamic boundary check
@@ -71,11 +82,16 @@ export default function Budgets() {
   }, {} as Record<string, { totalLimit: number; totalSpent: number }>);
 
   // Sum actual spending per slice from expenses
-  monthlyExpenses.forEach(exp => {
-    if (!exp) return;
+  expenses.forEach(exp => {
+    if (!exp || !exp.category_id) return;
+
     const cat = categories.find(c => c.id === exp.category_id);
-    if (cat && sliceSummary[cat.slice]) {
-      sliceSummary[cat.slice].totalSpent += Number(exp.amount || 0);
+
+    if (cat?.slice) {
+      if (!sliceSummary[cat.slice]) {
+        sliceSummary[cat.slice] = { totalLimit: 0, totalSpent: 0 };
+      }
+      sliceSummary[cat.slice].totalSpent += (Number(exp.amount) || 0);
     }
   });
 
@@ -283,7 +299,7 @@ export default function Budgets() {
                   {filteredCategories.map(cat => {
                     const item = cat as any;
                     const itemLimit = Number(item.limit_amount ?? item.budget_limit) || 0;
-                    const itemSpent = Number(item.spent_amount ?? item.amount ?? categorySpends[cat.id]) || 0;
+                    const itemSpent = Number(item.spent_amount ?? item.amount) || 0;
 
                     const itemProgressPercentage = itemLimit > 0
                       ? Math.min((itemSpent / itemLimit) * 100, 100)
