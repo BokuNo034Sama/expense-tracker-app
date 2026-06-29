@@ -672,19 +672,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     }
   },
 
-  signInMagicLink: async (email) => {
-    set(s => ({ errors: { ...s.errors, auth: null } }));
-    try {
-      await apiRequest('/api/auth/magiclink', {
-        method: 'POST',
-        body: JSON.stringify({ email, redirectTo: window.location.origin }),
-      });
-    } catch (err: any) {
-      set(s => ({ errors: { ...s.errors, auth: err.message || String(err) } }));
-      throw err;
-    }
-  },
-
   signOut: async () => {
     await supabase.auth.signOut();
     set({

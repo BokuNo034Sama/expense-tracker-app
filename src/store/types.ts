@@ -214,7 +214,6 @@ export interface AppStore {
   setAppState:    (state: AppState) => void;
   signUp:         (email: string, password: string, incomeType: 'salary' | 'business' | 'student', anchorDay: number | null, fluidWindowDays: number | null) => Promise<void>;
   signIn:         (email: string, password: string) => Promise<void>;
-  signInMagicLink:(email: string) => Promise<void>;
   signOut:        () => Promise<void>;
   initAuth:       () => Promise<void>; // Called once on app mount
   archiveCurrentMonth: () => Promise<void>;

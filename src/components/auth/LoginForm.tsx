@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
+import { supabase } from '../../lib/supabaseClient';
 
 export function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -10,7 +11,6 @@ export function LoginForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [useMagicLink, setUseMagicLink] = useState(false);
   const [incomeType, setIncomeType] = useState<'salary' | 'business' | 'student'>('salary');
   const [anchorDay, setAnchorDay] = useState<number>(30);
   const [fluidWindowDays, setFluidWindowDays] = useState<number>(30);
@@ -28,7 +28,6 @@ export function LoginForm() {
 
   const signIn = useAppStore(s => s.signIn);
   const signUp = useAppStore(s => s.signUp);
-  const signInMagicLink = useAppStore(s => s.signInMagicLink);
   const serverError = useAppStore(s => s.errors.auth);
   const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
   const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
@@ -50,21 +49,19 @@ export function LoginForm() {
       return false;
     }
     
-    if (!useMagicLink) {
-      if (!password) {
-        setLocalError('Password is required');
+    if (!password) {
+      setLocalError('Password is required');
+      return false;
+    }
+    
+    if (isSignUp) {
+      if (password.length < 6) {
+        setLocalError('Password must be at least 6 characters');
         return false;
       }
-      
-      if (isSignUp) {
-        if (password.length < 6) {
-          setLocalError('Password must be at least 6 characters');
-          return false;
-        }
-        if (password !== confirmPassword) {
-          setLocalError('Passwords do not match');
-          return false;
-        }
+      if (password !== confirmPassword) {
+        setLocalError('Passwords do not match');
+        return false;
       }
     }
     return true;
@@ -76,36 +73,50 @@ export function LoginForm() {
 
     setLoading(true);
     try {
-      if (useMagicLink) {
-        await signInMagicLink(email.trim());
-        setSuccessMsg('CHECK_YOUR_EMAIL — magic link sent.');
-      } else {
-        if (isSignUp) {
-          const cleanAnchorDay = anchorDay ? parseInt(String(anchorDay).replace(/\D/g, ""), 10) : null;
-          const cleanStudentAnchorDay = studentAnchorDay ? parseInt(String(studentAnchorDay).replace(/\D/g, ""), 10) : null;
-          const finalAnchorDay = incomeType === 'salary'
-            ? cleanAnchorDay
-            : incomeType === 'student'
-              ? (studentCycleType === 'weekly' ? 0 : cleanStudentAnchorDay)
-              : null;
-          const finalFluidWindowDays = incomeType === 'business' ? fluidWindowDays : null;
+      if (isSignUp) {
+        const cleanAnchorDay = anchorDay ? parseInt(String(anchorDay).replace(/\D/g, ""), 10) : null;
+        const cleanStudentAnchorDay = studentAnchorDay ? parseInt(String(studentAnchorDay).replace(/\D/g, ""), 10) : null;
+        const finalAnchorDay = incomeType === 'salary'
+          ? cleanAnchorDay
+          : incomeType === 'student'
+            ? (studentCycleType === 'weekly' ? 0 : cleanStudentAnchorDay)
+            : null;
+        const finalFluidWindowDays = incomeType === 'business' ? fluidWindowDays : null;
 
-          await signUp(
-            email.trim(), 
-            password, 
-            incomeType.toUpperCase() as any, 
-            finalAnchorDay, 
-            finalFluidWindowDays
-          );
-          setSuccessMsg('Check your email to verify your signup.');
-        } else {
-          await signIn(email.trim(), password);
-        }
+        await signUp(
+          email.trim(), 
+          password, 
+          incomeType.toUpperCase() as any, 
+          finalAnchorDay, 
+          finalFluidWindowDays
+        );
+        setSuccessMsg('Check your email to verify your signup.');
+      } else {
+        await signIn(email.trim(), password);
       }
     } catch (err) {
       const error = err as Error;
       setLocalError(error.message || 'An authentication error occurred');
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setLocalError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${import.meta.env.VITE_APP_URL ?? window.location.origin}/`,
+        },
+      });
+      if (error) throw error;
+      // Note: on success, Supabase redirects the browser away from this page.
+      // setLoading(false) is NOT needed on the success path.
+    } catch (err: any) {
+      setLocalError(err.message || 'Failed to initialize Google Sign-In.');
       setLoading(false);
     }
   };
@@ -128,7 +139,6 @@ export function LoginForm() {
               type="button"
               onClick={() => {
                 setIsSignUp(false);
-                setUseMagicLink(false);
                 setLocalError(null);
                 setSuccessMsg(null);
               }}
@@ -141,7 +151,6 @@ export function LoginForm() {
               type="button"
               onClick={() => {
                 setIsSignUp(true);
-                setUseMagicLink(false);
                 setLocalError(null);
                 setSuccessMsg(null);
               }}
@@ -173,66 +182,62 @@ export function LoginForm() {
             </div>
 
             {/* Password Fields */}
-            {!useMagicLink && (
-              <>
-                <div>
-                  <label 
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                    className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
-                  >
-                    PASSWORD
-                  </label>
-                  <div className="relative w-full">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                      className="w-full pl-4 pr-10 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] focus:outline-none"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
+            <div>
+              <label 
+                style={{ fontFamily: 'var(--font-mono)' }}
+                className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
+              >
+                PASSWORD
+              </label>
+              <div className="relative w-full">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="w-full pl-4 pr-10 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
 
-                {isSignUp && (
-                  <div>
-                    <label 
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                      className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
-                    >
-                      CONFIRM_PASSWORD
-                    </label>
-                    <div className="relative w-full">
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        style={{ fontFamily: 'var(--font-mono)' }}
-                        className="w-full pl-4 pr-10 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] focus:outline-none"
-                        aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-                      >
-                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
+            {isSignUp && (
+              <div>
+                <label 
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="block text-xs font-bold tracking-wider text-[var(--color-ink)] uppercase mb-1.5"
+                >
+                  CONFIRM_PASSWORD
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                    className="w-full pl-4 pr-10 py-3 bg-[var(--color-surface)] border-[var(--border-default)] rounded-[var(--border-radius)] text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] outline-none focus:shadow-[var(--shadow-btn)] transition-all duration-150"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] focus:outline-none"
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
             )}
 
             {isSignUp && (
@@ -342,21 +347,35 @@ export function LoginForm() {
               )}
             </button>
 
-            {/* Toggle Magic Link Option (only for Log In) */}
-            {!isSignUp && (
-              <button
-                type="button"
-                onClick={() => {
-                  setUseMagicLink(!useMagicLink);
-                  setLocalError(null);
-                  setSuccessMsg(null);
-                }}
+            {/* Divider */}
+            <div className="relative flex py-3 items-center">
+              <div className="flex-grow border-t-2 border-[var(--color-ink)] opacity-10"></div>
+              <span
                 style={{ fontFamily: 'var(--font-mono)' }}
-                className="w-full py-2.5 mt-2 bg-transparent text-[var(--color-ink)] hover:text-[var(--color-ink-muted)] border-[var(--border-default)] border-dashed rounded-[var(--border-radius)] text-xs font-bold uppercase transition-all duration-100"
+                className="flex-shrink mx-4 text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest"
               >
-                {useMagicLink ? 'USE PASSWORD INSTEAD' : 'SEND MAGIC LINK'}
-              </button>
-            )}
+                OR
+              </span>
+              <div className="flex-grow border-t-2 border-[var(--color-ink)] opacity-10"></div>
+            </div>
+
+            {/* Google Sign-In Button */}
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              style={{ fontFamily: 'var(--font-mono)' }}
+              className="w-full py-3.5 bg-white text-black border-2 border-black rounded-[var(--border-radius)] shadow-[2px_2px_0px_0px_#000000] hover:-translate-x-[0.5px] hover:-translate-y-[0.5px] hover:shadow-[3px_3px_0px_0px_#000000] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none font-bold text-xs uppercase tracking-widest transition-all duration-100 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {/* Inline Google G SVG — no external image dependency */}
+              <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              CONTINUE_WITH_GOOGLE
+            </button>
 
             {deferredPrompt && (
               <button
