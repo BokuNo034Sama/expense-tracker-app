@@ -81,10 +81,12 @@ export function LoginForm() {
         setSuccessMsg('CHECK_YOUR_EMAIL — magic link sent.');
       } else {
         if (isSignUp) {
+          const cleanAnchorDay = anchorDay ? parseInt(String(anchorDay).replace(/\D/g, ""), 10) : null;
+          const cleanStudentAnchorDay = studentAnchorDay ? parseInt(String(studentAnchorDay).replace(/\D/g, ""), 10) : null;
           const finalAnchorDay = incomeType === 'salary'
-            ? anchorDay
+            ? cleanAnchorDay
             : incomeType === 'student'
-              ? (studentCycleType === 'weekly' ? 0 : studentAnchorDay)
+              ? (studentCycleType === 'weekly' ? 0 : cleanStudentAnchorDay)
               : null;
           const finalFluidWindowDays = incomeType === 'business' ? fluidWindowDays : null;
 
@@ -389,17 +391,18 @@ export function LoginForm() {
 
             {(localError || serverError) && (() => {
               const raw = localError || serverError || '';
-              const friendly = raw.toLowerCase().includes('rate limit') || raw.toLowerCase().includes('email rate limit')
+              const rawStr = typeof raw === 'object' ? (raw as any).message || JSON.stringify(raw) : String(raw);
+              const friendly = rawStr.toLowerCase().includes('rate limit') || rawStr.toLowerCase().includes('email rate limit')
                 ? 'Too many attempts — please wait a few minutes before trying again.'
-                : raw.toLowerCase().includes('invalid login credentials') || raw.toLowerCase().includes('invalid credentials')
+                : rawStr.toLowerCase().includes('invalid login credentials') || rawStr.toLowerCase().includes('invalid credentials')
                 ? 'Incorrect email or password. Please try again.'
-                : raw.toLowerCase().includes('user already registered') || raw.toLowerCase().includes('already been registered')
+                : rawStr.toLowerCase().includes('user already registered') || rawStr.toLowerCase().includes('already been registered')
                 ? 'An account with this email already exists. Try logging in instead.'
-                : raw.toLowerCase().includes('email not confirmed')
+                : rawStr.toLowerCase().includes('email not confirmed')
                 ? 'Please check your email and confirm your account first.'
-                : raw.toLowerCase().includes('network') || raw.toLowerCase().includes('fetch')
+                : rawStr.toLowerCase().includes('network') || rawStr.toLowerCase().includes('fetch')
                 ? 'Network error — check your connection and try again.'
-                : raw;
+                : rawStr;
               return (
                 <div
                   style={{ fontFamily: 'var(--font-mono)' }}
