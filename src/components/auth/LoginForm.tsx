@@ -20,7 +20,7 @@ export function LoginForm() {
   const classification = incomeType;
   const setClassification = setIncomeType;
   const paydayAnchor = anchorDay;
-  const setPaydayAnchor = (val: string | number) => setAnchorDay(typeof val === 'string' ? parseInt(val, 10) || 30 : val);
+  const setPaydayAnchor = (val: number) => setAnchorDay(val);
   
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function LoginForm() {
           await signUp(
             email.trim(), 
             password, 
-            incomeType, 
+            incomeType.toUpperCase() as any, 
             finalAnchorDay, 
             finalFluidWindowDays
           );
@@ -280,7 +280,7 @@ export function LoginForm() {
                     </label>
                     <select
                       value={paydayAnchor}
-                      onChange={(e) => setPaydayAnchor(e.target.value)}
+                      onChange={(e) => setPaydayAnchor(parseInt(e.target.value, 10))}
                       style={{ fontFamily: 'var(--font-mono)' }}
                       className="w-full px-4 py-3 bg-[var(--color-surface)] border-2 border-black text-[var(--color-ink)] outline-none focus:shadow-[2px_2px_0px_0px_#000000] transition-all duration-150 font-bold"
                     >
@@ -391,18 +391,30 @@ export function LoginForm() {
 
             {(localError || serverError) && (() => {
               const raw = localError || serverError || '';
-              const rawStr = typeof raw === 'object' ? (raw as any).message || JSON.stringify(raw) : String(raw);
-              const friendly = rawStr.toLowerCase().includes('rate limit') || rawStr.toLowerCase().includes('email rate limit')
-                ? 'Too many attempts — please wait a few minutes before trying again.'
-                : rawStr.toLowerCase().includes('invalid login credentials') || rawStr.toLowerCase().includes('invalid credentials')
-                ? 'Incorrect email or password. Please try again.'
-                : rawStr.toLowerCase().includes('user already registered') || rawStr.toLowerCase().includes('already been registered')
-                ? 'An account with this email already exists. Try logging in instead.'
-                : rawStr.toLowerCase().includes('email not confirmed')
-                ? 'Please check your email and confirm your account first.'
+              
+              // Safely extract the error string context
+              let rawStr = '';
+              if (raw && typeof raw === 'object') {
+                rawStr = (raw as any).message || JSON.stringify(raw);
+              } else {
+                rawStr = String(raw);
+              }
+
+              // If the stringified output is just an empty object notation, fall back gracefully
+              if (rawStr === '{}' || !rawStr.trim()) {
+                rawStr = 'Registration rejected by API validation middleware.';
+              }
+
+              const friendly = rawStr.toLowerCase().includes('rate limit')
+                ? 'Too many attempts — please wait a few minutes.'
+                : rawStr.toLowerCase().includes('credentials')
+                ? 'Incorrect email or password.'
+                : rawStr.toLowerCase().includes('already registered')
+                ? 'An account with this email already exists.'
                 : rawStr.toLowerCase().includes('network') || rawStr.toLowerCase().includes('fetch')
-                ? 'Network error — check your connection and try again.'
+                ? 'Network error — check your connection.'
                 : rawStr;
+
               return (
                 <div
                   style={{ fontFamily: 'var(--font-mono)' }}
