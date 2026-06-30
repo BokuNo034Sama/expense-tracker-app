@@ -740,40 +740,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   completeOnboarding: async (name, purpose, occupation, monthlySalary, savingsRate, incomeType, anchorDay, fluidWindowDays) => {
-    // Seed baseline categories matched to seeded dynamic budget slices
-    const categoriesToSeed = [
-      { name: 'Transport',      icon: 'Car',        slice: 'Basic Needs',        budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false },
-      { name: 'Feeding',        icon: 'Utensils',   slice: 'Feeding',            budget_limit: 0, is_basic: true,  is_priority: purpose === 'clarity', is_subscription: false }
-    ] as any[];
-
-    if (incomeType === 'student') {
-      categoriesToSeed.push(
-        { name: 'Hostel Rent',      icon: 'Home',     slice: 'Basic Needs',        budget_limit: 0, is_basic: false, is_priority: true,  is_subscription: false },
-        { name: 'Handouts & Books', icon: 'BookOpen', slice: 'Handouts & Books',   budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false },
-        { name: 'Laptop & Gigs',    icon: 'Laptop',   slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false, is_subscription: false }
-      );
-    } else {
-      categoriesToSeed.push(
-        { name: 'Parent Token',   icon: 'Gift',       slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false },
-        { name: 'Sibling Token',  icon: 'Heart',      slice: 'Flex Money',         budget_limit: 0, is_basic: false, is_priority: false,                  is_subscription: false },
-        { name: 'Investments',    icon: 'TrendingUp', slice: 'Savings',            budget_limit: 0, is_basic: false, is_priority: purpose === 'saving',  is_subscription: false }
-      );
-    }
-
-    for (const cat of categoriesToSeed) {
-      try {
-        await apiRequest('/api/categories', {
-          method: 'POST',
-          body: JSON.stringify(cat),
-        });
-      } catch (err: any) {
-        console.warn('[KINY] Seeding baseline category failed:', err.message);
-      }
-    }
-    await get().fetchCategories();
-
-    // Seed dynamic budget slices
-    await get().seedDefaultBudgetSlices(incomeType || 'salary');
+    // Do NOT seed categories or budget slices from the client.
+    // The backend /api/profile PATCH endpoint handles category and slice seeding atomically
+    // based on income_type. Running client-side seeding in parallel causes constraint violations.
 
     const avatarInitials = name
       .split(' ')
