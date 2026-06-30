@@ -121,6 +121,13 @@ const updateLoggingStreak = async (get: () => AppStore) => {
   const profile = get().profile;
   if (!profile) return;
 
+  // Guard: do not calculate or reset streak if expenses haven't loaded yet
+  const loadingState = get().loading;
+  if (loadingState.expenses) {
+    console.log('[KINY] Skipping streak calculation — expenses still loading.');
+    return;
+  }
+
   const expenses = get().expenses || [];
   if (expenses.length === 0) {
     await get().updateProfile({
@@ -185,38 +192,7 @@ const updateLoggingStreak = async (get: () => AppStore) => {
   });
 };
 
-const checkAndRunRollover = async (get: () => AppStore) => {
-  const profile = get().profile;
-  if (!profile) return;
-
-  if (profile.income_type === 'business') {
-    // Business users have trailing/rolling window, no automatic rollover checks
-    return;
-  }
-
-  const todayStr = getLocalDateString();
-  const todayDate = new Date(todayStr);
-
-  if (!profile.last_logged_date) {
-    try {
-      await get().updateProfile({ last_logged_date: todayStr });
-    } catch (err) {
-      console.error('[KINY] Failed to initialize last_logged_date:', err);
-    }
-    return;
-  }
-
-  const lastLoggedDate = new Date(profile.last_logged_date);
-  const loggedCycle = getCycleBoundariesForDate(profile, lastLoggedDate);
-
-  if (todayDate > loggedCycle.endDate) {
-    try {
-      await get().archiveCurrentMonth();
-    } catch (err) {
-      console.error('[KINY] Rollover evaluation failed:', err);
-    }
-  }
-};
+// Client-side auto-rollover has been disabled. Rollovers are handled by backend cron job or manual override button.
 
 interface CustomNotificationOptions extends NotificationOptions {
   vibrate?: number[];
@@ -421,7 +397,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
               get().fetchIncomes(),
               get().fetchMonthlySnapshots(),
             ]);
-            await checkAndRunRollover(get);
             recalculateWealthMetrics(set, get, true);
             set({ appState: 'READY' });
           } else {
@@ -456,7 +431,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             get().fetchIncomes(),
             get().fetchMonthlySnapshots(),
           ]);
-          await checkAndRunRollover(get);
           recalculateWealthMetrics(set, get, true);
           set({ appState: 'READY' });
         } else {
@@ -490,7 +464,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
               get().fetchIncomes(),
               get().fetchMonthlySnapshots(),
             ]);
-            await checkAndRunRollover(get);
             recalculateWealthMetrics(set, get, true);
             set({ appState: 'READY' });
 
@@ -690,9 +663,18 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     try {
       const data = await apiRequest('/api/profile');
       const row = data as unknown as ProfileRow;
+      let enabledSlices: string[] = ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'];
+      if (row.enabled_slices) {
+        if (Array.isArray(row.enabled_slices)) {
+          enabledSlices = row.enabled_slices;
+        } else if (typeof row.enabled_slices === 'string') {
+          enabledSlices = (row.enabled_slices as string).split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+
       const profileWithSlices: ProfileRow = {
         ...row,
-        enabled_slices: row.enabled_slices || ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
+        enabled_slices: enabledSlices,
         estimated_monthly_salary: row.monthly_salary,
       };
       set({ profile: profileWithSlices, theme: (row.theme as Theme) || 'light' });

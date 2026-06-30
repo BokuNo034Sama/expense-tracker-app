@@ -104,9 +104,17 @@ export default function Budgets() {
     setIsFormOpen(true);
   };
 
+  const rawSlices = profile?.enabled_slices;
+  const enabledSlicesList = Array.isArray(rawSlices)
+    ? rawSlices
+    : (typeof rawSlices === 'string'
+        ? (rawSlices as string).split(',').map((s: string) => s.trim())
+        : ['Basic', 'Family', 'Wealth', 'Subscription', 'Chop_Life', 'Black_Tax', 'Side_Hustle']
+      );
+
   const slices = budgetSlices.length > 0
     ? budgetSlices.map(s => s.slice_name).filter(Boolean)
-    : (Array.isArray(profile?.enabled_slices) ? profile.enabled_slices : ['Basic Needs', 'Feeding', 'Flex Money', 'Savings']).filter(Boolean) as Slice[];
+    : enabledSlicesList.filter(Boolean) as Slice[];
 
   // Force an empty array fallback if slices is undefined, null, or not an array
   const activeSlices = Array.isArray(slices) ? slices : [];
