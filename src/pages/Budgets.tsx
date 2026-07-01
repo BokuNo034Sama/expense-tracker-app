@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAppStore, getCycleBoundaries } from "@/store/useAppStore";
+import { SliceBreakdownPanel } from "@/components/budgets/SliceBreakdownPanel";
 import { CategoryCard } from "@/components/budgets/CategoryCard";
 import { CategoryForm } from "@/components/budgets/CategoryForm";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
@@ -75,30 +76,9 @@ export default function Budgets() {
     }
   });
 
-  // Pure computed constants — no useState, no setters, no side effects
-  // Step 1: Build slice summary from category limits
-  const sliceSummary = categories.reduce((acc, cat) => {
-    const slice = cat.slice;
-    if (!acc[slice]) acc[slice] = { totalLimit: 0, totalSpent: 0 };
-    acc[slice].totalLimit += (Number(cat.budget_limit) || 0);
-    return acc;
-  }, {} as Record<string, { totalLimit: number; totalSpent: number }>);
 
-  // Step 2: Accumulate spending per slice — null-safe
-  expenses.forEach(exp => {
-    if (!exp || !exp.category_id) return; // skip truly uncategorized
 
-    const cat = categories.find(c => c.id === exp.category_id);
-    if (!cat?.slice) return; // skip if category not found or has no slice
 
-    if (!sliceSummary[cat.slice]) {
-      sliceSummary[cat.slice] = { totalLimit: 0, totalSpent: 0 };
-    }
-    sliceSummary[cat.slice].totalSpent += (Number(exp.amount) || 0);
-  });
-
-  const totalLimit = Object.values(sliceSummary).reduce((s, v) => s + v.totalLimit, 0);
-  const totalSpent = Object.values(sliceSummary).reduce((s, v) => s + v.totalSpent, 0);
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
@@ -144,11 +124,7 @@ export default function Budgets() {
 
 
 
-  const totalSpentNum = Number(totalSpent) || 0;
-  const totalLimitNum = Number(totalLimit) || 0;
-  const percentage = totalLimitNum > 0 && !isNaN(totalSpentNum) && !isNaN(totalLimitNum)
-    ? Math.min((totalSpentNum / totalLimitNum) * 100, 100)
-    : 0;
+
 
   return (
     <motion.div
@@ -229,54 +205,7 @@ export default function Budgets() {
         <div className="flex-1 overflow-y-auto py-4 space-y-6 bg-transparent">
           
           {/* Trends Summary Panel */}
-          {showTrends && (
-            <div className="border-2 border-black dark:border-white p-4 bg-white dark:bg-zinc-800 space-y-4 rounded-none">
-              <h4 className="font-display font-black text-xs uppercase text-black dark:text-white">MONTHLY PROGRESS</h4>
-              <div className="space-y-1.5">
-                <div className="font-mono text-xs font-bold uppercase tracking-wide text-black dark:text-white">
-                  <span>SPENT: ₦{totalSpentNum.toLocaleString('en-NG')}</span>
-                  <span className="float-right">LIMIT: ₦{totalLimitNum.toLocaleString('en-NG')}</span>
-                </div>
-                <div className="w-full border-2 border-black h-6 bg-white overflow-hidden mt-2">
-                  <div 
-                    style={{ width: `${percentage}%` }}
-                    className="bg-[#C6EF4E] h-full flex items-center justify-center border-r-2 border-black font-mono text-[10px] font-bold text-black"
-                  >
-                    {percentage.toFixed(1)}% CONSUMED
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t-2 border-black dark:border-white pt-4 space-y-3">
-                <h5 className="font-mono text-[9px] font-bold text-gray-500 uppercase">BREAKDOWN_BY_SLICE</h5>
-                {activeSlices.map(slice => {
-                  const summary = sliceSummary[slice];
-                  if (!summary || summary.totalLimit === 0) return null;
-                  
-                  const sliceLimitNum = summary.totalLimit;
-                  const sliceSpentNum = summary.totalSpent;
-                  const slicePercent = sliceLimitNum > 0
-                    ? Math.min((sliceSpentNum / sliceLimitNum) * 100, 100)
-                    : 0;
-                  
-                  return (
-                    <div key={slice} className="space-y-1 font-mono text-[10px] text-black dark:text-white">
-                      <div className="flex justify-between font-bold">
-                        <span>{(slice || '').toUpperCase()}</span>
-                        <span>₦{sliceSpentNum.toLocaleString('en-NG')} / ₦{sliceLimitNum.toLocaleString('en-NG')}</span>
-                      </div>
-                      <div className="h-2 w-full bg-[#F4F4F0] dark:bg-zinc-900 border border-black dark:border-white rounded-none overflow-hidden">
-                        <div 
-                          className="h-full bg-[#C6EF4E]" 
-                          style={{ width: `${slicePercent}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <SliceBreakdownPanel isOpen={showTrends} />
 
           {/* Budget Metric Bento Cards Section */}
           {!showTrends && (

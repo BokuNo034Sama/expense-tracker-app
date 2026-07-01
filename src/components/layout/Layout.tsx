@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { BottomTabBar } from './BottomTabBar';
 import { OfflineBanner } from '../pwa/OfflineBanner';
 import { UpdatePrompt } from '../pwa/UpdatePrompt';
 import { PWAInstallPrompt } from '../PWAInstallPrompt';
@@ -88,6 +89,7 @@ export function Layout({ children }: LayoutProps) {
         <UpdatePrompt />
         <PWAInstallPrompt />
       </main>
+      <BottomTabBar />
     </div>
   );
 }

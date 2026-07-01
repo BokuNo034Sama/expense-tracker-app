@@ -1,48 +1,19 @@
-import { useAppStore, getCycleBoundaries } from '../../store';
+import { useAppStore } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
+import { useDashboardMetrics } from '../../hooks/useDashboardMetrics';
 
 interface SummaryCardProps {
   type: 'totalSpent' | 'transactions' | 'topCategory';
 }
 
 export function SummaryCard({ type }: SummaryCardProps) {
-  const expenses = useAppStore(s => s.expenses);
-  const categories = useAppStore(s => s.categories);
   const isDataMasked = useAppStore(s => s.isDataMasked);
+  const { totalSpent, transactionCount, topCategory, topCategoryAmount } = useDashboardMetrics();
 
   const formatNaira = (amount: number) => {
     if (isDataMasked) return '••••••';
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
-
-  const profile = useAppStore(s => s.profile);
-  const currentCycle = getCycleBoundaries(profile);
-  const monthlyExpenses = expenses.filter(e => {
-    const d = new Date(e.date);
-    return d >= currentCycle.startDate && d <= currentCycle.endDate;
-  });
-
-  const totalSpent = monthlyExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const transactionsCount = monthlyExpenses.length;
-
-  // Compute top category
-  const categorySpends: { [id: string]: number } = {};
-  monthlyExpenses.forEach(e => {
-    if (e.category_id) {
-      categorySpends[e.category_id] = (categorySpends[e.category_id] || 0) + Number(e.amount);
-    }
-  });
-
-  let topCategoryId = '';
-  let topCategoryAmount = 0;
-  Object.entries(categorySpends).forEach(([id, amt]) => {
-    if (amt > topCategoryAmount) {
-      topCategoryAmount = amt;
-      topCategoryId = id;
-    }
-  });
-
-  const topCategoryName = categories.find(c => c.id === topCategoryId)?.name || 'None';
 
   const getContent = () => {
     switch (type) {
@@ -55,13 +26,13 @@ export function SummaryCard({ type }: SummaryCardProps) {
       case 'transactions':
         return {
           title: 'MONTHLY_LOG_COUNT',
-          value: String(transactionsCount),
-          subText: `${transactionsCount === 1 ? 'transaction' : 'transactions'} logged`
+          value: String(transactionCount),
+          subText: `${transactionCount === 1 ? 'transaction' : 'transactions'} logged`
         };
       case 'topCategory':
         return {
           title: 'TOP_SPENDING_CATEGORY',
-          value: topCategoryName.toUpperCase(),
+          value: topCategory.toUpperCase(),
           subText: topCategoryAmount > 0 ? `${formatNaira(topCategoryAmount)} spent` : 'No logs recorded'
         };
     }
@@ -79,8 +50,8 @@ export function SummaryCard({ type }: SummaryCardProps) {
           {content.title}
         </h4>
         <div 
-          style={{ fontFamily: 'var(--font-mono)' }}
-          className="text-2xl font-extrabold tracking-tight text-[var(--color-ink)] break-words"
+          style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', minWidth: '10ch' }}
+          className="text-2xl font-extrabold tracking-tight text-[var(--color-ink)] break-words inline-block"
         >
           {content.value}
         </div>

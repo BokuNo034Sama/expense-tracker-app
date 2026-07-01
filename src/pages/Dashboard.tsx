@@ -295,7 +295,7 @@ export default function Dashboard() {
               </div>
 
               {/* The 2x2 Secondary Macro-Metric Grid */}
-              <div className="grid grid-cols-2 gap-2 w-full shrink-0">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 w-full shrink-0">
                 {/* Top Left: TOTAL_INCOME */}
                 <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 flex flex-col justify-between rounded-none">
                   <span className="text-[9px] font-bold uppercase tracking-wider font-mono text-gray-500 dark:text-zinc-400">

@@ -56,8 +56,8 @@ export function WealthCard() {
           </button>
         </div>
         <span 
-          style={{ fontFamily: 'var(--font-mono)' }}
-          className="text-3xl font-extrabold tracking-tight mb-2 block break-words"
+          style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', minWidth: '10ch' }}
+          className="text-3xl font-extrabold tracking-tight mb-2 inline-block break-words"
         >
           {formatNaira(netSavings)}
         </span>
@@ -66,11 +66,11 @@ export function WealthCard() {
       <div className="w-full flex flex-col gap-1.5 border-t border-dashed border-black/20 pt-2">
         <div className="flex justify-between items-center text-[11px] font-mono">
           <span className="uppercase text-[var(--color-ink-muted)]">ESTIMATED_INCOME:</span>
-          <span className="font-bold shrink-0">{formatNaira(totalIncome)}</span>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }} className="font-bold shrink-0">{formatNaira(totalIncome)}</span>
         </div>
         <div className="flex justify-between items-center text-[11px] font-mono">
           <span className="uppercase text-[var(--color-ink-muted)]">MONTH_EXPENSES:</span>
-          <span className="font-bold shrink-0">{formatNaira(totalExpenses)}</span>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }} className="font-bold shrink-0">{formatNaira(totalExpenses)}</span>
         </div>
         <div className="flex justify-between items-center text-[11px] font-mono">
           <span className="uppercase text-[var(--color-ink-muted)]">SAVINGS_RATE:</span>

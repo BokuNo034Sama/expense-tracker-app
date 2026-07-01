@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store';
 import { parseLocalDate } from '../../lib/format';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Trash2, Edit2, ArrowUpDown } from 'lucide-react';
+import { Trash2, Edit2, ArrowUpDown, Pencil } from 'lucide-react';
 import type { Expense } from '../../store/types';
 
 interface ExpenseTableProps {
@@ -100,8 +100,8 @@ export function ExpenseTable({ onEdit }: ExpenseTableProps) {
         </div>
       </div>
 
-      {/* Table Container */}
-      <div className="w-full overflow-x-auto border-2 border-[var(--color-border)] rounded-[var(--border-radius)] bg-[var(--color-surface)] text-[var(--color-text-main)] shadow-[var(--shadow-neubrutalist)]">
+      {/* Desktop table — hidden on mobile */}
+      <div className="hidden md:block w-full overflow-x-auto border-2 border-[var(--color-border)] rounded-[var(--border-radius)] bg-[var(--color-surface)] text-[var(--color-text-main)] shadow-[var(--shadow-neubrutalist)]">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b-[var(--border-default)] bg-[var(--color-surface)]">
@@ -207,6 +207,93 @@ export function ExpenseTable({ onEdit }: ExpenseTableProps) {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile card list — hidden on desktop */}
+      <div className="block md:hidden space-y-3">
+        {filteredExpenses.length === 0 ? (
+          <div style={{ fontFamily: 'var(--font-mono)' }} className="py-12 text-center text-xs text-[var(--color-ink-muted)] uppercase border-2 border-[var(--color-border)] rounded-[var(--border-radius)] bg-[var(--color-surface)] shadow-[var(--shadow-neubrutalist)]">
+            No transaction records found.
+          </div>
+        ) : (
+          filteredExpenses.map(expense => (
+            <MobileExpenseCard
+              key={expense.id}
+              expense={expense}
+              category={categories.find(c => c.id === expense.category_id)}
+              onEdit={() => onEdit(expense)}
+              onDelete={() => handleDelete(expense.id)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface MobileExpenseCardProps {
+  expense: Expense;
+  category: any;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function MobileExpenseCard({ expense, category, onEdit, onDelete }: MobileExpenseCardProps) {
+  const catName = category?.name || 'Uncategorized';
+  const catSlice = category?.slice || 'Family';
+
+  const formattedDate = new Date(expense.date).toLocaleDateString('en-NG', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  });
+
+  return (
+    <div
+      style={{ fontFamily: 'var(--font-mono)' }}
+      className="flex items-center gap-3 p-3 bg-[var(--color-surface)] border-2 border-[var(--color-ink)] rounded-[var(--border-radius)] shadow-[3px_3px_0px_0px_var(--color-ink)]"
+    >
+      {/* Left Hub — Icon */}
+      <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[var(--color-primary)] border-2 border-[var(--color-ink)] rounded-lg">
+        <span className="text-[var(--color-ink)] text-xs font-bold">
+          {catName.slice(0, 2).toUpperCase()}
+        </span>
+      </div>
+
+      {/* Centre — Merchant + Meta */}
+      <div className="flex-1 min-w-0">
+        <p className="text-[var(--color-ink)] font-bold text-sm truncate leading-tight">
+          {expense.vendor}
+        </p>
+        <p className="text-[var(--color-ink-muted)] text-[10px] uppercase tracking-wide mt-0.5">
+          {catSlice} · {formattedDate}
+        </p>
+      </div>
+
+      {/* Right Hub — Amount + Actions */}
+      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+        <span
+          className="text-[var(--color-ink)] font-bold text-sm tabular-nums"
+          style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+          ₦{Number(expense.amount).toLocaleString('en-NG')}
+        </span>
+        <div className="flex gap-1.5">
+          <button
+            onClick={onEdit}
+            className="p-1 border border-[var(--color-ink)] rounded text-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-primary)] transition-colors"
+          >
+            <Pencil size={11} />
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm('Delete this receipt? This cannot be undone.')) {
+                onDelete();
+              }
+            }}
+            className="p-1 border border-[var(--color-danger)] rounded text-[var(--color-danger)] hover:bg-[var(--color-danger)] hover:text-white transition-colors"
+          >
+            <Trash2 size={11} />
+          </button>
+        </div>
       </div>
     </div>
   );
