@@ -953,15 +953,31 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     recalculateWealthMetrics(set, get, false);
   },
 
-  deleteExpense: async (id) => {
+  deleteExpense: async (id: string) => {
     if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('bypass') === 'true') {
       set(s => ({ expenses: s.expenses.filter(e => e.id !== id) }));
       recalculateWealthMetrics(set, get, false);
       return;
     }
-    await apiRequest(`/api/expenses/${id}`, {
-      method: 'DELETE',
-    });
+    const session = get().auth.session;
+    if (!session?.access_token) throw new Error('Not authenticated');
+
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/expenses/${id}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to delete expense.');
+    }
+
+    // Remove from local store immediately — no need to refetch
     set(s => ({ expenses: s.expenses.filter(e => e.id !== id) }));
     recalculateWealthMetrics(set, get, false);
   },

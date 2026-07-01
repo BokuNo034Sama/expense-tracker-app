@@ -75,6 +75,7 @@ const parseBankAlert = (text: string) => {
 export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
   const addExpense = useAppStore(s => s.addExpense);
   const updateExpense = useAppStore(s => s.updateExpense);
+  const deleteExpense = useAppStore(s => s.deleteExpense);
   const categories = useAppStore(s => s.categories);
 
   const [transactionDate, setTransactionDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -85,6 +86,21 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!expense) return;
+    if (!window.confirm('Delete this receipt? This cannot be undone.')) return;
+    setIsSubmitting(true);
+    setErrorMsg(null);
+    try {
+      await deleteExpense(expense.id);
+      onOpenChange(false);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to delete expense.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -545,32 +561,45 @@ export function ExpenseForm({ open, onOpenChange, expense }: ExpenseFormProps) {
             </div>
           )}
 
-          <DialogFooter className="border-t border-[var(--color-ink)] border-dashed pt-4 mt-6 gap-2 sm:gap-0">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-              style={{ fontFamily: 'var(--font-display)' }}
-              className="px-5 py-3 bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              CANCEL
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              style={{ fontFamily: 'var(--font-display)' }}
-              className={`
-                px-5 py-3 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] 
-                rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] 
-                hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] 
-                active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs 
-                uppercase transition-all duration-100 flex items-center justify-center gap-2
-                disabled:opacity-50 disabled:cursor-not-allowed
-                ${isSubmitting ? 'animate-pulse cursor-wait' : ''}
-              `}
-            >
-              {isSubmitting ? 'SAVING...' : 'SAVE_RECORD'}
-            </button>
+          <DialogFooter className="border-t border-[var(--color-ink)] border-dashed pt-4 mt-6 gap-2 sm:gap-0 flex flex-row items-center justify-between">
+            {expense && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                style={{ fontFamily: 'var(--font-display)' }}
+                className="px-5 py-3 bg-[var(--color-danger)] text-white border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed mr-auto"
+              >
+                {isSubmitting ? '...' : 'DELETE'}
+              </button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+                style={{ fontFamily: 'var(--font-display)' }}
+                className="px-5 py-3 bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--border-default)] rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs uppercase transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                style={{ fontFamily: 'var(--font-display)' }}
+                className={`
+                  px-5 py-3 bg-[var(--color-brand-primary)] text-[#000000] border-[var(--border-default)] 
+                  rounded-[var(--border-radius)] shadow-[var(--shadow-btn)] hover:-translate-x-[1px] 
+                  hover:-translate-y-[1px] hover:shadow-[var(--shadow-card)] active:translate-x-[1px] 
+                  active:translate-y-[1px] active:shadow-[var(--shadow-btn-active)] font-bold text-xs 
+                  uppercase transition-all duration-100 flex items-center justify-center gap-2
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  ${isSubmitting ? 'animate-pulse cursor-wait' : ''}
+                `}
+              >
+                {isSubmitting ? 'SAVING...' : 'SAVE_RECORD'}
+              </button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -76,6 +76,7 @@ export default function Budgets() {
   });
 
   // Pure computed constants — no useState, no setters, no side effects
+  // Step 1: Build slice summary from category limits
   const sliceSummary = categories.reduce((acc, cat) => {
     const slice = cat.slice;
     if (!acc[slice]) acc[slice] = { totalLimit: 0, totalSpent: 0 };
@@ -83,12 +84,17 @@ export default function Budgets() {
     return acc;
   }, {} as Record<string, { totalLimit: number; totalSpent: number }>);
 
+  // Step 2: Accumulate spending per slice — null-safe
   expenses.forEach(exp => {
-    if (!exp || !exp.category_id) return;
+    if (!exp || !exp.category_id) return; // skip truly uncategorized
+
     const cat = categories.find(c => c.id === exp.category_id);
-    if (cat?.slice && sliceSummary[cat.slice]) {
-      sliceSummary[cat.slice].totalSpent += (Number(exp.amount) || 0);
+    if (!cat?.slice) return; // skip if category not found or has no slice
+
+    if (!sliceSummary[cat.slice]) {
+      sliceSummary[cat.slice] = { totalLimit: 0, totalSpent: 0 };
     }
+    sliceSummary[cat.slice].totalSpent += (Number(exp.amount) || 0);
   });
 
   const totalLimit = Object.values(sliceSummary).reduce((s, v) => s + v.totalLimit, 0);
@@ -104,11 +110,11 @@ export default function Budgets() {
     setIsFormOpen(true);
   };
 
-  const rawSlices = profile?.enabled_slices;
-  const enabledSlicesList = Array.isArray(rawSlices)
+  const rawSlices = profile?.enabled_slices as any;
+  const enabledSlicesList: string[] = Array.isArray(rawSlices)
     ? rawSlices
     : (typeof rawSlices === 'string'
-        ? (rawSlices as string).split(',').map((s: string) => s.trim())
+        ? rawSlices.split(',').map((s: string) => s.trim()).filter(Boolean)
         : ['Basic', 'Family', 'Wealth', 'Subscription', 'Chop_Life', 'Black_Tax', 'Side_Hustle']
       );
 

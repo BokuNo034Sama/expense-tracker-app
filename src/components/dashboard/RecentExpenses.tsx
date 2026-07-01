@@ -12,8 +12,8 @@ export function RecentExpenses() {
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
-  // Get last 5 expenses
-  const recent = expenses.slice(0, 5);
+  // Get last 11 expenses
+  const recent = expenses.slice(0, 11);
 
   const renderIcon = (iconName: string) => {
     const LucideIcon = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[iconName] || Icons.HelpCircle;
@@ -39,9 +39,13 @@ export function RecentExpenses() {
       ) : (
         <div className="grid grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1">
           {recent.map(exp => {
-            const category = categories.find(c => c.id === exp.category_id);
-            const categoryName = category?.name || 'Uncategorized';
-            const iconName = category?.icon || 'MoreHorizontal';
+            const category = categories.find(c => c.id === exp.category_id) ?? {
+              name: 'Uncategorized',
+              icon: 'HelpCircle',
+              slice: 'Family',
+            };
+            const categoryName = category.name;
+            const iconName = category.icon;
 
             return (
               <div 

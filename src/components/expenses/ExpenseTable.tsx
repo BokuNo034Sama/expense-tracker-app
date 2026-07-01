@@ -14,7 +14,19 @@ export function ExpenseTable({ onEdit }: ExpenseTableProps) {
   const categories = useAppStore(s => s.categories);
   const deleteExpense = useAppStore(s => s.deleteExpense);
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<'date' | 'vendor' | 'amount'>('date');
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await deleteExpense(id);
+    } catch (err: any) {
+      alert(`Failed to delete: ${err.message}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
 
@@ -176,11 +188,12 @@ export function ExpenseTable({ onEdit }: ExpenseTableProps) {
                               <p style={{ fontFamily: 'var(--font-mono)' }} className="text-[10px] text-[var(--color-ink-muted)] leading-relaxed uppercase">This action cannot be undone.</p>
                               <div className="flex justify-end gap-2 pt-1">
                                 <button
-                                  onClick={() => deleteExpense(exp.id).catch(console.error)}
+                                  onClick={() => handleDelete(exp.id)}
+                                  disabled={deletingId === exp.id}
                                   style={{ fontFamily: 'var(--font-display)' }}
-                                  className="px-3 py-1.5 bg-[var(--color-danger)] text-white border-[var(--border-default)] rounded-[var(--border-radius)] font-bold text-[10px] uppercase shadow-[var(--shadow-btn-active)]"
+                                  className="px-3 py-1.5 bg-[var(--color-danger)] text-white border-[var(--border-default)] rounded-[var(--border-radius)] font-bold text-[10px] uppercase shadow-[var(--shadow-btn-active)] disabled:opacity-50"
                                 >
-                                  DELETE
+                                  {deletingId === exp.id ? '...' : 'DELETE'}
                                 </button>
                               </div>
                             </div>
