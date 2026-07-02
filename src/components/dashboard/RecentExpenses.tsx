@@ -5,8 +5,8 @@ export function RecentExpenses() {
   const expenses = useAppStore(s => s.expenses);
   const categories = useAppStore(s => s.categories);
 
-  // Get last 11 expenses
-  const recent = expenses.slice(0, 11);
+  // Get all expenses to let container scroll
+  const recent = expenses;
 
   return (
     <div className="w-full space-y-4">
@@ -25,7 +25,10 @@ export function RecentExpenses() {
           No expenses recorded yet.
         </div>
       ) : (
-        <div className="border-2 border-[var(--color-ink)] bg-[var(--color-surface)] p-4 rounded-none max-h-[360px] overflow-y-auto space-y-1">
+        <div 
+          className="border-2 border-[var(--color-ink)] bg-[var(--color-surface)] p-4 rounded-none overflow-y-auto space-y-1"
+          style={{ maxHeight: 'calc(100vh - 280px)' }}
+        >
           {recent.map(exp => (
             <RecentExpenseCard
               key={exp.id}

@@ -1,18 +1,20 @@
 // src/components/layout/BottomTabBar.tsx
+import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, CreditCard, Receipt, TrendingUp, User } from 'lucide-react';
+import { Home, CreditCard, Receipt, User, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SupportModal } from '../support/SupportModal';
 
 const NAV_ITEMS = [
   { to: '/',         icon: Home,        label: 'HOME'     },
   { to: '/budgets',  icon: CreditCard,  label: 'BUDGETS'  },
   { to: '/expenses', icon: Receipt,     label: 'EXPENSES' },
-  { to: '/income',   icon: TrendingUp,  label: 'INCOME'   },
   { to: '/profile',  icon: User,        label: 'PROFILE'  },
 ];
 
 export function BottomTabBar() {
   const location = useLocation();
+  const [supportOpen, setSupportOpen] = useState(false);
 
   return (
     <nav
@@ -56,7 +58,28 @@ export function BottomTabBar() {
             </NavLink>
           );
         })}
+
+        {/* Support button — 5th slot, not a route */}
+        <button
+          type="button"
+          onClick={() => setSupportOpen(true)}
+          className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 cursor-pointer"
+        >
+          <MessageCircle
+            size={20}
+            className="text-[var(--color-ink-muted)]"
+          />
+          <span
+            style={{ fontFamily: 'var(--font-mono)' }}
+            className="text-[8px] font-bold tracking-widest uppercase text-[var(--color-ink-muted)]"
+          >
+            SUPPORT
+          </span>
+        </button>
       </div>
+
+      {/* Support Modal */}
+      <SupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />
     </nav>
   );
 }

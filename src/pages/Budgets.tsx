@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAppStore, getCycleBoundaries } from "@/store/useAppStore";
+import { useAppStore } from "@/store/useAppStore";
 import { SliceBreakdownPanel } from "@/components/budgets/SliceBreakdownPanel";
 import { CategoryCard } from "@/components/budgets/CategoryCard";
 import { CategoryForm } from "@/components/budgets/CategoryForm";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
-import type { Category, Slice, Expense } from "@/store/types";
+import type { Category, Slice } from "@/store/types";
 
 const customStyles = `
   .no-scrollbar::-webkit-scrollbar {
@@ -37,44 +37,44 @@ export default function Budgets() {
   const [activeSliceFilter, setActiveSliceFilter] = useState<string>('all');
   const [showTrends, setShowTrends] = useState<boolean>(false);
 
-  const categoriesStore = useAppStore(s => s.categories);
-  const expensesStore   = useAppStore(s => s.expenses);
   const profile    = useAppStore(s => s.profile);
   const budgetSlicesStore = useAppStore(s => s.budgetSlices);
   const appState   = useAppStore(s => s.appState);
   const loading    = useAppStore(s => s.loading);
 
-  // Loading gate — must come before any calculations
-  if (appState === 'LOADING' || loading.categories) {
+  // Confirm loading gate exists
+  if (appState === 'LOADING' || loading.categories || loading.expenses) {
     return (
-      <div className="p-6 font-mono text-xs uppercase text-black">
-        RETRIEVING_NAIRA_ARCHITECTURES...
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <span style={{ fontFamily: 'var(--font-mono)' }}
+          className="text-xs uppercase tracking-widest 
+          text-[var(--color-ink-muted)] animate-pulse">
+          RETRIEVING_NAIRA_ARCHITECTURES...
+        </span>
       </div>
     );
   }
 
-  // Pure local filtered constants to avoid selectors returning new array references
-  const categories = Array.isArray(categoriesStore) ? categoriesStore.filter(c => c && typeof c === 'object') : [] as Category[];
-  const expenses = Array.isArray(expensesStore) ? expensesStore.filter(e => e && typeof e === 'object') : [] as Expense[];
+  const categories = useAppStore(s => s.categories);
+  const expenses   = useAppStore(s => s.expenses);
+
+  // Calculate actual spending per category ID this month
+  const now = new Date();
+  const thisMonthExpenses = expenses.filter(e => {
+    if (!e?.date) return false;
+    const d = new Date(e.date);
+    return d.getMonth() === now.getMonth() && 
+           d.getFullYear() === now.getFullYear();
+  });
+
+  const spentByCategory: Record<string, number> = {};
+  thisMonthExpenses.forEach(exp => {
+    if (!exp?.category_id) return;
+    spentByCategory[exp.category_id] = 
+      (spentByCategory[exp.category_id] || 0) + (Number(exp.amount) || 0);
+  });
+
   const budgetSlices = Array.isArray(budgetSlicesStore) ? budgetSlicesStore.filter(b => b && typeof b === 'object') : [];
-
-  const currentCycle = getCycleBoundaries(profile);
-  
-  // Safe filtering with a dynamic boundary check
-  const targetExpenses = Array.isArray(expenses) ? expenses : [];
-  const monthlyExpenses = targetExpenses.filter(e => {
-    if (!e || !e.date || typeof e.date !== "string") return false;
-    const txnDate = new Date(e.date);
-    return txnDate >= currentCycle.startDate && txnDate <= currentCycle.endDate;
-  });
-
-  // Compute spend per category
-  const categorySpends: { [id: string]: number } = {};
-  monthlyExpenses.forEach(e => {
-    if (e && e.category_id) {
-      categorySpends[e.category_id] = (categorySpends[e.category_id] || 0) + Number(e.amount || 0);
-    }
-  });
 
 
 
@@ -228,17 +228,20 @@ export default function Budgets() {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {filteredCategories.map(cat => {
-                    const item = cat as any;
-                    const itemLimit = Number(item.limit_amount ?? item.budget_limit) || 0;
-                    const itemSpent = Number(item.spent_amount ?? item.amount) || 0;
-
-                    const itemProgressPercentage = itemLimit > 0
-                      ? Math.min((itemSpent / itemLimit) * 100, 100)
+                    const spent   = spentByCategory[cat.id] || 0;
+                    const limit   = Number(cat.budget_limit) || 0;
+                    const pct     = limit > 0 
+                      ? Math.min((spent / limit) * 100, 100) 
                       : 0;
 
+                    const barColor =
+                      pct >= 80 ? 'bg-[var(--color-danger)]' :
+                      pct >= 60 ? 'bg-[var(--color-warn)]'   :
+                      'bg-[var(--color-ink)]';
+
                     // Read the value to satisfy the TypeScript unused variables compiler rule
-                    if (itemProgressPercentage < 0) {
-                      console.log('[KINY] negative progress:', itemProgressPercentage);
+                    if (pct < 0) {
+                      console.log('[KINY] negative progress:', pct, barColor);
                     }
 
                     return (
@@ -246,9 +249,9 @@ export default function Budgets() {
                          key={cat.id}
                          category={{
                            ...cat,
-                           budget_limit: itemLimit
+                           budget_limit: limit
                          }}
-                         spent={itemSpent}
+                         spent={spent}
                          onEdit={handleEdit}
                       />
                     );

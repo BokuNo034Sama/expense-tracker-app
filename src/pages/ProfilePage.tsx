@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { usePWA } from '../hooks/usePWA';
 import { BentoCard } from '../components/shared/BentoCard';
@@ -7,6 +8,7 @@ import { LogOut } from 'lucide-react';
 import { SliceManager } from '../components/profile/SliceManager';
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const profile = useAppStore(s => s.profile);
   const updateProfile = useAppStore(s => s.updateProfile);
   const signOut = useAppStore(s => s.signOut);
@@ -407,6 +409,18 @@ export default function ProfilePage() {
             </button>
           </div>
         )}
+
+        {/* Income Page navigation link */}
+        <button
+          onClick={() => navigate('/income')}
+          style={{ fontFamily: 'var(--font-mono)' }}
+          className="w-full py-2.5 text-xs font-bold uppercase 
+          tracking-widest text-left text-[var(--color-ink-muted)] 
+          border-t border-[var(--color-ink)]/10 pt-3 
+          hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+        >
+          → INCOME_LEDGER
+        </button>
 
         {/* Sign Out Card Button */}
         <div className="pt-6 border-t border-[var(--color-ink)] border-dashed flex justify-between gap-4">
