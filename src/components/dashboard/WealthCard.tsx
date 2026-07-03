@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useAppStore, getCycleBoundaries } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
 import { Eye, EyeOff } from 'lucide-react';
@@ -6,8 +7,47 @@ export function WealthCard() {
   const profile = useAppStore(s => s.profile);
   const expenses = useAppStore(s => s.expenses);
   const incomes = useAppStore(s => s.incomes);
+  const categories = useAppStore(s => s.categories);
   const isDataMasked = useAppStore(s => s.isDataMasked);
   const toggleDataMasked = useAppStore(s => s.toggleDataMasked);
+
+  // Track whether we have already fired the notification 
+  // this session to prevent repeated triggers
+  const hasNotifiedRef = useRef(false);
+
+  const wealthCatIds = categories
+    .filter(c => c.slice === 'Wealth')
+    .map(c => c.id);
+  const now = new Date();
+  const wealthBalance = expenses
+    .filter(e => {
+      if (!wealthCatIds.includes(e.category_id ?? '')) return false;
+      const d = new Date(e.date);
+      return d.getMonth() === now.getMonth() && 
+             d.getFullYear() === now.getFullYear();
+    })
+    .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+  useEffect(() => {
+    if (
+      wealthBalance >= 50000 &&
+      !hasNotifiedRef.current &&
+      Notification.permission === 'granted'
+    ) {
+      hasNotifiedRef.current = true;
+      navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification('Wealth Milestone Met! 🚀', {
+          body: `Your surplus reached ₦${wealthBalance.toLocaleString('en-NG')}. Consider moving to growth assets.`,
+          icon: '/logo.svg',
+          badge: '/logo.svg',
+          tag: 'wealth-milestone',
+          data: { url: '/' }
+        });
+      }).catch(err => {
+        console.warn('[KINY] Wealth milestone notification failed:', err);
+      });
+    }
+  }, [wealthBalance]);
 
   const formatNaira = (amount: number) => {
     if (isDataMasked) return '••••••';

@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useAppStore } from '../store';
+import { getFCMToken } from '../lib/firebase';
 
 export function usePWA() {
   const setPWAUpdate = useAppStore(s => s.setPWAUpdate);
   const setPWAInstalled = useAppStore(s => s.setPWAInstalled);
+  const updateProfile = useAppStore(s => s.updateProfile);
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -32,6 +34,13 @@ export function usePWA() {
       }
 
       console.log('[KINY] Push notification permission granted.');
+
+      // Fetch and sync FCM token
+      const fcmToken = await getFCMToken();
+      if (fcmToken) {
+        await updateProfile({ push_subscription: { type: 'fcm', token: fcmToken } });
+        console.log('[KINY] FCM Token successfully synced to user profile.');
+      }
     } catch (err) {
       console.error('[KINY] registerPushNotifications failed:', err);
     }

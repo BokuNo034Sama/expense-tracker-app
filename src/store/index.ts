@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import { supabase, getUID } from '../lib/supabaseClient';
-import { getFCMToken } from '../lib/firebase';
 import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
@@ -193,12 +192,6 @@ const updateLoggingStreak = async (get: () => AppStore) => {
 };
 
 // Client-side auto-rollover has been disabled. Rollovers are handled by backend cron job or manual override button.
-
-interface CustomNotificationOptions extends NotificationOptions {
-  vibrate?: number[];
-  renotify?: boolean;
-}
-
 const recalculateWealthMetrics = (
   set: (state: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void,
   get: () => AppStore,
@@ -236,19 +229,6 @@ const recalculateWealthMetrics = (
     if (oldStatus === 'PENDING' && newStatus === 'THRESHOLD_MET' && !isInitialLoad) {
       bannerTriggered = true;
       newBannerMessage = `MILESTONE MET: You've crossed the threshold for ${trigger.name} (₦${trigger.targetThreshold.toLocaleString()})!`;
-
-      // Trigger Push Notification directly via Service Worker
-      if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.showNotification(`Wealth Milestone Met! 🚀`, {
-            body: `Your surplus reached ₦${netMonthlySurplus.toLocaleString()}. You can now invest in ${trigger.name} on ${trigger.targetPlatform}!`,
-            icon: '/logo.svg',
-            vibrate: [200, 100, 200],
-            tag: trigger.id,
-            renotify: true
-          } as CustomNotificationOptions);
-        }).catch((err) => console.error('[API] Push notification error:', err));
-      }
     }
 
     return {
@@ -466,21 +446,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             ]);
             recalculateWealthMetrics(set, get, true);
             set({ appState: 'READY' });
-
-            // Asynchronously request and sync FCM token in the background
-            getFCMToken().then(async (fcmToken) => {
-              if (fcmToken) {
-                console.log('USER_FCM_TOKEN:', fcmToken);
-                const currentSub = get().profile?.push_subscription;
-                const fcmSub = { type: 'fcm', token: fcmToken };
-                if (!currentSub || JSON.stringify(currentSub) !== JSON.stringify(fcmSub)) {
-                  await get().updateProfile({ push_subscription: fcmSub });
-                  console.log('[KINY] FCM Token successfully synced to user profile.');
-                }
-              }
-            }).catch((err) => {
-              console.warn('[KINY] Background FCM sync warning:', err);
-            });
           } else {
             set({ appState: 'ONBOARDING_INCOMPLETE' });
           }
