@@ -9,7 +9,6 @@ import Expenses from "./pages/Expenses";
 import Budgets from "./pages/Budgets";
 import ProfilePage from "./pages/ProfilePage";
 import { ExpenseForm } from "./components/expenses/ExpenseForm";
-import { initializeKinyPushSubscription } from './utils/pushSubscription';
 
 export default function App() {
   const initAuth = useAppStore(s => s.initAuth);
@@ -20,9 +19,6 @@ export default function App() {
 
   useEffect(() => {
     initAuth();
-    initializeKinyPushSubscription().catch(err => {
-      console.error('[KINY] Main lifecycle push setup failed:', err);
-    });
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
