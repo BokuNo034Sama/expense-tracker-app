@@ -9,14 +9,18 @@ export function useDashboardMetrics() {
   const profile    = useAppStore(s => s.profile);
 
   return useMemo(() => {
+    const safeExpenses  = expenses  ?? [];
+    const safeIncomes   = incomes   ?? [];
+    const safeCategories = categories ?? [];
+
     const currentCycle = getCycleBoundaries(profile);
-    const thisCycleExpenses = expenses.filter(e => {
+    const thisCycleExpenses = safeExpenses.filter(e => {
       const d = new Date(e.date);
       return d >= currentCycle.startDate && d <= currentCycle.endDate;
     });
 
     const totalSpent = thisCycleExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const totalIncome = incomes
+    const totalIncome = safeIncomes
       .filter(i => {
         const d = new Date(i.date);
         return d >= currentCycle.startDate && d <= currentCycle.endDate;
@@ -43,7 +47,7 @@ export function useDashboardMetrics() {
       }
     });
 
-    const topCategory = categories.find(c => c.id === topCategoryId)?.name || 'None';
+    const topCategory = safeCategories.find(c => c.id === topCategoryId)?.name || 'None';
 
     return { totalSpent, totalIncome, transactionCount, remainingBalance, topCategory, topCategoryAmount };
   }, [expenses, incomes, categories, profile]);

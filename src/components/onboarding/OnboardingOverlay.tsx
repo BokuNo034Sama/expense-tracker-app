@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
@@ -7,8 +7,10 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/
 import { OnboardingStep2 } from './OnboardingStep2';
 
 export function OnboardingOverlay() {
-  const completeOnboarding = useAppStore(s => s.completeOnboarding);
   const profile = useAppStore(s => s.profile);
+  const sessionToken = useAppStore(s => s.auth.session?.access_token);
+  const fetchProfile = useAppStore(s => s.fetchProfile);
+  const setAppState = useAppStore(s => s.setAppState);
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
@@ -27,6 +29,19 @@ export function OnboardingOverlay() {
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState('SAVING...');
+
+  useEffect(() => {
+    let slowTimer: ReturnType<typeof setTimeout>;
+    if (saving) {
+      slowTimer = setTimeout(() => {
+        setLoadingMessage('CONNECTING... (first load may take 15s)');
+      }, 8000);
+    } else {
+      setLoadingMessage('SAVING...');
+    }
+    return () => clearTimeout(slowTimer);
+  }, [saving]);
 
   const handleNext = () => {
     setErrorMsg(null);
@@ -56,24 +71,82 @@ export function OnboardingOverlay() {
   const handleFinish = async () => {
     setErrorMsg(null);
     setSaving(true);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 20000);
+
     try {
-      const monthlySalary = parseFloat(salaryStr);
+      const monthlySalary = parseFloat(salaryStr) || 0;
+      const avatarInitials = name
+        .split(' ')
+        .filter(Boolean)
+        .map(w => w[0].toUpperCase())
+        .join('')
+        .slice(0, 2);
+
+      const defaultSlices = incomeType === 'student'
+        ? ['Basic Needs', 'Handouts & Books', 'Feeding', 'Flex Money', 'Savings']
+        : ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'];
+
       const defaultAnchorDay = incomeType === 'salary' ? 30 : null;
       const defaultFluidWindowDays = incomeType === 'business' ? 30 : null;
-      await completeOnboarding(
-        name.trim(),
-        purpose,
-        occupation.trim(),
-        monthlySalary,
-        purpose === 'saving' ? savingsRate : undefined,
-        incomeType,
-        defaultAnchorDay,
-        defaultFluidWindowDays
+
+      const profileResponse = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/profile`,
+        {
+          method: 'PATCH',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+          body: JSON.stringify({
+            name: name.trim(),
+            occupation: occupation.trim(),
+            avatar_initials: avatarInitials,
+            purpose: purpose,
+            target_savings_rate: purpose === 'saving' ? savingsRate : null,
+            is_completed_onboarding: true,
+            enabled_slices: defaultSlices,
+            income_type: incomeType,
+            monthly_salary: monthlySalary,
+            anchor_day: defaultAnchorDay,
+            fluid_window_days: defaultFluidWindowDays
+          }),
+        }
       );
-    } catch (err) {
-      const error = err as Error;
-      setErrorMsg(error.message || 'Failed to complete onboarding');
+
+      clearTimeout(timeoutId);
+
+      if (!profileResponse.ok) {
+        const errData = await profileResponse.json().catch(() => ({}));
+        throw new Error(
+          errData.error ||
+          errData.message ||
+          `Server error ${profileResponse.status} — please try again.`
+        );
+      }
+
+      await fetchProfile();
+      setAppState('READY');
+
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+
+      if (err.name === 'AbortError') {
+        setErrorMsg(
+          'Request timed out after 20 seconds. ' +
+          'Please check your connection and tap FINISH_SETUP again. ' +
+          'Your progress has been saved.'
+        );
+      } else {
+        setErrorMsg(err.message || 'Failed to complete setup. Please try again.');
+      }
+    } finally {
       setSaving(false);
+      clearTimeout(timeoutId);
     }
   };
 
@@ -380,7 +453,7 @@ export function OnboardingOverlay() {
                   ${saving ? 'animate-pulse cursor-wait' : ''}
                 `}
               >
-                {saving ? 'SAVING...' : 'FINISH_SETUP ✓'}
+                {saving ? loadingMessage : 'FINISH_SETUP ✓'}
               </button>
             )}
           </div>
