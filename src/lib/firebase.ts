@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, isSupported, type Messaging } from 'firebase/messaging';
+import { supabase } from './supabaseClient';
 
 // Firebase Client Configuration
 const firebaseConfig = {
@@ -96,4 +97,44 @@ export function onMessageListener() {
       }
     });
   });
+}
+
+/**
+ * Save FCM token using multi-device push_subscriptions table.
+ */
+export async function saveTokenToSupabase(userId: string, token: string) {
+  // DEPRECATED — single device only, kept for rollback
+  // await supabase.from('profiles')
+  //   .update({ push_subscription: { type: 'fcm', token } })
+  //   .eq('id', userId);
+
+  // Detect a simple device hint from the browser
+  const deviceHint = `${navigator.platform || 'Unknown'} / ${
+    /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) 
+      ? 'Mobile' 
+      : 'Desktop'
+  }`;
+
+  // Upsert — if same token already exists for this user, 
+  // just update last_seen. If new device, insert new row.
+  const { error: upsertError } = await supabase
+    .from('push_subscriptions')
+    .upsert(
+      {
+        user_id:     userId,
+        token:       token,
+        device_hint: deviceHint,
+        last_seen:   new Date().toISOString(),
+      },
+      {
+        onConflict: 'user_id,token', // matches the UNIQUE constraint
+        ignoreDuplicates: false,     // update last_seen on re-register
+      }
+    );
+
+  if (upsertError) {
+    console.error('[KINY] Failed to save push token:', upsertError.message);
+  } else {
+    console.log('[KINY] Push token registered for device:', deviceHint);
+  }
 }

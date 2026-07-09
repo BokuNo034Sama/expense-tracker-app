@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useAppStore } from '../store';
-import { getFCMToken } from '../lib/firebase';
+import { getFCMToken, saveTokenToSupabase } from '../lib/firebase';
 
 export function usePWA() {
   const setPWAUpdate = useAppStore(s => s.setPWAUpdate);
   const setPWAInstalled = useAppStore(s => s.setPWAInstalled);
-  const updateProfile = useAppStore(s => s.updateProfile);
+  // const updateProfile = useAppStore(s => s.updateProfile);
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -38,8 +38,14 @@ export function usePWA() {
       // Fetch and sync FCM token
       const fcmToken = await getFCMToken();
       if (fcmToken) {
-        await updateProfile({ push_subscription: { type: 'fcm', token: fcmToken } });
-        console.log('[KINY] FCM Token successfully synced to user profile.');
+        const { supabase } = await import('../lib/supabaseClient');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // DEPRECATED — single device only, kept for rollback
+          // await updateProfile({ push_subscription: { type: 'fcm', token: fcmToken } });
+          await saveTokenToSupabase(user.id, fcmToken);
+          console.log('[KINY] FCM Token successfully synced to push_subscriptions.');
+        }
       }
     } catch (err) {
       console.error('[KINY] registerPushNotifications failed:', err);
