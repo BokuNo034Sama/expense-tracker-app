@@ -24,6 +24,9 @@ export interface Database {
           created_at: string
            updated_at: string
           is_premium: boolean | null
+          premium_expires_at: string | null
+          premium_plan: string | null
+          notification_style: string | null
           has_supported_creator: boolean | null
           financial_streak: number | null
           last_logged_date: string | null
@@ -51,6 +54,9 @@ export interface Database {
           created_at?: string
           updated_at?: string
           is_premium?: boolean | null
+          premium_expires_at?: string | null
+          premium_plan?: string | null
+          notification_style?: string | null
           has_supported_creator?: boolean | null
           financial_streak?: number | null
           last_logged_date?: string | null
@@ -78,6 +84,9 @@ export interface Database {
           created_at?: string
           updated_at?: string
           is_premium?: boolean | null
+          premium_expires_at?: string | null
+          premium_plan?: string | null
+          notification_style?: string | null
           has_supported_creator?: boolean | null
           financial_streak?: number | null
           last_logged_date?: string | null
@@ -306,6 +315,51 @@ export interface Database {
           device_hint?: string | null
           last_seen?: string | null
           created_at?: string
+        }
+        Relationships: []
+      }
+      squads: {
+        Row: {
+          id: string
+          name: string
+          invite_code: string
+          created_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          invite_code?: string
+          created_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          invite_code?: string
+          created_by?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      squad_members: {
+        Row: {
+          id: string
+          squad_id: string
+          user_id: string
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          squad_id: string
+          user_id: string
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          squad_id?: string
+          user_id?: string
+          joined_at?: string
         }
         Relationships: []
       }

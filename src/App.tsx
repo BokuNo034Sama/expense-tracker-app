@@ -46,6 +46,21 @@ export default function App() {
     };
   }, [initAuth, setDeferredPrompt, refreshSession]);
 
+  const joinSquad = useAppStore(s => s.joinSquad);
+  const appState = useAppStore(s => s.appState);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const joinCode = params.get('join');
+    if (joinCode && authStatus === 'authenticated' && appState === 'READY') {
+      joinSquad(joinCode)
+        .then(() => {
+          window.history.replaceState({}, '', window.location.pathname);
+        })
+        .catch(err => console.warn('[KINY] Auto-join failed:', err.message));
+    }
+  }, [authStatus, appState, joinSquad]);
+
   if (authStatus === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)] text-[var(--color-ink)]">

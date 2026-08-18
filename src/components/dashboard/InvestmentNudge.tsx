@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useAppStore } from '../../store';
 import { BentoCard } from '../shared/BentoCard';
 import type { InvestmentType } from '../../store/types';
+import { useWealthConsistency } from '../../hooks/useWealthConsistency';
+import { InvestmentProductCards } from './InvestmentProductCards';
 
 export function InvestmentNudge() {
   const profile = useAppStore(s => s.profile);
@@ -9,6 +11,7 @@ export function InvestmentNudge() {
   const expenses = useAppStore(s => s.expenses);
   const incomes = useAppStore(s => s.incomes);
   const isDataMasked = useAppStore(s => s.isDataMasked);
+  const { isConsistent } = useWealthConsistency();
 
   const [clickedType, setClickedType] = useState<InvestmentType | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,41 +49,49 @@ export function InvestmentNudge() {
           ✓ INTEREST_LOGGED — Thank you! A counselor will review your preference for {clickedType}.
         </div>
       ) : (
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h4 
-              style={{ fontFamily: 'var(--font-display)' }}
-              className="text-xs font-bold bg-[var(--color-brand-primary)] text-[#000000] border border-[var(--color-border)] px-2 py-0.5 rounded-full inline-block uppercase mb-1.5"
-            >
-              ★ WEALTH_BUILDER_INTELLIGENCE
-            </h4>
-            <h3 
-              style={{ fontFamily: 'var(--font-display)' }}
-              className="text-sm font-extrabold uppercase text-[var(--color-ink)]"
-            >
-              Put your savings of {isDataMasked ? '••••••' : `₦${wealthBalance.toLocaleString()}`} to work!
-            </h3>
-            <p 
-              style={{ fontFamily: 'var(--font-mono)' }}
-              className="text-[10px] text-[var(--color-ink-muted)] uppercase"
-            >
-              We detected net savings in your portfolio. Select a growth interest stream:
-            </p>
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h4 
+                style={{ fontFamily: 'var(--font-display)' }}
+                className="text-xs font-bold bg-[var(--color-brand-primary)] text-[#000000] border border-[var(--color-border)] px-2 py-0.5 rounded-full inline-block uppercase mb-1.5"
+              >
+                ★ WEALTH_BUILDER_INTELLIGENCE
+              </h4>
+              <h3 
+                style={{ fontFamily: 'var(--font-display)' }}
+                className="text-sm font-extrabold uppercase text-[var(--color-ink)] dark:text-white"
+              >
+                Put your savings of {isDataMasked ? '••••••' : `₦${wealthBalance.toLocaleString()}`} to work!
+              </h3>
+              <p 
+                style={{ fontFamily: 'var(--font-mono)' }}
+                className="text-[10px] text-[var(--color-ink-muted)] dark:text-zinc-400 uppercase"
+              >
+                We detected net savings in your portfolio. Select a growth interest stream:
+              </p>
+            </div>
+
+            <div className="flex gap-2 flex-wrap shrink-0">
+              {(['Stocks', 'Mutual Funds', 'ETFs'] as InvestmentType[]).map((type) => (
+                <button
+                  key={type}
+                  disabled={loading}
+                  onClick={() => handleInterestClick(type)}
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-brand-primary)] hover:text-[#000000] text-[var(--color-text-main)] border-2 border-[var(--color-border)] rounded-[var(--border-radius)] text-[10px] font-bold shadow-[var(--shadow-btn)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-[var(--shadow-btn-active)] uppercase transition-all duration-100 disabled:opacity-50 cursor-pointer"
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex gap-2 flex-wrap shrink-0">
-            {(['Stocks', 'Mutual Funds', 'ETFs'] as InvestmentType[]).map((type) => (
-              <button
-                key={type}
-                disabled={loading}
-                onClick={() => handleInterestClick(type)}
-                style={{ fontFamily: 'var(--font-mono)' }}
-                className="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-brand-primary)] hover:text-[#000000] text-[var(--color-text-main)] border-2 border-[var(--color-border)] rounded-[var(--border-radius)] text-[10px] font-bold shadow-[var(--shadow-btn)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-[var(--shadow-btn-active)] uppercase transition-all duration-100 disabled:opacity-50"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
+          {isConsistent && (
+            <div className="mt-4 border-t-2 border-[var(--color-ink)] dark:border-white pt-4">
+              <InvestmentProductCards />
+            </div>
+          )}
         </div>
       )}
     </BentoCard>

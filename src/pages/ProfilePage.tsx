@@ -502,6 +502,41 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
+
+          {/* Notification Style Picker */}
+          <div className="space-y-2 pt-2 border-t border-dashed border-[var(--color-ink)] dark:border-white">
+            <label style={{ fontFamily: 'var(--font-mono)' }}
+                   className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink)] dark:text-white">
+              NOTIFICATION_STYLE
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { value: 'aggressive',   label: 'AGGRESSIVE',   desc: 'Pidgin slang, high urgency' },
+                { value: 'motivational', label: 'MOTIVATIONAL',  desc: 'Encouraging, positive tone' },
+                { value: 'silent',       label: 'SILENT_MODE',   desc: 'No daily reminders' },
+              ].map(s => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => updateProfile({ notification_style: s.value as any })}
+                  className={`text-left p-3 border-2 border-[var(--color-ink)] dark:border-white rounded-[var(--border-radius)] transition-all cursor-pointer ${
+                    (profile?.notification_style ?? 'aggressive') === s.value
+                      ? 'bg-[#CCFF00] text-black font-bold shadow-[2px_2px_0px_0px_#000]'
+                      : 'bg-[var(--color-surface)] dark:bg-zinc-800 text-[var(--color-ink)] dark:text-white'
+                  }`}
+                >
+                  <p style={{ fontFamily: 'var(--font-mono)' }}
+                     className="text-[10px] font-bold uppercase">
+                    {s.label}
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-mono)' }}
+                     className="text-[9px] opacity-80 mt-0.5">
+                    {s.desc}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </BentoCard>
 

@@ -376,6 +376,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
               get().fetchExpenses(),
               get().fetchIncomes(),
               get().fetchMonthlySnapshots(),
+              get().fetchSquads(),
             ]);
             recalculateWealthMetrics(set, get, true);
             set({ appState: 'READY' });
@@ -410,6 +411,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             get().fetchExpenses(),
             get().fetchIncomes(),
             get().fetchMonthlySnapshots(),
+            get().fetchSquads(),
           ]);
           recalculateWealthMetrics(set, get, true);
           set({ appState: 'READY' });
@@ -443,6 +445,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
               get().fetchExpenses(),
               get().fetchIncomes(),
               get().fetchMonthlySnapshots(),
+              get().fetchSquads(),
             ]);
             recalculateWealthMetrics(set, get, true);
             set({ appState: 'READY' });
@@ -1284,6 +1287,90 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       get().fetchIncomes(),
     ]);
     recalculateWealthMetrics(set, get, true);
+  },
+
+  // ── Financial Squads ───────────────────────────────────────────────────────
+  squads: [],
+
+  fetchSquads: async () => {
+    try {
+      const uid = await getUID();
+      const { data: memberRows } = await supabase
+        .from('squad_members')
+        .select('squad_id')
+        .eq('user_id', uid);
+
+      if (!memberRows || memberRows.length === 0) {
+        set({ squads: [] });
+        return;
+      }
+
+      const squadIds = memberRows.map(r => r.squad_id);
+      const { data, error } = await supabase
+        .from('squads')
+        .select('*')
+        .in('id', squadIds);
+
+      if (!error) set({ squads: data ?? [] });
+    } catch (e) {
+      console.error('[KINY] fetchSquads failed:', e);
+    }
+  },
+
+  createSquad: async (name: string) => {
+    const uid = await getUID();
+
+    const { data: squad, error: createError } = await supabase
+      .from('squads')
+      .insert({ name: name.trim(), created_by: uid })
+      .select()
+      .single();
+
+    if (createError || !squad) throw new Error(createError?.message || 'Failed to create squad.');
+
+    await supabase
+      .from('squad_members')
+      .insert({ squad_id: squad.id, user_id: uid });
+
+    await get().fetchSquads();
+    return squad;
+  },
+
+  joinSquad: async (inviteCode: string) => {
+    const uid = await getUID();
+
+    const { data: squad, error: findError } = await supabase
+      .from('squads')
+      .select('id')
+      .eq('invite_code', inviteCode.trim().toLowerCase())
+      .single();
+
+    if (findError || !squad) {
+      throw new Error('Squad not found. Check the invite code and try again.');
+    }
+
+    const { error: joinError } = await supabase
+      .from('squad_members')
+      .insert({ squad_id: squad.id, user_id: uid });
+
+    if (joinError) {
+      if (joinError.code === '23505') throw new Error('You are already in this squad.');
+      throw new Error(joinError.message);
+    }
+
+    await get().fetchSquads();
+  },
+
+  leaveSquad: async (squadId: string) => {
+    const uid = await getUID();
+    const { error } = await supabase
+      .from('squad_members')
+      .delete()
+      .eq('squad_id', squadId)
+      .eq('user_id', uid);
+
+    if (error) throw new Error(error.message);
+    set(s => ({ squads: s.squads.filter(sq => sq.id !== squadId) }));
   },
 }));
 

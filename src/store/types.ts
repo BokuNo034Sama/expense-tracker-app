@@ -45,6 +45,9 @@ export interface ProfileRow {
   created_at:                string;
   updated_at:                string;
   is_premium?:               boolean;
+  premium_expires_at?:       string | null;
+  premium_plan?:             'monthly' | 'annual' | null;
+  notification_style?:       'aggressive' | 'motivational' | 'silent';
   has_supported_creator?:    boolean;
   current_streak?:           number;
   last_active_date?:         string;
@@ -59,6 +62,25 @@ export interface ProfileRow {
   anchor_day?:               number | null;
   fluid_window_days?:        number | null;
   last_reset_date?:          string | null;
+}
+
+export interface Squad {
+  id:          string;
+  name:        string;
+  invite_code: string;
+  created_by:  string;
+  created_at:  string;
+}
+
+export interface SquadMember {
+  id:        string;
+  squad_id:  string;
+  user_id:   string;
+  joined_at: string;
+  name?:            string;
+  avatar_initials?: string;
+  current_streak?:  number;
+  last_logged_date?: string;
 }
 
 export interface CategoryRow {
@@ -310,4 +332,11 @@ export interface AppStore {
   deleteBudgetSlice: (id: string) => Promise<void>;
   upsertBudgetSlices: (slices: BudgetSliceRow[]) => Promise<void>;
   seedDefaultBudgetSlices: (occupation: string) => Promise<void>;
+
+  // ── Financial Squads ───────────────────────────────────────────────────────
+  squads:       Squad[];
+  fetchSquads:  () => Promise<void>;
+  createSquad:  (name: string) => Promise<Squad>;
+  joinSquad:    (inviteCode: string) => Promise<void>;
+  leaveSquad:   (squadId: string) => Promise<void>;
 }

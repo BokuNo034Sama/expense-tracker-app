@@ -14,6 +14,9 @@ import { MonthlyWrap } from "@/components/dashboard/MonthlyWrap";
 import { KinyWrapExport } from "@/components/dashboard/KinyWrapExport";
 import { Eye, EyeOff } from "lucide-react";
 import { SyncIndicator } from "@/components/shared/SyncIndicator";
+import { SquadPanel } from "@/components/squads/SquadPanel";
+import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
+import { BurnRateWarningCard } from "@/components/dashboard/BurnRateWarningCard";
 
 export default function Dashboard() {
   const profile = useAppStore(s => s.profile);
@@ -532,6 +535,17 @@ export default function Dashboard() {
         </motion.div>
         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-2">
           <SpendingRadar />
+        </motion.div>
+
+        {/* Row 5: Growth & Monetisation Tools */}
+        <motion.div variants={itemVariants} className="md:col-span-1 lg:col-span-1">
+          <SquadPanel />
+        </motion.div>
+        <motion.div variants={itemVariants} className="md:col-span-1 lg:col-span-1">
+          <WhatIfSimulator />
+        </motion.div>
+        <motion.div variants={itemVariants} className="md:col-span-1 lg:col-span-1">
+          <BurnRateWarningCard />
         </motion.div>
       </motion.div>
       <KinyWrapExport />
