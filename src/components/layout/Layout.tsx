@@ -60,7 +60,7 @@ export function Layout({ children }: LayoutProps) {
       <Sidebar />
       
       {/* Main page content container */}
-      <main className="pl-0 md:pl-[72px] pb-24 md:pb-8 mx-auto max-w-6xl py-8 space-y-6">
+      <main className="pl-0 md:pl-[72px] pb-20 md:pb-0 mx-auto max-w-6xl py-8 space-y-6">
         {/* Main Content Viewport Header */}
         {!isDashboard && (
           <div className="flex justify-between items-center border-b border-[var(--color-ink)] border-opacity-10 pb-4 gap-2 flex-wrap">

@@ -176,7 +176,7 @@ export default function ProfilePage() {
 
 
   return (
-    <div className="space-y-6 w-full py-6 text-black dark:text-white">
+    <div className="min-h-screen bg-[var(--color-bg)] pb-24 md:pb-8 space-y-6 w-full py-6 text-black dark:text-white">
       {/* Profile Details Card */}
       <BentoCard hoverEffect={false} className="space-y-6 dark:bg-[#1A1A1A] border-2 border-black dark:border-white">
         <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 border-b-2 border-dashed border-[var(--color-ink)] pb-2 mb-4">

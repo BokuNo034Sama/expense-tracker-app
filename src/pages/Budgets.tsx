@@ -131,11 +131,11 @@ export default function Budgets() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full py-2 px-1 text-black dark:text-white"
+      className="min-h-screen bg-[var(--color-bg)] pb-24 md:pb-8 px-1 text-black dark:text-white"
     >
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
 
-      <div className="w-full flex flex-col h-[calc(100vh-180px)] md:h-[calc(100vh-120px)] relative">
+      <div className="w-full flex flex-col relative">
         
         {/* A. The Anchored Control Cockpit (Sticky Top Container) */}
         <div className="bg-[var(--color-bg)] dark:bg-zinc-900 pb-4 space-y-4 select-none shrink-0 border-b-2 border-black dark:border-white">
@@ -201,8 +201,8 @@ export default function Budgets() {
           </div>
         </div>
 
-        {/* B. The Fluid Scroll Trench (Scrollable Content Container) */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-6 bg-transparent">
+        {/* B. Content Container */}
+        <div className="py-4 space-y-6 bg-transparent">
           
           {/* Trends Summary Panel */}
           <SliceBreakdownPanel isOpen={showTrends} />

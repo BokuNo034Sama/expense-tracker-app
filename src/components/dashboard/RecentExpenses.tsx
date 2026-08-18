@@ -5,8 +5,10 @@ export function RecentExpenses() {
   const expenses = useAppStore(s => s.expenses);
   const categories = useAppStore(s => s.categories);
 
-  // Get all expenses to let container scroll
-  const recent = expenses;
+  // Limit to 6 most recent for the dashboard tile
+  const recentExpenses = [...expenses]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 6);
 
   return (
     <div className="w-full space-y-4">
@@ -17,7 +19,7 @@ export function RecentExpenses() {
         RECENT_LOGS
       </h3>
 
-      {recent.length === 0 ? (
+      {recentExpenses.length === 0 ? (
         <div 
           style={{ fontFamily: 'var(--font-mono)' }}
           className="text-xs text-[var(--color-ink-muted)] py-8 text-center uppercase border-2 border-[var(--color-ink)] rounded-none bg-[var(--color-surface)]"
@@ -25,11 +27,8 @@ export function RecentExpenses() {
           No expenses recorded yet.
         </div>
       ) : (
-        <div 
-          className="border-2 border-[var(--color-ink)] bg-[var(--color-surface)] p-4 rounded-none overflow-y-auto space-y-1"
-          style={{ maxHeight: 'calc(100vh - 280px)' }}
-        >
-          {recent.map(exp => (
+        <div className="border-2 border-[var(--color-ink)] bg-[var(--color-surface)] p-4 rounded-none space-y-1">
+          {recentExpenses.map(exp => (
             <RecentExpenseCard
               key={exp.id}
               expense={exp}
@@ -41,3 +40,4 @@ export function RecentExpenses() {
     </div>
   );
 }
+

@@ -72,11 +72,11 @@ export default function Expenses() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full py-2 px-1 text-black dark:text-white"
+      className="min-h-screen bg-[var(--color-bg)] pb-24 md:pb-8 px-1 text-black dark:text-white"
     >
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
 
-      <div className="w-full flex flex-col h-[calc(100vh-180px)] md:h-[calc(100vh-120px)] relative">
+      <div className="w-full flex flex-col relative">
         
         {/* 1. FIXED COCKPIT (Top 30%) */}
         <div className="bg-[var(--color-bg)] dark:bg-zinc-900 pb-3 space-y-3 select-none shrink-0 border-b-2 border-black dark:border-white">
@@ -148,8 +148,8 @@ export default function Expenses() {
           <span className="w-1/4 text-right">AMOUNT</span>
         </div>
 
-        {/* 2. FLUID SCROLL TRENCH (Bottom 70%) */}
-        <div className="flex-1 overflow-y-auto py-3 space-y-4 bg-transparent">
+        {/* 2. Content Container */}
+        <div className="py-3 space-y-4 bg-transparent">
           {/* Transaction Item Rows list */}
           <div className="border-2 border-black dark:border-white bg-white dark:bg-zinc-800 p-2 rounded-none space-y-1">
             {filteredExpenses.length === 0 ? (
