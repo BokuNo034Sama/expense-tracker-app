@@ -1,6 +1,6 @@
 // src/hooks/useSliceSummary.ts
 import { useMemo } from 'react';
-import { useAppStore } from '../store';
+import { useBudgetSummary } from './useBudgetSummary';
 
 export interface SliceMetric {
   totalLimit: number;
@@ -9,36 +9,19 @@ export interface SliceMetric {
 }
 
 export function useSliceSummary() {
-  const categories = useAppStore(s => s.categories);
-  const expenses   = useAppStore(s => s.expenses);
+  const { sliceMetrics } = useBudgetSummary();
 
   return useMemo(() => {
-    const safeCats = categories ?? [];
-    const safeExps = expenses ?? [];
+    const summary: Record<string, SliceMetric> = {};
 
-    const summary = safeCats.reduce((acc, cat) => {
-      const slice = cat.slice;
-      if (!acc[slice]) acc[slice] = { totalLimit: 0, totalSpent: 0, progressPct: 0 };
-      acc[slice].totalLimit += (Number(cat.budget_limit) || 0);
-      return acc;
-    }, {} as Record<string, SliceMetric>);
-
-    safeExps.forEach(exp => {
-      if (!exp?.category_id) return;
-      const cat = safeCats.find(c => c.id === exp.category_id);
-      if (cat?.slice && summary[cat.slice]) {
-        summary[cat.slice].totalSpent += (Number(exp.amount) || 0);
-      }
-    });
-
-    // Compute progress percentages
-    Object.keys(summary).forEach(slice => {
-      const { totalLimit, totalSpent } = summary[slice];
-      summary[slice].progressPct = totalLimit > 0
-        ? Math.min((totalSpent / totalLimit) * 100, 100)
-        : 0;
+    sliceMetrics.forEach(sm => {
+      summary[sm.slice] = {
+        totalLimit:  sm.totalLimit,
+        totalSpent:  sm.totalSpent,
+        progressPct: sm.progressPct,
+      };
     });
 
     return summary;
-  }, [categories, expenses]);
+  }, [sliceMetrics]);
 }

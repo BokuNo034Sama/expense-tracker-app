@@ -7,6 +7,8 @@ import { CategoryForm } from "@/components/budgets/CategoryForm";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import type { Category, Slice } from "@/store/types";
 
+import { useBudgetSummary } from "@/hooks/useBudgetSummary";
+
 const customStyles = `
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -42,6 +44,8 @@ export default function Budgets() {
   const appState   = useAppStore(s => s.appState);
   const loading    = useAppStore(s => s.loading);
 
+  const { categoryMetrics } = useBudgetSummary();
+
   // Confirm loading gate exists
   if (appState === 'LOADING' || loading.categories || loading.expenses) {
     return (
@@ -56,22 +60,10 @@ export default function Budgets() {
   }
 
   const categories = useAppStore(s => s.categories);
-  const expenses   = useAppStore(s => s.expenses);
-
-  // Calculate actual spending per category ID this month
-  const now = new Date();
-  const thisMonthExpenses = expenses.filter(e => {
-    if (!e?.date) return false;
-    const d = new Date(e.date);
-    return d.getMonth() === now.getMonth() && 
-           d.getFullYear() === now.getFullYear();
-  });
 
   const spentByCategory: Record<string, number> = {};
-  thisMonthExpenses.forEach(exp => {
-    if (!exp?.category_id) return;
-    spentByCategory[exp.category_id] = 
-      (spentByCategory[exp.category_id] || 0) + (Number(exp.amount) || 0);
+  categoryMetrics.forEach(cm => {
+    spentByCategory[cm.id] = cm.spent;
   });
 
   const budgetSlices = Array.isArray(budgetSlicesStore) ? budgetSlicesStore.filter(b => b && typeof b === 'object') : [];

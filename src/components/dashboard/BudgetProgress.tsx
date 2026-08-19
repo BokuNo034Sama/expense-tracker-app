@@ -1,28 +1,11 @@
-import { useAppStore, getCycleBoundaries } from '../../store';
+import { useBudgetSummary } from '../../hooks/useBudgetSummary';
 import { BudgetProgressBar } from './BudgetProgressBar';
 
 export function BudgetProgress() {
-  const categories = useAppStore(s => Array.isArray(s.categories) ? s.categories : []);
-  const expenses = useAppStore(s => Array.isArray(s.expenses) ? s.expenses : []);
-
-  const profile = useAppStore(s => s.profile);
-  const currentCycle = getCycleBoundaries(profile);
-  const monthlyExpenses = expenses.filter(e => {
-    if (!e || !e.date || typeof e.date !== 'string') return false;
-    const d = new Date(e.date);
-    return d >= currentCycle.startDate && d <= currentCycle.endDate;
-  });
-
-  // Compute spend per category
-  const categorySpends: { [id: string]: number } = {};
-  monthlyExpenses.forEach(e => {
-    if (e && e.category_id) {
-      categorySpends[e.category_id] = (categorySpends[e.category_id] || 0) + Number(e.amount || 0);
-    }
-  });
+  const { categoryMetrics } = useBudgetSummary();
 
   // Only categories that have a budget limit configured (> 0)
-  const budgetedCategories = categories.filter(c => c && Number(c.budget_limit || 0) > 0);
+  const budgetedCategories = categoryMetrics.filter(c => c.limit > 0);
 
   return (
     <div className="w-full space-y-4">
@@ -43,10 +26,6 @@ export function BudgetProgress() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 w-full md:max-h-[360px] md:overflow-y-auto md:pr-1">
           {budgetedCategories.map(cat => {
-            const spent = categorySpends[cat.id] || 0;
-            const limit = Number(cat.budget_limit);
-            const percentage = Math.min((spent / limit) * 100, 100);
-
             return (
               <div 
                 key={cat.id} 
@@ -54,9 +33,9 @@ export function BudgetProgress() {
               >
                 <BudgetProgressBar
                   label={cat.name}
-                  spent={spent}
-                  limit={limit}
-                  progressPct={percentage}
+                  spent={cat.spent}
+                  limit={cat.limit}
+                  progressPct={cat.progressPct}
                 />
               </div>
             );

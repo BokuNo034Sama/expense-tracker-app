@@ -39,6 +39,8 @@ export interface Database {
           current_streak: number | null
           max_streak_this_month: number | null
           last_tracked_date: string | null
+          tip_dismissed_permanently?: boolean
+          tip_last_shown_at?: string | null
         }
         Insert: {
           id: string
@@ -69,6 +71,8 @@ export interface Database {
           current_streak?: number | null
           max_streak_this_month?: number | null
           last_tracked_date?: string | null
+          tip_dismissed_permanently?: boolean | null
+          tip_last_shown_at?: string | null
         }
         Update: {
           id?: string
@@ -99,6 +103,8 @@ export interface Database {
           current_streak?: number | null
           max_streak_this_month?: number | null
           last_tracked_date?: string | null
+          tip_dismissed_permanently?: boolean | null
+          tip_last_shown_at?: string | null
         }
         Relationships: []
       }

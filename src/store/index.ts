@@ -305,10 +305,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         has_supported_creator: true,
         current_streak: 1,
         max_streak_this_month: 1,
-        last_tracked_date: new Date().toISOString().split('T')[0],
+        last_tracked_date: getLocalDateString(),
         last_active_date: new Date().toISOString(),
         financial_streak: 1,
-        last_logged_date: new Date().toISOString().split('T')[0],
+        last_logged_date: getLocalDateString(),
         enabled_slices: ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
       };
       set({

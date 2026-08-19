@@ -3,6 +3,7 @@ import { useAppStore, useCurrentStreak } from "@/store/useAppStore";
 import { WealthCard } from "@/components/dashboard/WealthCard";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { RecentExpenses } from "@/components/dashboard/RecentExpenses";
+import { DeveloperTipCard } from "@/components/dashboard/DeveloperTipCard";
 import { InvestmentNudge } from "@/components/dashboard/InvestmentNudge";
 import { KinyWrapExport } from "@/components/dashboard/KinyWrapExport";
 import { SyncIndicator } from "@/components/shared/SyncIndicator";
@@ -138,6 +139,7 @@ export default function Dashboard() {
 
         {/* 8. Recent Expenses with navigation link */}
         <RecentExpenses />
+        <DeveloperTipCard />
         <button
           onClick={() => navigate('/expenses')}
           style={{ fontFamily: 'var(--font-mono)' }}

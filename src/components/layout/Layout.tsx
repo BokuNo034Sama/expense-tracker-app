@@ -5,7 +5,6 @@ import { BottomTabBar } from './BottomTabBar';
 import { OfflineBanner } from '../pwa/OfflineBanner';
 import { UpdatePrompt } from '../pwa/UpdatePrompt';
 import { PWAInstallPrompt } from '../PWAInstallPrompt';
-import { CreatorAppreciationBanner } from '../dashboard/CreatorAppreciationBanner';
 import { SyncIndicator } from '../shared/SyncIndicator';
 import { useAppStore, useCurrentStreak } from '../../store';
  
@@ -82,7 +81,6 @@ export function Layout({ children }: LayoutProps) {
         )}
 
         <OfflineBanner />
-        <CreatorAppreciationBanner />
         {children}
         <UpdatePrompt />
         <PWAInstallPrompt />

@@ -62,6 +62,8 @@ export interface ProfileRow {
   anchor_day?:               number | null;
   fluid_window_days?:        number | null;
   last_reset_date?:          string | null;
+  tip_dismissed_permanently?: boolean;
+  tip_last_shown_at?:         string | null;
 }
 
 export interface Squad {
