@@ -29,7 +29,10 @@ export function WhatIfSimulator() {
   }, [amount, categoryId, categories, sliceSummary]);
 
   return (
-    <PremiumGate feature="What-If Simulator">
+    <PremiumGate
+      feature="What-If Simulator"
+      description="Test a spend before you commit to it"
+    >
       <div className="bg-[var(--color-surface)] dark:bg-zinc-800 border-2 border-[var(--color-ink)] dark:border-white rounded-[var(--border-radius)] p-4">
         <p
           style={{ fontFamily: 'var(--font-mono)' }}

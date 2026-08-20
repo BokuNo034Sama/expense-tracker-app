@@ -9,6 +9,8 @@ import Expenses from "./pages/Expenses";
 import Budgets from "./pages/Budgets";
 import ProfilePage from "./pages/ProfilePage";
 import { ExpenseForm } from "./components/expenses/ExpenseForm";
+import { UpgradeDrawerProvider } from './components/premium/UpgradeDrawerContext';
+import { UpgradeDrawer } from './components/premium/UpgradeDrawer';
 
 export default function App() {
   const initAuth = useAppStore(s => s.initAuth);
@@ -75,18 +77,21 @@ export default function App() {
   }
 
   return (
-    <AuthGate>
-      <BrowserRouter>
-        <Layout onAddExpense={() => setIsAddExpenseOpen(true)}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/budgets" element={<Budgets />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
-          <ExpenseForm open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen} />
-        </Layout>
-      </BrowserRouter>
-    </AuthGate>
+    <UpgradeDrawerProvider>
+      <UpgradeDrawer />
+      <AuthGate>
+        <BrowserRouter>
+          <Layout onAddExpense={() => setIsAddExpenseOpen(true)}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/budgets" element={<Budgets />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Routes>
+            <ExpenseForm open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen} />
+          </Layout>
+        </BrowserRouter>
+      </AuthGate>
+    </UpgradeDrawerProvider>
   );
 }

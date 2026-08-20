@@ -6,7 +6,10 @@ export function BurnRateWarningCard() {
   const atRiskSlices = useBurnRate();
 
   return (
-    <PremiumGate feature="Burn Rate Warning">
+    <PremiumGate
+      feature="Burn Rate Warning"
+      description="See when your budget will hit zero before payday"
+    >
       <div className="bg-[var(--color-surface)] dark:bg-zinc-800 border-2 border-[var(--color-ink)] dark:border-white rounded-[var(--border-radius)] p-4">
         <div className="flex items-center gap-2 mb-3">
           <AlertTriangle size={14} className="text-amber-500" />
