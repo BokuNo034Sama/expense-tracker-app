@@ -7,7 +7,7 @@ import { DeveloperTipCard } from "@/components/dashboard/DeveloperTipCard";
 import { InvestmentNudge } from "@/components/dashboard/InvestmentNudge";
 import { KinyWrapExport } from "@/components/dashboard/KinyWrapExport";
 import { SyncIndicator } from "@/components/shared/SyncIndicator";
-import { SquadPanel } from "@/components/squads/SquadPanel";
+import { SquadHomeTile } from "@/components/squads/SquadHomeTile";
 import { WhatIfSimulator } from "@/components/dashboard/WhatIfSimulator";
 import { BurnRateWarningCard } from "@/components/dashboard/BurnRateWarningCard";
 
@@ -124,8 +124,8 @@ export default function Dashboard() {
         {/* 4. Investment Nudge (conditional) */}
         <InvestmentNudge />
 
-        {/* 5. Squad Tile (if user is in a squad) */}
-        <SquadPanel />
+        {/* 5. Squad Tile (read-only) */}
+        <SquadHomeTile />
 
         {/* 6. Wealth Card */}
         <WealthCard />

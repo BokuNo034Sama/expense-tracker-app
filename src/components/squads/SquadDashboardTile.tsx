@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Copy, Check, LogOut } from 'lucide-react';
+import { Users, Copy, Check } from 'lucide-react';
 import { useAppStore } from '../../store';
 
 interface SquadMemberDisplay {
@@ -15,11 +15,10 @@ interface SquadDashboardTileProps {
   squadId:    string;
   squadName:  string;
   inviteCode: string;
-  onLeave:    () => void;
 }
 
 export function SquadDashboardTile({
-  squadId, squadName, inviteCode, onLeave
+  squadId, squadName, inviteCode
 }: SquadDashboardTileProps) {
   const session     = useAppStore(s => s.auth.session);
   const [members,   setMembers]   = useState<SquadMemberDisplay[]>([]);
@@ -78,13 +77,6 @@ export function SquadDashboardTile({
           >
             {copied ? <Check size={10} /> : <Copy size={10} />}
             {copied ? 'COPIED' : inviteCode.toUpperCase()}
-          </button>
-          <button
-            onClick={onLeave}
-            className="p-1 text-[var(--color-ink-muted)] hover:text-red-500 transition-colors cursor-pointer"
-            title="Leave squad"
-          >
-            <LogOut size={12} />
           </button>
         </div>
       </div>

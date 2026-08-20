@@ -6,12 +6,15 @@ import { BentoCard } from '../components/shared/BentoCard';
 import { IncomeList } from '../components/income/IncomeList';
 import { LogOut } from 'lucide-react';
 import { SliceManager } from '../components/profile/SliceManager';
+import { SquadPanel } from '../components/squads/SquadPanel';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const profile = useAppStore(s => s.profile);
   const updateProfile = useAppStore(s => s.updateProfile);
   const signOut = useAppStore(s => s.signOut);
+  const squads = useAppStore(s => s.squads);
+  const leaveSquad = useAppStore(s => s.leaveSquad);
   const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
   const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
 
@@ -535,6 +538,48 @@ export default function ProfilePage() {
                   </p>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* ── SQUADS section ── */}
+          <div className="space-y-3 pt-2">
+            <div className="border-t-2 border-[var(--color-ink)]/10 dark:border-white/10 pt-4">
+              <p
+                style={{ fontFamily: 'var(--font-mono)' }}
+                className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink)] dark:text-white mb-3"
+              >
+                ACCOUNTABILITY_SQUADS
+              </p>
+
+              {/* Existing squads list */}
+              {squads.map(sq => (
+                <div
+                  key={sq.id}
+                  className="flex items-center justify-between py-2 border-b border-[var(--color-ink)]/10 dark:border-white/10 last:border-0"
+                >
+                  <div>
+                    <p style={{ fontFamily: 'var(--font-mono)' }}
+                       className="text-xs font-bold uppercase text-[var(--color-ink)] dark:text-white">
+                      {sq.name}
+                    </p>
+                    <p style={{ fontFamily: 'var(--font-mono)' }}
+                       className="text-[9px] text-[var(--color-ink-muted)] dark:text-zinc-400 uppercase mt-0.5">
+                      Code: {sq.invite_code.toUpperCase()}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => leaveSquad(sq.id)}
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                    className="text-[9px] font-bold uppercase text-[var(--color-danger)] border border-[var(--color-danger)] px-2 py-1 rounded hover:bg-[var(--color-danger)]/10 transition-colors cursor-pointer"
+                  >
+                    LEAVE
+                  </button>
+                </div>
+              ))}
+
+              {/* Full SquadPanel create/join form */}
+              <SquadPanel />
             </div>
           </div>
         </div>
