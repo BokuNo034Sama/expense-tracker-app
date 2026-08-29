@@ -83,6 +83,18 @@ export interface SquadMember {
   avatar_initials?: string;
   current_streak?:  number;
   last_logged_date?: string;
+  shield_active?:   boolean;
+  all_buckets_locked?: boolean;
+}
+
+export interface SquadActivityLogItem {
+  id:              number;
+  squad_id:        string;
+  user_id:         string;
+  event_type:      'joined' | 'all_buckets_locked';
+  created_at:      string;
+  name?:           string;
+  avatar_initials?: string;
 }
 
 export interface CategoryRow {
@@ -339,8 +351,11 @@ export interface AppStore {
   squads:       Squad[];
   fetchSquads:  () => Promise<void>;
   createSquad:  (name: string) => Promise<Squad>;
-  joinSquad:    (inviteCode: string) => Promise<void>;
+  joinSquad:    (inviteCode: string) => Promise<Squad>;
   leaveSquad:   (squadId: string) => Promise<void>;
+  fetchSquadActivity: (squadId: string) => Promise<SquadActivityLogItem[]>;
+  removeSquadMember:  (squadId: string, userId: string) => Promise<void>;
+  deleteSquad:        (squadId: string) => Promise<void>;
 
   // ── Leaderboards ───────────────────────────────────────────────────────────
   fetchSquadLeaderboard: (squadId: string, week?: string) => Promise<SquadLeaderboardData>;
@@ -355,6 +370,7 @@ export interface LeaderboardMember {
   avatar_initials: string;
   current_streak?: number;
   shield_active?: boolean;
+  all_buckets_locked?: boolean;
   composite_score: number;
   logging_consistency: number;
   budget_adherence: number;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../../store';
+import { CheckCircle2 } from 'lucide-react';
 
 export function SquadPanel() {
   const createSquad = useAppStore(s => s.createSquad);
@@ -9,30 +10,54 @@ export function SquadPanel() {
   const [inviteInput,  setInviteInput]  = useState('');
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState<string | null>(null);
+  const [joinedSquadName, setJoinedSquadName] = useState<string | null>(null);
   const [tab,          setTab]          = useState<'create' | 'join'>('create');
 
   const handleCreate = async () => {
     if (!newSquadName.trim()) return;
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
       await createSquad(newSquadName);
       setNewSquadName('');
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleJoin = async () => {
     if (!inviteInput.trim()) return;
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      await joinSquad(inviteInput);
+      const joinedSquad = await joinSquad(inviteInput);
       setInviteInput('');
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
+      const squadName = joinedSquad?.name || 'SQUAD';
+      setJoinedSquadName(squadName);
+      setTimeout(() => setJoinedSquadName(null), 4000);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="bg-[var(--color-surface)] dark:bg-zinc-800 border-2 border-[var(--color-ink)] dark:border-white rounded-[var(--border-radius)] p-4">
+    <div className="bg-[var(--color-surface)] dark:bg-zinc-800 border-2 border-[var(--color-ink)] dark:border-white rounded-[var(--border-radius)] p-4 relative">
+      {/* Snackbar feedback on successful join */}
+      {joinedSquadName && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-3 p-2.5 bg-[#C6EF4E] text-black border-2 border-black rounded shadow-[2px_2px_0px_0px_#000] flex items-center gap-2 animate-bounce font-mono text-xs font-black uppercase"
+        >
+          <CheckCircle2 size={14} className="stroke-[3]" />
+          <span>// JOINED {joinedSquadName.toUpperCase()}</span>
+        </div>
+      )}
+
       <div className="flex gap-2 mb-4">
         {(['create', 'join'] as const).map(t => (
           <button
@@ -41,7 +66,7 @@ export function SquadPanel() {
             style={{ fontFamily: 'var(--font-mono)' }}
             className={`flex-1 py-2 text-[10px] font-bold uppercase border-2 border-[var(--color-ink)] dark:border-white rounded transition-all cursor-pointer ${
               tab === t
-                ? 'bg-[var(--color-ink)] dark:bg-white text-[#CCFF00] dark:text-black font-extrabold'
+                ? 'bg-[var(--color-ink)] dark:bg-white text-[#CCFF00] dark:text-black font-extrabold shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff]'
                 : 'bg-[var(--color-surface)] dark:bg-zinc-900 text-[var(--color-ink)] dark:text-white'
             }`}
           >
@@ -76,7 +101,7 @@ export function SquadPanel() {
             id="squad-join-desc"
             className="text-[12px] text-[var(--color-ink-muted)] dark:text-zinc-400 leading-normal"
           >
-            Squads allows you to track discipline, not money. See your crew&apos;s streaks and shields — nobody sees your balance or spend.Remember to save for for December Obleee!!
+            Squads allows you to track discipline, not money. See your crew&apos;s streaks and shields — nobody sees your balance or spend. Remember to save for December Obleee!!
           </p>
           <input
             id="squad-invite-input"
@@ -101,11 +126,14 @@ export function SquadPanel() {
       )}
 
       {error && (
-        <p style={{ fontFamily: 'var(--font-mono)' }}
-           className="text-[10px] text-red-500 font-bold mt-2 border-l-4 border-red-500 pl-2">
+        <p
+          style={{ fontFamily: 'var(--font-mono)' }}
+          className="text-[10px] text-red-500 font-bold mt-2 border-l-4 border-red-500 pl-2"
+        >
           ERROR: {error}
         </p>
       )}
     </div>
   );
 }
+

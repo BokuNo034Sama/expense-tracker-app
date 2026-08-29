@@ -1264,14 +1264,26 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       throw new Error('Please enter an invite code.');
     }
 
-    const { error } = await supabase
-      .rpc('join_squad_by_code', { p_invite_code: code });
+    const session = get().auth.session;
+    const token = session?.access_token;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-    if (error) {
-      throw new Error(error.message);
+    const res = await fetch(`${apiUrl}/api/squads/join`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ inviteCode: code }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to join squad.');
     }
 
     await get().fetchSquads();
+    return data.squad;
   },
 
   leaveSquad: async (squadId: string) => {
@@ -1286,12 +1298,71 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set(s => ({ squads: s.squads.filter(sq => sq.id !== squadId) }));
   },
 
+  fetchSquadActivity: async (squadId: string) => {
+    const session = get().auth.session;
+    const token = session?.access_token;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+    const res = await fetch(`${apiUrl}/api/squads/${squadId}/activity`, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch squad activity.');
+    }
+
+    const data = await res.json();
+    return data.activities || [];
+  },
+
+  removeSquadMember: async (squadId: string, targetUserId: string) => {
+    const session = get().auth.session;
+    const token = session?.access_token;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+    const res = await fetch(`${apiUrl}/api/squads/${squadId}/members/${targetUserId}`, {
+      method: 'DELETE',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to remove member.');
+    }
+  },
+
+  deleteSquad: async (squadId: string) => {
+    const session = get().auth.session;
+    const token = session?.access_token;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+    const res = await fetch(`${apiUrl}/api/squads/${squadId}`, {
+      method: 'DELETE',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to delete squad.');
+    }
+
+    set(s => ({ squads: s.squads.filter(sq => sq.id !== squadId) }));
+  },
+
   fetchSquadLeaderboard: async (squadId: string, week?: string): Promise<SquadLeaderboardData> => {
     const session = get().auth.session;
     const token = session?.access_token;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
     const url = week
-      ? `/api/leaderboard/squad/${squadId}?week=${encodeURIComponent(week)}`
-      : `/api/leaderboard/squad/${squadId}`;
+      ? `${apiUrl}/api/leaderboard/squad/${squadId}?week=${encodeURIComponent(week)}`
+      : `${apiUrl}/api/leaderboard/squad/${squadId}`;
 
     const res = await fetch(url, {
       headers: {

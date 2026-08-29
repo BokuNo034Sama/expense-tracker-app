@@ -1,6 +1,33 @@
--- Migration: Add join_squad_by_code RPC function (SECURITY DEFINER)
--- Allows authenticated users to safely join a squad via invite code and records an activity log event in the same transaction.
+-- Migration: Squad Activity Log & Updated Join RPC
+-- Table: public.squad_activity_log
 
+CREATE TABLE IF NOT EXISTS public.squad_activity_log (
+  id BIGSERIAL PRIMARY KEY,
+  squad_id UUID NOT NULL REFERENCES public.squads(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL CHECK (event_type IN ('joined', 'all_buckets_locked')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Index for querying recent activity per squad
+CREATE INDEX IF NOT EXISTS idx_squad_activity_log_squad 
+  ON public.squad_activity_log(squad_id, created_at DESC);
+
+-- Enable RLS
+ALTER TABLE public.squad_activity_log ENABLE ROW LEVEL SECURITY;
+
+-- Squadmate SELECT policy
+DROP POLICY IF EXISTS squad_activity_squadmate_select ON public.squad_activity_log;
+CREATE POLICY squad_activity_squadmate_select ON public.squad_activity_log
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.squad_members sm
+      WHERE sm.squad_id = squad_activity_log.squad_id
+        AND sm.user_id = auth.uid()
+    )
+  );
+
+-- Update join_squad_by_code RPC to insert activity log entry atomically
 CREATE OR REPLACE FUNCTION public.join_squad_by_code(p_invite_code text)
 RETURNS public.squads
 LANGUAGE plpgsql
@@ -57,6 +84,5 @@ BEGIN
 END;
 $$;
 
--- Revoke default public execution & grant strictly to authenticated users
 REVOKE EXECUTE ON FUNCTION public.join_squad_by_code(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.join_squad_by_code(text) TO authenticated;
