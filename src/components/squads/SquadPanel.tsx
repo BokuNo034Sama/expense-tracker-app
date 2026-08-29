@@ -76,7 +76,7 @@ export function SquadPanel() {
             id="squad-join-desc"
             className="text-[12px] text-[var(--color-ink-muted)] dark:text-zinc-400 leading-normal"
           >
-            Squads allows you to track discipline, not money. See your crew&apos;s streaks and shields — nobody sees your balance or spend.
+            Squads allows you to track discipline, not money. See your crew&apos;s streaks and shields — nobody sees your balance or spend.Remember to save for for December Obleee!!
           </p>
           <input
             id="squad-invite-input"
