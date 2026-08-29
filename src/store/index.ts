@@ -1337,25 +1337,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
   },
 
   joinSquad: async (inviteCode: string) => {
-    const uid = await getUID();
-
-    const { data: squad, error: findError } = await supabase
-      .from('squads')
-      .select('id')
-      .eq('invite_code', inviteCode.trim().toLowerCase())
-      .single();
-
-    if (findError || !squad) {
-      throw new Error('Squad not found. Check the invite code and try again.');
+    const code = inviteCode.trim().toLowerCase();
+    if (!code) {
+      throw new Error('Please enter an invite code.');
     }
 
-    const { error: joinError } = await supabase
-      .from('squad_members')
-      .insert({ squad_id: squad.id, user_id: uid });
+    const { error } = await supabase
+      .rpc('join_squad_by_code', { p_invite_code: code });
 
-    if (joinError) {
-      if (joinError.code === '23505') throw new Error('You are already in this squad.');
-      throw new Error(joinError.message);
+    if (error) {
+      throw new Error(error.message);
     }
 
     await get().fetchSquads();

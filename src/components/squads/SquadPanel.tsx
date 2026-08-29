@@ -72,7 +72,15 @@ export function SquadPanel() {
         </div>
       ) : (
         <div className="space-y-3">
+          <p
+            id="squad-join-desc"
+            className="text-[12px] text-[var(--color-ink-muted)] dark:text-zinc-400 leading-normal"
+          >
+            Squads allows you to track discipline, not money. See your crew&apos;s streaks and shields — nobody sees your balance or spend.
+          </p>
           <input
+            id="squad-invite-input"
+            aria-describedby="squad-join-desc"
             type="text"
             placeholder="Enter 8-character invite code"
             value={inviteInput}

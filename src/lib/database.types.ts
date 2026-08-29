@@ -374,7 +374,12 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      join_squad_by_code: {
+        Args: {
+          p_invite_code: string
+        }
+        Returns: Database['public']['Tables']['squads']['Row']
+      }
     }
     Enums: {
       [_ in never]: never
