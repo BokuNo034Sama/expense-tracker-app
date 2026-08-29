@@ -39,6 +39,7 @@ export interface Database {
           current_streak: number | null
           max_streak_this_month: number | null
           last_tracked_date: string | null
+          global_leaderboard_opt_in?: boolean
           tip_dismissed_permanently?: boolean
           tip_last_shown_at?: string | null
         }
@@ -71,6 +72,7 @@ export interface Database {
           current_streak?: number | null
           max_streak_this_month?: number | null
           last_tracked_date?: string | null
+          global_leaderboard_opt_in?: boolean
           tip_dismissed_permanently?: boolean | null
           tip_last_shown_at?: string | null
         }
@@ -103,6 +105,7 @@ export interface Database {
           current_streak?: number | null
           max_streak_this_month?: number | null
           last_tracked_date?: string | null
+          global_leaderboard_opt_in?: boolean
           tip_dismissed_permanently?: boolean | null
           tip_last_shown_at?: string | null
         }
@@ -366,6 +369,45 @@ export interface Database {
           squad_id?: string
           user_id?: string
           joined_at?: string
+        }
+        Relationships: []
+      }
+      weekly_scores: {
+        Row: {
+          user_id: string
+          week_start_date: string
+          distinct_log_days: number
+          total_capped_slices: number
+          logging_consistency: number
+          budget_adherence: number
+          composite_score: number
+          is_ranked: boolean
+          is_final: boolean
+          computed_at: string
+        }
+        Insert: {
+          user_id: string
+          week_start_date: string
+          distinct_log_days?: number
+          total_capped_slices?: number
+          logging_consistency?: number
+          budget_adherence?: number
+          composite_score?: number
+          is_ranked?: boolean
+          is_final?: boolean
+          computed_at?: string
+        }
+        Update: {
+          user_id?: string
+          week_start_date?: string
+          distinct_log_days?: number
+          total_capped_slices?: number
+          logging_consistency?: number
+          budget_adherence?: number
+          composite_score?: number
+          is_ranked?: boolean
+          is_final?: boolean
+          computed_at?: string
         }
         Relationships: []
       }

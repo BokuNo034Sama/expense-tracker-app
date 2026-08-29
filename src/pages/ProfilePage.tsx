@@ -4,9 +4,10 @@ import { useAppStore } from '../store';
 import { usePWA } from '../hooks/usePWA';
 import { BentoCard } from '../components/shared/BentoCard';
 import { IncomeList } from '../components/income/IncomeList';
-import { LogOut } from 'lucide-react';
+import { LogOut, Trophy, Globe } from 'lucide-react';
 import { SliceManager } from '../components/profile/SliceManager';
 import { SquadPanel } from '../components/squads/SquadPanel';
+import { GlobalLeaderboardModal } from '../components/leaderboard/GlobalLeaderboardModal';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -15,8 +16,12 @@ export default function ProfilePage() {
   const signOut = useAppStore(s => s.signOut);
   const squads = useAppStore(s => s.squads);
   const leaveSquad = useAppStore(s => s.leaveSquad);
+  const setGlobalLeaderboardOptIn = useAppStore(s => s.setGlobalLeaderboardOptIn);
   const deferredPrompt = useAppStore(s => s.pwa.deferredPrompt);
   const setDeferredPrompt = useAppStore(s => s.setDeferredPrompt);
+
+  const [isGlobalLbOpen, setIsGlobalLbOpen] = useState(false);
+  const [isTogglingOptIn, setIsTogglingOptIn] = useState(false);
 
   const { registerPushNotifications } = usePWA();
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
@@ -582,10 +587,88 @@ export default function ProfilePage() {
               <SquadPanel />
             </div>
           </div>
+
+          {/* ── GLOBAL LEADERBOARD section ── */}
+          <div className="space-y-3 pt-2">
+            <div className="border-t-2 border-[var(--color-ink)]/10 dark:border-white/10 pt-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Globe size={14} className="text-[var(--color-ink)] dark:text-white" />
+                <p
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink)] dark:text-white"
+                >
+                  GLOBAL_DISCIPLINE_LEADERBOARD
+                </p>
+              </div>
+              <p
+                style={{ fontFamily: 'var(--font-mono)' }}
+                className="text-[10px] text-[var(--color-ink-muted)] dark:text-zinc-400 mb-3"
+              >
+                Compete on logging consistency & budget caps against the Kiny community. All income, balances, and spend amounts remain 100% private.
+              </p>
+
+              <div className="flex items-center justify-between p-3 bg-[var(--color-surface)] dark:bg-zinc-800 border-2 border-black dark:border-white rounded-[var(--border-radius)]">
+                <div>
+                  <p className="font-mono text-xs font-bold text-[var(--color-ink)] dark:text-white uppercase">
+                    GLOBAL_LEADERBOARD_OPT_IN
+                  </p>
+                  <p className="font-mono text-[9px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    {profile?.global_leaderboard_opt_in ? 'Status: Active (Ranked globally)' : 'Status: Off (Private)'}
+                  </p>
+                </div>
+
+                {/* Accessible Toggle Switch (Min 44px touch target) */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={Boolean(profile?.global_leaderboard_opt_in)}
+                  aria-label="Toggle Global Leaderboard Participation"
+                  disabled={isTogglingOptIn}
+                  onClick={async () => {
+                    setIsTogglingOptIn(true);
+                    try {
+                      await setGlobalLeaderboardOptIn(!profile?.global_leaderboard_opt_in);
+                    } catch (e) {
+                      console.error(e);
+                    } finally {
+                      setIsTogglingOptIn(false);
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-black transition-colors duration-200 ease-in-out focus:outline-none min-w-[44px] min-h-[24px] ${
+                    profile?.global_leaderboard_opt_in ? 'bg-[#C6EF4E]' : 'bg-zinc-300 dark:bg-zinc-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-black shadow ring-0 transition duration-200 ease-in-out mt-0.5 ml-0.5 ${
+                      profile?.global_leaderboard_opt_in ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {profile?.global_leaderboard_opt_in && (
+                <button
+                  type="button"
+                  onClick={() => setIsGlobalLbOpen(true)}
+                  style={{ fontFamily: 'var(--font-display)' }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-black text-[#C6EF4E] border-2 border-black dark:border-white rounded-[var(--border-radius)] text-xs font-bold uppercase shadow-[3px_3px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer mt-2"
+                >
+                  <Trophy size={14} />
+                  VIEW GLOBAL LEADERBOARD →
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </BentoCard>
 
       <SliceManager />
+
+      {/* Global Leaderboard Modal */}
+      <GlobalLeaderboardModal
+        isOpen={isGlobalLbOpen}
+        onClose={() => setIsGlobalLbOpen(false)}
+      />
     </div>
   );
 }

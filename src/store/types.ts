@@ -341,4 +341,38 @@ export interface AppStore {
   createSquad:  (name: string) => Promise<Squad>;
   joinSquad:    (inviteCode: string) => Promise<void>;
   leaveSquad:   (squadId: string) => Promise<void>;
+
+  // ── Leaderboards ───────────────────────────────────────────────────────────
+  fetchSquadLeaderboard: (squadId: string, week?: string) => Promise<SquadLeaderboardData>;
+  fetchGlobalLeaderboard: (week?: string) => Promise<GlobalLeaderboardData>;
+  setGlobalLeaderboardOptIn: (optIn: boolean) => Promise<boolean>;
+}
+
+export interface LeaderboardMember {
+  rank?: number;
+  user_id: string;
+  name: string;
+  avatar_initials: string;
+  current_streak?: number;
+  shield_active?: boolean;
+  composite_score: number;
+  logging_consistency: number;
+  budget_adherence: number;
+  distinct_log_days: number;
+  total_capped_slices: number;
+  is_ranked?: boolean;
+  is_self?: boolean;
+}
+
+export interface SquadLeaderboardData {
+  weekStartDate: string;
+  ranked: LeaderboardMember[];
+  unranked: LeaderboardMember[];
+}
+
+export interface GlobalLeaderboardData {
+  weekStartDate: string;
+  rankings: LeaderboardMember[];
+  selfRank: LeaderboardMember | null;
+  opt_in_required?: boolean;
 }

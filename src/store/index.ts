@@ -5,6 +5,7 @@ import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
   InvestmentTrigger, MonthlySnapshot, BudgetSliceRow, AppState,
+  SquadLeaderboardData, GlobalLeaderboardData, LeaderboardMember,
 } from './types';
 import type { User, Session } from '@supabase/supabase-js';
 import { getCycleBoundariesForDate } from '../lib/cycleLogic';
@@ -1283,6 +1284,83 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
     if (error) throw new Error(error.message);
     set(s => ({ squads: s.squads.filter(sq => sq.id !== squadId) }));
+  },
+
+  fetchSquadLeaderboard: async (squadId: string, week?: string): Promise<SquadLeaderboardData> => {
+    const session = get().auth.session;
+    const token = session?.access_token;
+    const url = week
+      ? `/api/leaderboard/squad/${squadId}?week=${encodeURIComponent(week)}`
+      : `/api/leaderboard/squad/${squadId}`;
+
+    const res = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch squad leaderboard.');
+    }
+
+    return res.json();
+  },
+
+  fetchGlobalLeaderboard: async (week?: string): Promise<GlobalLeaderboardData> => {
+    const session = get().auth.session;
+    const token = session?.access_token;
+    const url = week
+      ? `/api/leaderboard/global?week=${encodeURIComponent(week)}`
+      : `/api/leaderboard/global`;
+
+    const res = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 403 && err.opt_in_required) {
+        return {
+          weekStartDate: '',
+          rankings: [],
+          selfRank: null,
+          opt_in_required: true,
+        };
+      }
+      throw new Error(err.error || 'Failed to fetch global leaderboard.');
+    }
+
+    return res.json();
+  },
+
+  setGlobalLeaderboardOptIn: async (optIn: boolean): Promise<boolean> => {
+    const session = get().auth.session;
+    const token = session?.access_token;
+
+    const res = await fetch('/api/leaderboard/opt-in', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ optIn }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to update global leaderboard opt-in.');
+    }
+
+    const data = await res.json();
+    if (get().profile) {
+      set(s => ({
+        profile: s.profile ? { ...s.profile, global_leaderboard_opt_in: data.global_leaderboard_opt_in } : null,
+      }));
+    }
+    return Boolean(data.global_leaderboard_opt_in);
   },
 }));
 
