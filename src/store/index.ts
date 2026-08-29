@@ -7,6 +7,8 @@ import type {
   InvestmentTrigger, MonthlySnapshot, BudgetSliceRow, AppState,
 } from './types';
 import type { User, Session } from '@supabase/supabase-js';
+import { getCycleBoundariesForDate } from '../lib/cycleLogic';
+export { getCycleBoundariesForDate };
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
 
@@ -30,87 +32,6 @@ export const getLocalDateString = (date: Date = new Date()): string => {
   // Force en-CA format because it natively outputs clean 'YYYY-MM-DD'
   return date.toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
 };
-
-export function getCycleBoundariesForDate(profile: ProfileRow | null, date: Date): { startDate: Date; endDate: Date } {
-  if (!profile) {
-    // Fallback: start and end of calendar month of 'date'
-    const y = date.getUTCFullYear();
-    const m = date.getUTCMonth();
-    const startDate = new Date(Date.UTC(y, m, 1));
-    const endDate = new Date(Date.UTC(y, m + 1, 0));
-    return { startDate, endDate };
-  }
-
-  if (profile.income_type === 'business' || profile.income_type === 'FLUID_ROLLING') {
-    const fluidWindowDays = profile.fluid_window_days || 30;
-    const endDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-    const startDate = new Date(endDate);
-    startDate.setUTCDate(startDate.getUTCDate() - (fluidWindowDays - 1));
-    return { startDate, endDate };
-  }
-
-  if (profile.income_type === 'student') {
-    const anchorDay = profile.anchor_day;
-    if (anchorDay === 0 || anchorDay === null || anchorDay === undefined) {
-      // Weekly Reset (Every Monday)
-      const current = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-      const day = current.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-      const diff = current.getUTCDate() - (day === 0 ? 6 : day - 1);
-      const startDate = new Date(current);
-      startDate.setUTCDate(diff);
-
-      const endDate = new Date(startDate);
-      endDate.setUTCDate(startDate.getUTCDate() + 6);
-      return { startDate, endDate };
-    }
-  }
-
-  // Salary earner or Student with custom anchor day
-  const anchorDay = profile.anchor_day || 30;
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
-
-  const getPaydayForMonth = (y: number, m: number, anchor: number): Date => {
-    const daysInMonth = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-    const d = Math.min(anchor, daysInMonth);
-    const pDate = new Date(Date.UTC(y, m, d));
-    const dow = pDate.getUTCDay(); // 0 = Sunday, 6 = Saturday
-    if (dow === 6) {
-      pDate.setUTCDate(pDate.getUTCDate() - 1); // Saturday -> Friday
-    } else if (dow === 0) {
-      pDate.setUTCDate(pDate.getUTCDate() + 1); // Sunday -> Monday
-    }
-    return pDate;
-  };
-
-  const pThis = getPaydayForMonth(year, month, anchorDay);
-
-  if (date >= pThis) {
-    // Current cycle starts at pThis, ends day before next payday
-    let nextYear = year;
-    let nextMonth = month + 1;
-    if (nextMonth > 11) {
-      nextMonth = 0;
-      nextYear += 1;
-    }
-    const pNext = getPaydayForMonth(nextYear, nextMonth, anchorDay);
-    const endDate = new Date(pNext);
-    endDate.setUTCDate(endDate.getUTCDate() - 1);
-    return { startDate: pThis, endDate };
-  } else {
-    // Current cycle starts at pPrev, ends day before pThis
-    let prevYear = year;
-    let prevMonth = month - 1;
-    if (prevMonth < 0) {
-      prevMonth = 11;
-      prevYear -= 1;
-    }
-    const pPrev = getPaydayForMonth(prevYear, prevMonth, anchorDay);
-    const endDate = new Date(pThis);
-    endDate.setUTCDate(endDate.getUTCDate() - 1);
-    return { startDate: pPrev, endDate };
-  }
-}
 
 export function getCycleBoundaries(profile: ProfileRow | null, date: Date = new Date(getLocalDateString())): { startDate: Date; endDate: Date } {
   return getCycleBoundariesForDate(profile, date);

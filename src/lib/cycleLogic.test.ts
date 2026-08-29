@@ -6,7 +6,7 @@ import type { ProfileRow } from '../store/types';
 
 // Load backend CommonJS module via Node createRequire to verify cross-runtime parity
 const require = createRequire(import.meta.url);
-const backendPath = path.resolve(__dirname, '../../../../backend/cycleLogic.js');
+const backendPath = path.resolve(__dirname, '../../../backend/cycleLogic.js');
 const backendCycleLogic = require(backendPath);
 const getBackendCycleBoundaries = backendCycleLogic.getCycleBoundariesForDate;
 
