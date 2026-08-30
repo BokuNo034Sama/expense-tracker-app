@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
 import { useAppStore } from '../../store';
 import type { SquadActivityLogItem } from '../../store/types';
 import { Activity } from 'lucide-react';

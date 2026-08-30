@@ -5,7 +5,7 @@ import type {
   AppStore, AuthState, LoadingState, ErrorState, PWAState,
   Theme, ProfileRow, Category, Expense, Income, InvestmentInterest,
   InvestmentTrigger, MonthlySnapshot, BudgetSliceRow, AppState,
-  SquadLeaderboardData, GlobalLeaderboardData, LeaderboardMember,
+  SquadLeaderboardData, GlobalLeaderboardData,
 } from './types';
 import type { User, Session } from '@supabase/supabase-js';
 import { getCycleBoundariesForDate } from '../lib/cycleLogic';
@@ -224,14 +224,21 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         is_premium: true,
+        premium_expires_at: null,
+        premium_plan: null,
+        notification_style: null,
         has_supported_creator: true,
         current_streak: 1,
         max_streak_this_month: 1,
         last_tracked_date: getLocalDateString(),
-        last_active_date: new Date().toISOString(),
         financial_streak: 1,
         last_logged_date: getLocalDateString(),
         enabled_slices: ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
+        income_type: 'salary',
+        anchor_day: null,
+        fluid_window_days: null,
+        last_reset_date: null,
+        global_leaderboard_opt_in: false,
       };
       set({
         auth: {
@@ -589,14 +596,21 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           is_premium: false,
+          premium_expires_at: null,
+          premium_plan: null,
+          notification_style: null,
           has_supported_creator: false,
           current_streak: 0,
-          last_active_date: '',
           financial_streak: 0,
           last_logged_date: '',
           max_streak_this_month: 0,
           last_tracked_date: null,
           enabled_slices: ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
+          income_type: 'salary',
+          anchor_day: null,
+          fluid_window_days: null,
+          last_reset_date: null,
+          global_leaderboard_opt_in: false,
         };
         set({ profile: fallbackProfile, theme: 'light' });
         await get().fetchBudgetSlices();
@@ -1470,14 +1484,14 @@ export const calculateStreakCount = (expenses: Expense[]): number => {
   return computedStreak;
 };
 
-export const useCurrentStreak = () => {
+export const useCurrentStreak = (): number => {
   const expenses = useAppStore(s => s.expenses);
   const profile = useAppStore(s => s.profile);
   const loading = useAppStore(s => s.loading.expenses);
 
   return useMemo(() => {
     // If we're loading and have a profile streak, return the profile streak to prevent flash to 0
-    if (loading && profile?.current_streak !== undefined) {
+    if (loading && profile?.current_streak != null) {
       return profile.current_streak;
     }
     if (!expenses || expenses.length === 0) {

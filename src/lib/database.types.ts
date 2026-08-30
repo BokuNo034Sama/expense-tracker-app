@@ -39,7 +39,7 @@ export interface Database {
           current_streak: number | null
           max_streak_this_month: number | null
           last_tracked_date: string | null
-          global_leaderboard_opt_in?: boolean
+          global_leaderboard_opt_in: boolean
           tip_dismissed_permanently?: boolean
           tip_last_shown_at?: string | null
         }
@@ -369,6 +369,30 @@ export interface Database {
           squad_id?: string
           user_id?: string
           joined_at?: string
+        }
+        Relationships: []
+      }
+      squad_activity_log: {
+        Row: {
+          id: number
+          squad_id: string
+          user_id: string
+          event_type: 'joined' | 'all_buckets_locked' | string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          squad_id: string
+          user_id: string
+          event_type: 'joined' | 'all_buckets_locked' | string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          squad_id?: string
+          user_id?: string
+          event_type?: 'joined' | 'all_buckets_locked' | string
+          created_at?: string
         }
         Relationships: []
       }

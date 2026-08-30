@@ -1,4 +1,5 @@
 import type { User, Session } from '@supabase/supabase-js';
+import type { Database } from '../lib/database.types';
 
 export interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -29,50 +30,10 @@ export interface InvestmentTrigger {
   status: 'PENDING' | 'THRESHOLD_MET';
 }
 
-// ─── Database Row Shapes (snake_case mirrors Supabase columns) ─────────────────
+// ─── Database Row Shapes (derived from canonical database.types.ts) ───────────
 
-export interface ProfileRow {
-  id:                        string;
-  name:                      string;
-  occupation:                string;
-  monthly_salary:            number;
-  avatar_initials:           string;
-  purpose:                   Purpose;
-  target_savings_rate:       SavingsRate | null;
-  has_completed_onboarding:  boolean;
-  theme:                     Theme;
-  has_seen_investment_nudge: boolean;
-  created_at:                string;
-  updated_at:                string;
-  is_premium?:               boolean;
-  premium_expires_at?:       string | null;
-  premium_plan?:             'monthly' | 'annual' | null;
-  notification_style?:       'aggressive' | 'motivational' | 'silent';
-  has_supported_creator?:    boolean;
-  current_streak?:           number;
-  last_active_date?:         string;
-  push_subscription?:        unknown;
-  financial_streak?:         number;
-  last_logged_date?:         string;
-  max_streak_this_month?:    number;
-  last_tracked_date?:        string | null;
-  enabled_slices:            string[];
-  estimated_monthly_salary?: number;
-  income_type?:              'salary' | 'business' | 'student' | 'WEEKEND_SHIFT' | 'FLUID_ROLLING' | null;
-  anchor_day?:               number | null;
-  fluid_window_days?:        number | null;
-  last_reset_date?:          string | null;
-  tip_dismissed_permanently?: boolean;
-  tip_last_shown_at?:         string | null;
-}
-
-export interface Squad {
-  id:          string;
-  name:        string;
-  invite_code: string;
-  created_by:  string;
-  created_at:  string;
-}
+export type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+export type Squad = Database['public']['Tables']['squads']['Row'];
 
 export interface SquadMember {
   id:        string;
@@ -110,17 +71,7 @@ export interface CategoryRow {
   created_at:       string;
 }
 
-export interface ExpenseRow {
-  id:          string;
-  user_id:     string;
-  category_id: string | null;
-  date:        string;           // ISO date: "2026-05-15"
-  vendor:      string;
-  amount:      number;
-  note:        string | null;
-  created_at:  string;
-  updated_at:  string;
-}
+export type ExpenseRow = Database['public']['Tables']['expenses']['Row'];
 
 export interface IncomeRow {
   id:         string;
@@ -132,13 +83,7 @@ export interface IncomeRow {
   created_at: string;
 }
 
-export interface InvestmentInterestRow {
-  id:                      string;
-  user_id:                 string;
-  type:                    InvestmentType;
-  wealth_balance_at_click: number;
-  clicked_at:              string;
-}
+export type InvestmentInterestRow = Database['public']['Tables']['investment_interests']['Row'];
 
 // ─── App-level aliases (camelCase for component use) ──────────────────────────
 
@@ -148,14 +93,7 @@ export type Expense         = ExpenseRow;
 export type Income          = IncomeRow;
 export type InvestmentInterest = InvestmentInterestRow;
 
-export interface BudgetSliceRow {
-  id: string;
-  user_id: string;
-  slice_name: string;
-  slice_type: string;
-  allocated_percentage: number;
-  created_at: string;
-}
+export type BudgetSliceRow = Database['public']['Tables']['budget_slices']['Row'];
 
 export interface MappedCategory {
   id: string;
@@ -189,15 +127,7 @@ export interface MappedIncome {
   createdAt: string;
 }
 
-export interface MonthlySnapshot {
-  id: string;
-  user_id: string;
-  month_year: string;
-  total_income: number;
-  total_expense: number;
-  savings_rate: number;
-  top_category: string;
-}
+export type MonthlySnapshot = Database['public']['Tables']['monthly_snapshots']['Row'];
 
 // ─── Auth State ───────────────────────────────────────────────────────────────
 
