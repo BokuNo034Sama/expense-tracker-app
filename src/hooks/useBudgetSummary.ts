@@ -4,7 +4,7 @@
 // NEVER read budget_slices.allocated_percentage for Naira calculations.
 
 import { useMemo } from 'react';
-import { useAppStore } from '../store';
+import { useAppStore, getCycleBoundaries } from '../store';
 
 export interface CategoryBudgetMetric {
   id:          string;
@@ -26,25 +26,23 @@ export interface SliceBudgetMetric {
   remaining:   number;
   progressPct: number;
   isOverBudget:boolean;
-  isAtRisk:    boolean;
+  isAtRisk:    boolean;  // >80% spent
   categories:  CategoryBudgetMetric[];
 }
 
 export function useBudgetSummary() {
   const categories = useAppStore(s => s.categories || []);
   const expenses   = useAppStore(s => s.expenses || []);
+  const profile    = useAppStore(s => s.profile);
 
   return useMemo(() => {
-    const now = new Date();
+    const currentCycle = getCycleBoundaries(profile);
 
-    // This month's expenses only
+    // This cycle's expenses only
     const thisMonthExpenses = expenses.filter(e => {
       if (!e?.date) return false;
       const d = new Date(e.date);
-      return (
-        d.getMonth()    === now.getMonth() &&
-        d.getFullYear() === now.getFullYear()
-      );
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
     });
 
     // Spent per category ID
@@ -78,43 +76,41 @@ export function useBudgetSummary() {
       };
     });
 
-    // Group into slices
-    const sliceMap: Record<string, SliceBudgetMetric> = {};
-    categoryMetrics.forEach(cat => {
+    // Build per-slice metrics
+    const sliceMap: Record<string, { totalLimit: number; totalSpent: number; categories: CategoryBudgetMetric[] }> = {};
+
+    categories.forEach(cat => {
       if (!sliceMap[cat.slice]) {
-        sliceMap[cat.slice] = {
-          slice:        cat.slice,
-          totalLimit:   0,
-          totalSpent:   0,
-          remaining:    0,
-          progressPct:  0,
-          isOverBudget: false,
-          isAtRisk:     false,
-          categories:   [],
-        };
+        sliceMap[cat.slice] = { totalLimit: 0, totalSpent: 0, categories: [] };
       }
-      sliceMap[cat.slice].totalLimit  += cat.limit;
-      sliceMap[cat.slice].totalSpent  += cat.spent;
-      sliceMap[cat.slice].categories.push(cat);
+      const metric = categoryMetrics.find(m => m.id === cat.id);
+      if (metric) {
+        sliceMap[cat.slice].totalLimit += metric.limit;
+        sliceMap[cat.slice].totalSpent += metric.spent;
+        sliceMap[cat.slice].categories.push(metric);
+      }
     });
 
-    // Compute slice-level metrics
-    const sliceMetrics = Object.values(sliceMap).map(slice => {
-      const remaining   = Math.max(slice.totalLimit - slice.totalSpent, 0);
-      const progressPct = slice.totalLimit > 0
-        ? Math.min((slice.totalSpent / slice.totalLimit) * 100, 100)
+    const sliceMetrics: SliceBudgetMetric[] = Object.entries(sliceMap).map(([slice, data]) => {
+      const remaining   = Math.max(data.totalLimit - data.totalSpent, 0);
+      const progressPct = data.totalLimit > 0
+        ? Math.min((data.totalSpent / data.totalLimit) * 100, 100)
         : 0;
+
       return {
-        ...slice,
+        slice,
+        totalLimit:   data.totalLimit,
+        totalSpent:   data.totalSpent,
         remaining,
         progressPct,
-        isOverBudget: slice.totalSpent > slice.totalLimit && slice.totalLimit > 0,
-        isAtRisk:     progressPct >= 80,
+        isOverBudget: data.totalSpent > data.totalLimit && data.totalLimit > 0,
+        isAtRisk:     progressPct >= 80 && !(data.totalSpent > data.totalLimit && data.totalLimit > 0),
+        categories:   data.categories,
       };
     });
 
-    const totalLimit = sliceMetrics.reduce((s, sl) => s + sl.totalLimit, 0);
-    const totalSpent = sliceMetrics.reduce((s, sl) => s + sl.totalSpent, 0);
+    const totalLimit = categoryMetrics.reduce((sum, c) => sum + c.limit, 0);
+    const totalSpent = categoryMetrics.reduce((sum, c) => sum + c.spent, 0);
 
     return {
       categoryMetrics,
@@ -123,5 +119,5 @@ export function useBudgetSummary() {
       totalSpent,
       totalRemaining: Math.max(totalLimit - totalSpent, 0),
     };
-  }, [categories, expenses]);
+  }, [categories, expenses, profile]);
 }

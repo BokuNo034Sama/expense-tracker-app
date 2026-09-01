@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { toPng } from 'html-to-image';
-import { useAppStore } from '../../store';
+import { useAppStore, getCycleBoundaries } from '../../store';
 import { Sparkles, Download, Share2, X, Lock, Palmtree, Search, Soup } from 'lucide-react';
 
 const PERSONA_CONFIGS = {
@@ -56,7 +56,6 @@ export function KinyWrapExport() {
   const incomes = useAppStore(s => s.incomes);
   const categories = useAppStore(s => s.categories);
   const budgetSlices = useAppStore(s => s.budgetSlices);
-  const filterMonth = useAppStore(s => s.filterMonth);
 
   const [isOpen, setIsOpen] = useState(false);
   const [wrapMode, setWrapMode] = useState<'launch-week' | '3-month' | null>(null);
@@ -111,11 +110,19 @@ export function KinyWrapExport() {
 
   // 4. Available Cash calculation (Net Surplus / Total Income)
   const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || profile?.monthly_salary || 0));
-  const currentMonth = filterMonth || new Date().toISOString().substring(0, 7);
-  const currentMonthIncomes = incomes.filter(i => i.date.startsWith(currentMonth));
+  const currentCycle = getCycleBoundaries(profile);
+  const currentMonthIncomes = incomes.filter(i => {
+    if (!i.date) return false;
+    const d = new Date(i.date);
+    return d >= currentCycle.startDate && d <= currentCycle.endDate;
+  });
   const totalIncome = baseSalary + currentMonthIncomes.reduce((sum, i) => sum + Number(i.amount), 0);
 
-  const currentMonthExpenses = expenses.filter(e => e.date.startsWith(currentMonth));
+  const currentMonthExpenses = expenses.filter(e => {
+    if (!e.date) return false;
+    const d = new Date(e.date);
+    return d >= currentCycle.startDate && d <= currentCycle.endDate;
+  });
   const totalExpenses = currentMonthExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
   const availableCashRatio = totalIncome > 0 ? (totalIncome - totalExpenses) / totalIncome : 0;
@@ -246,16 +253,8 @@ export function KinyWrapExport() {
   };
 
   // ─── Date Labels helper ──────────────────────────────────────────────────────
-  const formatMonthName = (monthStr: string) => {
-    try {
-      const date = new Date(monthStr + '-02');
-      return date.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
-    } catch {
-      return monthStr.toUpperCase();
-    }
-  };
-
-  const monthLabel = formatMonthName(currentMonth);
+  const monthLabel = currentCycle.startDate.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }).toUpperCase();
+  const currentMonth = currentCycle.startDate.toISOString().substring(0, 7);
 
   // ─── Sharing Loop Implementation (Phase 3) ──────────────────────────────────
   const exportKinyWrap = async () => {
@@ -271,7 +270,7 @@ export function KinyWrapExport() {
       });
       
       const link = document.createElement('a');
-      link.download = `KINY-Wrap-June-${currentMonth}.png`;
+      link.download = `KINY-Wrap-${currentMonth}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {

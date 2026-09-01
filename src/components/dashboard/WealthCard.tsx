@@ -6,10 +6,12 @@ import { Eye, EyeOff } from 'lucide-react';
 export function WealthCard() {
   const profile = useAppStore(s => s.profile);
   const expenses = useAppStore(s => s.expenses);
-  const incomes = useAppStore(s => s.incomes);
   const categories = useAppStore(s => s.categories);
   const isDataMasked = useAppStore(s => s.isDataMasked);
   const toggleDataMasked = useAppStore(s => s.toggleDataMasked);
+  const totalIncome = useAppStore(s => s.totalMonthlyIncome);
+  const totalExpenses = useAppStore(s => s.totalMonthlyExpenses);
+  const netSavings = useAppStore(s => s.netMonthlySurplus);
 
   // Track whether we have already fired the notification 
   // this session to prevent repeated triggers
@@ -18,13 +20,12 @@ export function WealthCard() {
   const wealthCatIds = categories
     .filter(c => c.slice === 'Wealth')
     .map(c => c.id);
-  const now = new Date();
+  const currentCycle = getCycleBoundaries(profile);
   const wealthBalance = expenses
     .filter(e => {
       if (!wealthCatIds.includes(e.category_id ?? '')) return false;
       const d = new Date(e.date);
-      return d.getMonth() === now.getMonth() && 
-             d.getFullYear() === now.getFullYear();
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
     })
     .reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
@@ -54,26 +55,6 @@ export function WealthCard() {
     return '₦' + amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const currentCycle = getCycleBoundaries(profile);
-
-  const baseSalary = parseFloat(String(profile?.estimated_monthly_salary || 0));
-  const loggedIncomesSum = incomes
-    .filter(i => {
-      const d = new Date(i.date);
-      return d >= currentCycle.startDate && d <= currentCycle.endDate;
-    })
-    .reduce((sum, i) => sum + Number(i.amount), 0);
-
-  const totalIncome = baseSalary + loggedIncomesSum;
-
-  const totalExpenses = expenses
-    .filter(e => {
-      const d = new Date(e.date);
-      return d >= currentCycle.startDate && d <= currentCycle.endDate;
-    })
-    .reduce((sum, e) => sum + Number(e.amount), 0);
-
-  const netSavings = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
 
   return (

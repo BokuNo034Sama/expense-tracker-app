@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppStore, useCurrentStreak } from "@/store/useAppStore";
+import { useAppStore, useCurrentStreak, getPastCycles } from "@/store/useAppStore";
 import { WealthCard } from "@/components/dashboard/WealthCard";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { RecentExpenses } from "@/components/dashboard/RecentExpenses";
@@ -14,6 +15,7 @@ import { BurnRateWarningCard } from "@/components/dashboard/BurnRateWarningCard"
 export default function Dashboard() {
   const navigate = useNavigate();
   const expenses = useAppStore(s => s.expenses);
+  const profile = useAppStore(s => s.profile);
   const appState = useAppStore(s => s.appState);
   const loading = useAppStore(s => s.loading);
 
@@ -26,15 +28,8 @@ export default function Dashboard() {
   const streak = useCurrentStreak();
   const filledSegments = streak > 0 ? (streak % 5 === 0 ? 5 : streak % 5) : 0;
 
-  // Generate month options dynamically: last 12 months
-  const monthOptions = [];
-  const currentDate = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-    const value = d.toISOString().substring(0, 7);
-    const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
-    monthOptions.push({ value, label });
-  }
+  // Generate canonical financial cycles for the active user profile
+  const availableCycles = useMemo(() => getPastCycles(profile, 12), [profile]);
 
   if (appState === 'LOADING' || loading?.profile) {
     return (
@@ -83,9 +78,9 @@ export default function Dashboard() {
                 onChange={(e) => setFilterMonth(e.target.value)}
                 className="border border-black dark:border-white bg-white dark:bg-zinc-900 text-black dark:text-white px-2 py-0.5 font-bold uppercase cursor-pointer outline-none rounded-none text-xs transition-transform active:translate-y-[1px]"
               >
-                {monthOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                {availableCycles.map((cycle) => (
+                  <option key={cycle.id} value={cycle.isCurrent ? 'current' : cycle.id}>
+                    {cycle.label}
                   </option>
                 ))}
                 <option value="all">ALL_TIME</option>

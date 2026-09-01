@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAppStore } from '../store';
+import { useAppStore, getCycleBoundaries } from '../store';
 import { useSliceSummary } from './useSliceSummary';
 
 export interface BurnRateResult {
@@ -16,20 +16,19 @@ export function useBurnRate(): BurnRateResult[] {
   const sliceSummary = useSliceSummary();
 
   return useMemo(() => {
-    const anchorDay = profile?.anchor_day;
-    const now       = new Date();
-    const today     = now.getDate();
+    const cycle = getCycleBoundaries(profile);
+    const now = new Date();
+    const cycleStartMs = cycle.startDate.getTime();
+    const cycleEndMs = cycle.endDate.getTime();
+    const nowMs = now.getTime();
 
     // Calculate days elapsed in this financial cycle
-    let daysElapsed = anchorDay
-      ? (today >= anchorDay ? today - anchorDay : today + (30 - anchorDay))
-      : today;
-    if (daysElapsed < 1) daysElapsed = 1;
+    const elapsedDaysRaw = Math.floor((nowMs - cycleStartMs) / (1000 * 60 * 60 * 24)) + 1;
+    const daysElapsed = Math.max(1, elapsedDaysRaw);
 
-    // Days until next anchor
-    let daysUntilAnchor = anchorDay
-      ? (anchorDay > today ? anchorDay - today : 30 - today + anchorDay)
-      : 30 - today;
+    // Days until end of cycle
+    const remainingDaysRaw = Math.ceil((cycleEndMs - nowMs) / (1000 * 60 * 60 * 24));
+    const daysUntilAnchor = Math.max(0, remainingDaysRaw);
 
     return Object.entries(sliceSummary)
       .filter(([, metrics]) => metrics.totalLimit > 0)
@@ -58,5 +57,5 @@ export function useBurnRate(): BurnRateResult[] {
       })
       .filter(r => r.isAtRisk)
       .sort((a, b) => a.daysRemaining - b.daysRemaining);
-  }, [sliceSummary, profile?.anchor_day]);
+  }, [sliceSummary, profile]);
 }

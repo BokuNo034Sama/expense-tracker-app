@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import { useAppStore } from '../../store';
+import { useAppStore, getCycleBoundaries } from '../../store';
 
 interface InvestmentProduct {
   name:        string;
@@ -47,13 +47,14 @@ export function InvestmentProductCards() {
     s.categories.filter(c => c.slice === 'Wealth').map(c => c.id)
   );
   const expenses = useAppStore(s => s.expenses);
+  const profile = useAppStore(s => s.profile);
 
-  const now = new Date();
+  const currentCycle = getCycleBoundaries(profile);
   const wealthBalance = expenses
     .filter(e => {
       if (!wealthCatIds.includes(e.category_id ?? '')) return false;
       const d = new Date(e.date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      return d >= currentCycle.startDate && d <= currentCycle.endDate;
     })
     .reduce((s, e) => s + (Number(e.amount) || 0), 0);
 

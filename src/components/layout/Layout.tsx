@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { BottomTabBar } from './BottomTabBar';
@@ -6,7 +6,7 @@ import { OfflineBanner } from '../pwa/OfflineBanner';
 import { UpdatePrompt } from '../pwa/UpdatePrompt';
 import { PWAInstallPrompt } from '../PWAInstallPrompt';
 import { SyncIndicator } from '../shared/SyncIndicator';
-import { useAppStore, useCurrentStreak } from '../../store';
+import { useAppStore, useCurrentStreak, getCycleBoundaries } from '../../store';
  
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,39 +19,14 @@ export function Layout({ children }: LayoutProps) {
   const streak = useCurrentStreak();
   const profile = useAppStore(s => s.profile);
 
-  const getFinancialCycleTitle = (anchorDay: number | null): string => {
-    // Non-salary users (business/student) have no anchor day
-    // Fall back to standard calendar month display
-    if (!anchorDay) {
-      return new Date().toLocaleString('en-US', {
-        month: 'short',
-        year: 'numeric'
-      }).toUpperCase();
-    }
-
-    const today = new Date();
-    const currentDay = today.getDate();
-
-    let targetMonth = today.getMonth(); // 0-indexed
-    let targetYear  = today.getFullYear();
-
-    // If today is on or past the anchor day, active cycle belongs to next month
-    if (currentDay >= anchorDay) {
-      targetMonth += 1;
-      if (targetMonth > 11) {
-        targetMonth = 0;
-        targetYear  += 1;
-      }
-    }
-
-    const financialDate = new Date(targetYear, targetMonth, 1);
-    return financialDate.toLocaleString('en-US', {
+  const headerMonthTitle = useMemo(() => {
+    const cycle = getCycleBoundaries(profile);
+    return cycle.startDate.toLocaleDateString('en-US', {
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone: 'UTC'
     }).toUpperCase();
-  };
-
-  const headerMonthTitle = getFinancialCycleTitle(profile?.anchor_day ?? null);
+  }, [profile]);
  
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden px-4 md:px-8 bg-[var(--color-bg)] text-[var(--color-ink)] transition-colors duration-200 antialiased">

@@ -80,3 +80,49 @@ export function getCycleBoundariesForDate(
     return { startDate: pPrev, endDate };
   }
 }
+
+export interface FinancialCycleInfo {
+  id: string;
+  label: string;
+  startDate: Date;
+  endDate: Date;
+  isCurrent: boolean;
+}
+
+export function getPastCycles(
+  profile: ProfileRow | null,
+  count = 12,
+  referenceDate = new Date()
+): FinancialCycleInfo[] {
+  const cycles: FinancialCycleInfo[] = [];
+  let probe = new Date(referenceDate);
+
+  for (let i = 0; i < count; i++) {
+    const boundary = getCycleBoundariesForDate(profile, probe);
+    const startStr = boundary.startDate.toISOString().split('T')[0];
+    const endStr = boundary.endDate.toISOString().split('T')[0];
+    const id = `${startStr}_${endStr}`;
+
+    if (!cycles.some(c => c.id === id)) {
+      const monthName = boundary.startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).toUpperCase();
+      const startShort = boundary.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).toUpperCase();
+      const endShort = boundary.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).toUpperCase();
+      const label = i === 0
+        ? `CURRENT CYCLE (${startShort} → ${endShort})`
+        : `${monthName} (${startShort} → ${endShort})`;
+
+      cycles.push({
+        id,
+        label,
+        startDate: boundary.startDate,
+        endDate: boundary.endDate,
+        isCurrent: i === 0,
+      });
+    }
+
+    // Walk backward by probing 1 millisecond before current cycle start
+    probe = new Date(boundary.startDate.getTime() - 1);
+  }
+
+  return cycles;
+}

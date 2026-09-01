@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'module';
 import path from 'path';
-import { getCycleBoundariesForDate as getFrontendCycleBoundaries } from './cycleLogic';
+import { getCycleBoundariesForDate as getFrontendCycleBoundaries, getPastCycles as getFrontendPastCycles } from './cycleLogic';
 import type { ProfileRow } from '../store/types';
 
 // Load backend CommonJS module via Node createRequire to verify cross-runtime parity
@@ -9,11 +9,14 @@ const require = createRequire(import.meta.url);
 const backendPath = path.resolve(__dirname, '../../../backend/cycleLogic.js');
 const backendCycleLogic = require(backendPath);
 const getBackendCycleBoundaries = backendCycleLogic.getCycleBoundariesForDate;
+const getBackendPastCycles = backendCycleLogic.getPastCycles;
 
 describe('Cycle Logic — Cross-Runtime Parity & Business Correctness', () => {
   it('should successfully resolve and load both frontend and backend modules', () => {
     expect(typeof getFrontendCycleBoundaries).toBe('function');
     expect(typeof getBackendCycleBoundaries).toBe('function');
+    expect(typeof getFrontendPastCycles).toBe('function');
+    expect(typeof getBackendPastCycles).toBe('function');
   });
 
   const testVectors: Array<{
@@ -65,6 +68,41 @@ describe('Cycle Logic — Cross-Runtime Parity & Business Correctness', () => {
       expectedStart: '2026-06-10',
       expectedEnd: '2026-07-09',
     },
+    {
+      name: 'Salary anchor_day=28 on Aug 5th (pre-anchor, same month — should resolve to prior cycle)',
+      profile: { income_type: 'salary', anchor_day: 28 } as unknown as ProfileRow,
+      date: new Date(Date.UTC(2026, 7, 5)),
+      expectedStart: '2026-07-28',
+      expectedEnd: '2026-08-27',
+    },
+    {
+      name: 'Salary anchor_day=28 on Aug 29th (inside Aug 28 - Sep 27 cycle)',
+      profile: { income_type: 'salary', anchor_day: 28 } as unknown as ProfileRow,
+      date: new Date(Date.UTC(2026, 7, 29)),
+      expectedStart: '2026-08-28',
+      expectedEnd: '2026-09-27',
+    },
+    {
+      name: 'Salary anchor_day=28 on Sept 1st (still inside Aug 28 - Sep 27 cycle)',
+      profile: { income_type: 'salary', anchor_day: 28 } as unknown as ProfileRow,
+      date: new Date(Date.UTC(2026, 8, 1)),
+      expectedStart: '2026-08-28',
+      expectedEnd: '2026-09-27',
+    },
+    {
+      name: 'Salary anchor_day=28 on Sept 5th (still inside Aug 28 - Sep 27 cycle)',
+      profile: { income_type: 'salary', anchor_day: 28 } as unknown as ProfileRow,
+      date: new Date(Date.UTC(2026, 8, 5)),
+      expectedStart: '2026-08-28',
+      expectedEnd: '2026-09-27',
+    },
+    {
+      name: 'Salary anchor_day=28 on Sept 28th (new cycle Sep 28 - Oct 27)',
+      profile: { income_type: 'salary', anchor_day: 28 } as unknown as ProfileRow,
+      date: new Date(Date.UTC(2026, 8, 28)),
+      expectedStart: '2026-09-28',
+      expectedEnd: '2026-10-27',
+    },
   ];
 
   for (const vector of testVectors) {
@@ -110,5 +148,63 @@ describe('Cycle Logic — Cross-Runtime Parity & Business Correctness', () => {
     const monthlyCap = 310000;
     const weeklyCap = (monthlyCap / cycleDays) * 7;
     expect(weeklyCap).toBe(70000);
+  });
+
+  it('getPastCycles generates seamless, contiguous historical cycles with parity', () => {
+    const profile = {
+      income_type: 'salary',
+      anchor_day: 28,
+    } as unknown as ProfileRow;
+
+    const refDate = new Date(Date.UTC(2026, 8, 1)); // Sept 1, 2026
+    const feCycles = getFrontendPastCycles(profile, 6, refDate);
+    const beCycles = getBackendPastCycles(profile, 6, refDate);
+
+    expect(feCycles.length).toBe(6);
+    expect(beCycles.length).toBe(6);
+
+    // Current cycle should be Aug 28 - Sep 27
+    expect(feCycles[0].id).toBe('2026-08-28_2026-09-27');
+    expect(feCycles[0].isCurrent).toBe(true);
+    expect(beCycles[0].id).toBe('2026-08-28_2026-09-27');
+
+    // Preceding cycle should be Jul 28 - Aug 27
+    expect(feCycles[1].id).toBe('2026-07-28_2026-08-27');
+    expect(feCycles[1].isCurrent).toBe(false);
+    expect(beCycles[1].id).toBe('2026-07-28_2026-08-27');
+
+    // Parity check across all 6 cycles
+    for (let i = 0; i < 6; i++) {
+      expect(feCycles[i].id).toBe(beCycles[i].id);
+      expect(feCycles[i].label).toBe(beCycles[i].label);
+    }
+  });
+
+  it('correctly derives financial cycle header titles for pre-anchor and post-anchor dates', () => {
+    const profile = {
+      income_type: 'salary',
+      anchor_day: 28,
+    } as unknown as ProfileRow;
+
+    const getHeaderTitle = (d: Date) => {
+      const cycle = getFrontendCycleBoundaries(profile, d);
+      return cycle.startDate.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).toUpperCase();
+    };
+
+    // Aug 5, 2026 (pre-anchor within August: belongs to July 28 -> Aug 27 cycle)
+    expect(getHeaderTitle(new Date(Date.UTC(2026, 7, 5)))).toBe('JUL 2026');
+
+    // Sept 1, 2026 (pre-anchor within September: belongs to Aug 28 -> Sept 27 cycle)
+    expect(getHeaderTitle(new Date(Date.UTC(2026, 8, 1)))).toBe('AUG 2026');
+
+    // Sept 5, 2026 (pre-anchor within September: belongs to Aug 28 -> Sept 27 cycle)
+    expect(getHeaderTitle(new Date(Date.UTC(2026, 8, 5)))).toBe('AUG 2026');
+
+    // Sept 28, 2026 (anchor payday: begins Sept 28 -> Oct 27 cycle)
+    expect(getHeaderTitle(new Date(Date.UTC(2026, 8, 28)))).toBe('SEP 2026');
   });
 });

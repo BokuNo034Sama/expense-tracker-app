@@ -8,8 +8,8 @@ import type {
   SquadLeaderboardData, GlobalLeaderboardData,
 } from './types';
 import type { User, Session } from '@supabase/supabase-js';
-import { getCycleBoundariesForDate } from '../lib/cycleLogic';
-export { getCycleBoundariesForDate };
+import { getCycleBoundariesForDate, getPastCycles } from '../lib/cycleLogic';
+export { getCycleBoundariesForDate, getPastCycles };
 
 // ─── Initial slice values ─────────────────────────────────────────────────────
 
@@ -235,7 +235,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         last_logged_date: getLocalDateString(),
         enabled_slices: ['Basic Needs', 'Feeding', 'Flex Money', 'Savings'],
         income_type: 'salary',
-        anchor_day: null,
+        anchor_day: new URLSearchParams(window.location.search).get('anchor') ? parseInt(new URLSearchParams(window.location.search).get('anchor')!) : 28,
         fluid_window_days: null,
         last_reset_date: null,
         global_leaderboard_opt_in: false,
@@ -263,6 +263,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         ],
         appState: 'READY',
       });
+      recalculateWealthMetrics(set, get, true);
       return;
     }
 
@@ -769,35 +770,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set(s => ({ loading: { ...s.loading, expenses: true } }));
     try {
       const allExpenses = await apiRequest('/api/expenses');
-      const filter = get().filterMonth;
-      let filtered = allExpenses;
-
-      if (filter !== 'all') {
-        const currentMonthStr = new Date().toISOString().substring(0, 7);
-        let startOfMonth: string;
-        let startOfNextMonth: string;
-
-        if (filter === currentMonthStr) {
-          startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-          const nextMonthObj = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-          startOfNextMonth = nextMonthObj.toISOString().split('T')[0];
-        } else {
-          const [yearStr, monthStr] = filter.split('-');
-          const year = parseInt(yearStr);
-          const month = parseInt(monthStr);
-          startOfMonth = `${filter}-01`;
-          let nextYear = year;
-          let nextMonthVal = month + 1;
-          if (nextMonthVal > 12) {
-            nextMonthVal = 1;
-            nextYear += 1;
-          }
-          startOfNextMonth = `${nextYear}-${String(nextMonthVal).padStart(2, '0')}-01`;
-        }
-        filtered = allExpenses.filter((e: Expense) => e.date >= startOfMonth && e.date < startOfNextMonth);
-      }
-
-      set({ expenses: (filtered as Expense[]) ?? [] });
+      set({ expenses: (allExpenses as Expense[]) ?? [] });
     } catch (e: any) {
       set(s => ({ errors: { ...s.errors, expenses: e.message } }));
     } finally {
@@ -894,35 +867,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     set(s => ({ loading: { ...s.loading, incomes: true } }));
     try {
       const allIncomes = await apiRequest('/api/incomes');
-      const filter = get().filterMonth;
-      let filtered = allIncomes;
-
-      if (filter !== 'all') {
-        const currentMonthStr = new Date().toISOString().substring(0, 7);
-        let startOfMonth: string;
-        let startOfNextMonth: string;
-
-        if (filter === currentMonthStr) {
-          startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-          const nextMonthObj = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-          startOfNextMonth = nextMonthObj.toISOString().split('T')[0];
-        } else {
-          const [yearStr, monthStr] = filter.split('-');
-          const year = parseInt(yearStr);
-          const month = parseInt(monthStr);
-          startOfMonth = `${filter}-01`;
-          let nextYear = year;
-          let nextMonthVal = month + 1;
-          if (nextMonthVal > 12) {
-            nextMonthVal = 1;
-            nextYear += 1;
-          }
-          startOfNextMonth = `${nextYear}-${String(nextMonthVal).padStart(2, '0')}-01`;
-        }
-        filtered = allIncomes.filter((i: Income) => i.date >= startOfMonth && i.date < startOfNextMonth);
-      }
-
-      set({ incomes: (filtered as Income[]) ?? [] });
+      set({ incomes: (allIncomes as Income[]) ?? [] });
     } catch (e: any) {
       set(s => ({ errors: { ...s.errors, incomes: e.message } }));
     } finally {
@@ -1214,14 +1159,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     }
   },
 
-  // ── Month Filtering ────────────────────────────────────────────────────────
-  filterMonth: new Date().toISOString().substring(0, 7),
+  // ── Month/Cycle Filtering ──────────────────────────────────────────────────
+  filterMonth: 'current',
   setFilterMonth: async (month) => {
     set({ filterMonth: month });
-    await Promise.all([
-      get().fetchExpenses(),
-      get().fetchIncomes(),
-    ]);
     recalculateWealthMetrics(set, get, true);
   },
 

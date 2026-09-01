@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
-import { useAppStore, getCycleBoundaries } from "@/store/useAppStore";
+import { useAppStore, getCycleBoundaries, getPastCycles } from "@/store/useAppStore";
 import type { Expense, Category } from "@/store/types";
 
 const customStyles = `
@@ -35,27 +35,25 @@ export default function Expenses() {
     setIsFormOpen(true);
   };
 
-  // Generate month options dynamically: last 12 months
-  const monthOptions = [];
-  const currentDate = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-    const value = d.toISOString().substring(0, 7);
-    const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
-    monthOptions.push({ value, label });
-  }
+  // Generate canonical financial cycles for the active user profile
+  const availableCycles = useMemo(() => getPastCycles(profile, 12), [profile]);
 
   const targetExpenses = Array.isArray(expenses) ? expenses : [];
   
-  const cycle = filterMonth !== 'all' ? getCycleBoundaries(profile, new Date(filterMonth + "-15")) : null;
+  const activeCycle = useMemo(() => {
+    if (filterMonth === 'all') return null;
+    if (filterMonth === 'current' || !filterMonth) return getCycleBoundaries(profile);
+    const matched = availableCycles.find(c => c.id === filterMonth);
+    return matched ? { startDate: matched.startDate, endDate: matched.endDate } : getCycleBoundaries(profile);
+  }, [filterMonth, availableCycles, profile]);
 
-  // Filter expenses by month first
+  // Filter expenses by financial cycle
   const monthlyExpenses = targetExpenses.filter(e => {
     if (!e) return false;
     if (filterMonth === 'all') return true;
     if (!e.date || typeof e.date !== "string") return false;
     const txnDate = new Date(e.date);
-    return cycle ? (txnDate >= cycle.startDate && txnDate <= cycle.endDate) : false;
+    return activeCycle ? (txnDate >= activeCycle.startDate && txnDate <= activeCycle.endDate) : true;
   });
 
   // Filter expenses by category next
@@ -83,16 +81,16 @@ export default function Expenses() {
           
           {/* Row 1: The Filter Strip */}
           <div className="flex items-center gap-2 py-0.5 text-xs font-mono font-bold">
-            {/* Month Picker Select */}
+            {/* Month/Cycle Picker Select */}
             <div className="relative shrink-0">
               <select
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
                 className="appearance-none pr-7 pl-3 py-1 bg-white text-black border-2 border-black rounded-none text-[10px] font-mono font-bold focus:outline-none cursor-pointer uppercase"
               >
-                {monthOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                {availableCycles.map((cycle) => (
+                  <option key={cycle.id} value={cycle.isCurrent ? 'current' : cycle.id}>
+                    {cycle.label}
                   </option>
                 ))}
                 <option value="all">ALL TIME</option>
